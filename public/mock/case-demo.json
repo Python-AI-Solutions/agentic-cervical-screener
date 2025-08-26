@@ -1,0 +1,14 @@
+{
+  "schema_version":"0.1.0",
+  "case_id":"DEMO-001",
+  "program_id":"DemoProgram",
+  "slides":[{
+    "slide_id":"SLIDE-001",
+    "title":"Demo Slide",
+    "uri":"images/test-image.png",
+    "layers":[
+      {"layer_id":"detections-rects","kind":"detections","geometry":"rects","uri":"mock/detections-rects.json"},
+      {"layer_id":"lesion-points","kind":"lesion_token","geometry":"points","uri":"mock/detections-points.json"}
+    ]
+  }]
+}

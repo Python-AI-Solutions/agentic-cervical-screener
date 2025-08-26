@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Cervical AI Viewer</title>
+  <link rel="stylesheet" href="niivue/niivue.css"/>
+  <style>
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    header { position:fixed; top:0; left:0; right:0; height:56px; display:flex; align-items:center; gap:8px; padding:0 12px; background:#0f172a; color:#fff; z-index:10; }
+    header button, header input { height:32px; }
+    main { position:absolute; top:56px; left:0; right:0; bottom:0; display:flex; }
+    #sidebar { width:280px; border-right:1px solid #e5e7eb; padding:12px; overflow:auto; }
+    #viewer { position:relative; flex:1; display:flex; align-items:center; justify-content:center; background:#111827; }
+    #glCanvas { width: min(95vw, 1200px); height: min(calc(95vh - 56px), 900px); background:#000; }
+    #overlayCanvas { position:absolute; pointer-events:none; }
+    .row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+    .muted { color:#6b7280; font-size:12px; }
+    .pill { background:#1f2937; color:#fff; padding:3px 8px; border-radius:999px; font-size:12px; }
+    .layer { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 8px; border:1px solid #e5e7eb; border-radius:8px; margin-bottom:6px; }
+    #overlayCanvas { position:absolute; pointer-events:none; z-index: 10; }  /* keep overlays on top */
+    .spinner {
+      display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.35);
+      border-top-color:#fff; border-radius:50%; animation: spin .8s linear infinite; margin-left:6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg) } }
+
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Cervical AI Viewer</strong>
+    <button id="btnLoadDemo">Load CQAI Demo</button>
+    <button id="btnClassify">Classify</button>
+    <button id="btnPrevRoi">◀ Prev ROI</button>
+    <button id="btnNextRoi">Next ROI ▶</button>
+    <span class="pill" id="status">idle</span>
+    <span id="spinner" class="spinner" hidden aria-label="loading"></span>
+    <span class="muted">prototype – not for clinical use</span>
+  </header>
+  <main>
+    <aside id="sidebar">
+      <div class="row"><input id="caseUrl" placeholder="Case JSON URL" style="flex:1"/><button id="btnLoadCase">Load</button></div>
+      <div id="layers"></div>
+    </aside>
+    <section id="viewer">
+      <canvas id="glCanvas"></canvas>
+      <canvas id="overlayCanvas"></canvas>
+    </section>
+  </main>
+
+  <script src="niivue/niivue.js"></script>
+  <script type="module" src="/src/viewer/index.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+{"type":"FeatureCollection","features":[
+  {"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[120,120],[220,120],[220,220],[120,220],[120,120]]]},"properties":{"class":"hsil_like","score":0.92}},
+  {"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[300,200],[360,200],[360,260],[300,260],[300,200]]]},"properties":{"class":"artifact","score":0.65}}
+]}
