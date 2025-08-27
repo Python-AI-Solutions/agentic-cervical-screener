@@ -12,6 +12,7 @@ const btnClassify  = document.getElementById('btnClassify');
 const caseUrlInput = document.getElementById('caseUrl');
 const btnPrevRoi   = document.getElementById('btnPrevRoi');
 const btnNextRoi   = document.getElementById('btnNextRoi');
+const btnToggleRoiMode = document.getElementById('btnToggleRoiMode');
 
 const glCanvas     = document.getElementById('glCanvas');
 const overlayCanvas= document.getElementById('overlayCanvas');
@@ -24,6 +25,8 @@ let nv=null, rois=[], roiIdx=-1, currentSlideId=null, currentSlideUri=null, last
 let layerCache = new Map();          // layer_id -> FeatureCollection (for rects/points)
 let visibleLayers = new Set();       // layer_ids currently shown
 let lastBoxes = [];                  // boxes from last classify
+let roiMode = 'ground_truth';        // 'ground_truth' or 'ai_detections'
+let showAIDetections = true;         // Whether to show AI classification boxes
 
 function setStatus(s){ statusEl.textContent=s; }
 function showSpinner(v){ 
@@ -66,6 +69,7 @@ async function loadCaseFromUrl(url){
   setStatus('loading…'); showSpinner(true);
   layersEl.innerHTML=''; overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
   rois=[]; roiIdx=-1; layerCache.clear(); visibleLayers.clear(); lastBoxes = [];
+  showAIDetections = true; // Reset AI detections visibility
 
   const NvCtor = window.Niivue || (window.niivue && window.niivue.Niivue);
   if (!NvCtor) throw new Error('Niivue not loaded');
@@ -77,7 +81,6 @@ async function loadCaseFromUrl(url){
   lastLoadedCase=doc;
   const slide=doc.slides?.[0]; if(!slide) throw new Error('no slides');
   currentSlideId=slide.slide_id||'SLIDE-001'; currentSlideUri=slide.uri;
-  console.log('🔄 LOADED CASE:', {slideId: currentSlideId, uri: currentSlideUri});
 
   const imgUrl=resolveUri(slide.uri);
   if (/\.(png|jpg|jpeg)$/i.test(imgUrl)) {
@@ -148,8 +151,31 @@ function renderOverlays(){
     // we pass a color per kind using overlayAdapters' internal rules
     drawGeoJSON(overlayCtx, obj.fc, '#00E5FF', transform); // color is recomputed inside fc if you prefer
   }
-  // redraw last classifier boxes on top
-  drawLabeledBoxes(overlayCtx, lastBoxes, transform);
+  // redraw last classifier boxes on top (only if enabled)
+  if (showAIDetections) {
+    drawLabeledBoxes(overlayCtx, lastBoxes, transform);
+  }
+}
+
+function addAIDetectionsToggle() {
+  // Check if AI detections toggle already exists
+  if (document.querySelector('[data-layer="ai-detections"]')) return;
+  
+  // Create AI detections toggle
+  const el = document.createElement('div');
+  el.className = 'layer';
+  el.innerHTML = `
+    <span>ai-detections <span class="muted">(rects)</span></span>
+    <label><input type="checkbox" data-layer="ai-detections" checked/> Show</label>`;
+  
+  layersEl.appendChild(el);
+  
+  // Add event listener
+  const cb = el.querySelector('input[type="checkbox"]');
+  cb.addEventListener('change', () => {
+    showAIDetections = cb.checked;
+    renderOverlays();
+  });
 }
 
 btnLoadDemo.addEventListener('click', ()=> loadCaseFromUrl());
@@ -157,24 +183,92 @@ btnLoadCase.addEventListener('click', ()=>{ const url=(caseUrlInput.value||'').t
 
 btnClassify.addEventListener('click', async ()=>{
   try {
-    console.log('🎯 CLASSIFYING:', {slideId: currentSlideId, uri: currentSlideUri});
     setStatus('classifying…'); showSpinner(true); btnClassify.disabled = true;
     const res=await classify(currentSlideId, currentSlideUri);
     lastBoxes = res.boxes || [];
+    
+    // Add AI detections toggle if it doesn't exist
+    addAIDetectionsToggle();
+    
     renderOverlays();
     setStatus('classified');
   } catch(e){ console.error(e); setStatus('error'); }
   finally { showSpinner(false); btnClassify.disabled = false; }
 });
 
-btnPrevRoi.addEventListener('click', ()=>{ if(!rois.length) return; roiIdx=(roiIdx-1+rois.length)%rois.length; highlight(rois[roiIdx]); });
-btnNextRoi.addEventListener('click', ()=>{ if(!rois.length) return; roiIdx=(roiIdx+1)%rois.length; highlight(rois[roiIdx]); });
+btnPrevRoi.addEventListener('click', ()=>{ 
+  const currentRois = getCurrentRois();
+  if(!currentRois.length) return; 
+  roiIdx=(roiIdx-1+currentRois.length)%currentRois.length; 
+  highlight(currentRois[roiIdx]); 
+});
+
+btnNextRoi.addEventListener('click', ()=>{ 
+  const currentRois = getCurrentRois();
+  if(!currentRois.length) return; 
+  roiIdx=(roiIdx+1)%currentRois.length; 
+  highlight(currentRois[roiIdx]); 
+});
+
+btnToggleRoiMode.addEventListener('click', ()=>{
+  // Toggle between ground truth and AI detections
+  roiMode = roiMode === 'ground_truth' ? 'ai_detections' : 'ground_truth';
+  roiIdx = -1; // Reset ROI index
+  
+  // Update button text and style
+  if (roiMode === 'ai_detections') {
+    btnToggleRoiMode.textContent = 'AI Detections';
+    btnToggleRoiMode.style.background = '#DC2626'; // Red for AI
+  } else {
+    btnToggleRoiMode.textContent = 'Ground Truth';
+    btnToggleRoiMode.style.background = '#374151'; // Gray for ground truth
+  }
+  
+  // Clear any existing highlights
+  renderOverlays();
+  setStatus(`Switched to ${roiMode === 'ai_detections' ? 'AI Detections' : 'Ground Truth'} navigation`);
+});
+
+function getCurrentRois() {
+  if (roiMode === 'ai_detections' && lastBoxes.length > 0) {
+    // Convert AI detection boxes to ROI format
+    return lastBoxes.map(box => ({
+      xmin: box.x,
+      ymin: box.y, 
+      xmax: box.x + box.w,
+      ymax: box.y + box.h,
+      label: box.label,
+      score: box.score
+    }));
+  }
+  return rois; // ground truth ROIs
+}
 
 function highlight(roi){
-  overlayCtx.save(); overlayCtx.strokeStyle='#22C55E'; overlayCtx.lineWidth=4*transform.scale;
+  // Redraw all overlays first to clear previous highlights
+  renderOverlays();
+  
+  const currentRois = getCurrentRois();
+  const isAI = roiMode === 'ai_detections';
+  
+  // Then draw the highlight on top
+  overlayCtx.save(); 
+  overlayCtx.strokeStyle = isAI ? '#FFD700' : '#22C55E'; // Gold for AI, Green for ground truth
+  overlayCtx.lineWidth=4*transform.scale;
+  overlayCtx.setLineDash([8, 4]); // Dashed line to make it more visible
+  
   const x1=roi.xmin*transform.scale+transform.tx, y1=roi.ymin*transform.scale+transform.ty;
   const x2=roi.xmax*transform.scale+transform.tx, y2=roi.ymax*transform.scale+transform.ty;
-  overlayCtx.strokeRect(x1,y1,x2-x1,y2-y1); overlayCtx.restore(); setStatus(`ROI ${(roiIdx+1)}/${rois.length}`);
+  overlayCtx.strokeRect(x1,y1,x2-x1,y2-y1); 
+  
+  overlayCtx.restore(); 
+  
+  // Show different status for AI vs ground truth
+  if (isAI && roi.label && roi.score) {
+    setStatus(`AI Detection ${(roiIdx+1)}/${currentRois.length}: ${roi.label} (${Math.round(roi.score*100)}%)`);
+  } else {
+    setStatus(`ROI ${(roiIdx+1)}/${currentRois.length} - Ground Truth`);
+  }
 }
 
 // Drag and Drop functionality

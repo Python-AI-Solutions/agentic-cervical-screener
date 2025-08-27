@@ -1,0 +1,6 @@
+{"type":"FeatureCollection","features":[
+  {"type":"Feature","geometry":{"type":"Point","coordinates":[150,120]},"properties":{"class":"hsil_like","score":0.95}},
+  {"type":"Feature","geometry":{"type":"Point","coordinates":[300,200]},"properties":{"class":"hsil_like","score":0.88}},
+  {"type":"Feature","geometry":{"type":"Point","coordinates":[420,160]},"properties":{"class":"asc_h","score":0.81}},
+  {"type":"Feature","geometry":{"type":"Point","coordinates":[250,320]},"properties":{"class":"lsil_like","score":0.76}}
+]}

@@ -7,7 +7,6 @@ export async function classify(slideId='SLIDE-001', imageUri=null) {
   // Always send slide_id, optionally include image_uri
   const payload = { slide_id: slideId };
   if (imageUri) payload.image_uri = imageUri;
-  console.log('📤 SENDING TO BACKEND:', payload);
   const r = await fetch(`${API_BASE}/v1/classify`, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
   if(!r.ok){ const t=await r.text().catch(()=> ''); throw new Error(`classify failed ${r.status} ${t}`); }
   return r.json();

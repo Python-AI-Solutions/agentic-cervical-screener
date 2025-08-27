@@ -67,7 +67,6 @@ def get_case(case_id: str):
 @app.post("/v1/classify", response_model=ClassifyResp)
 def classify(req: ClassifyReq):
     slide_id = req.slide_id or "SLIDE-001"
-    print(f"🔍 CLASSIFY REQUEST: slide_id={slide_id}")  # Debug logging
     
     # Return different mock results based on slide_id to simulate real AI behavior
     # When Abdul provides weights, replace this entire function with real inference.
@@ -100,6 +99,5 @@ def classify(req: ClassifyReq):
     
     # Get boxes for the specific slide, fallback to SLIDE-001 if not found
     boxes = mock_results.get(slide_id, mock_results["SLIDE-001"])
-    print(f"🎯 RETURNING {len(boxes)} boxes for {slide_id}")  # Debug logging
     
     return {"slide_id": slide_id, "boxes": boxes}
