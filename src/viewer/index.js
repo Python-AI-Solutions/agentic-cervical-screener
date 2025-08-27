@@ -26,7 +26,14 @@ let visibleLayers = new Set();       // layer_ids currently shown
 let lastBoxes = [];                  // boxes from last classify
 
 function setStatus(s){ statusEl.textContent=s; }
-function showSpinner(v){ spinnerEl.hidden = !v; }
+function showSpinner(v){ 
+  console.log('showSpinner called with:', v, 'spinnerEl:', spinnerEl);
+  if (spinnerEl) {
+    spinnerEl.hidden = !v; 
+  } else {
+    console.error('spinnerEl not found!');
+  }
+}
 function fitOverlayToImage(w,h){
   const boxW=glCanvas.clientWidth, boxH=glCanvas.clientHeight;
   const scale=Math.min(boxW/w, boxH/h), tx=(boxW-w*scale)/2, ty=(boxH-h*scale)/2;
@@ -77,7 +84,13 @@ async function loadCaseFromUrl(url){
   const imgUrl=resolveUri(slide.uri);
   if (/\.(png|jpg|jpeg)$/i.test(imgUrl)) {
     const img = new Image();
-    img.onload = () => { displayImageOnCanvas(img); fitOverlayToImage(img.width, img.height); renderOverlays(); };
+    img.onload = () => { 
+      displayImageOnCanvas(img); 
+      fitOverlayToImage(img.width, img.height); 
+      renderOverlays(); 
+      setStatus('ready'); 
+      showSpinner(false); 
+    };
     img.onerror = () => { console.error('Failed to load image:', imgUrl); setStatus('error loading image'); showSpinner(false); };
     img.src = imgUrl;
   } else {
@@ -121,7 +134,11 @@ async function loadCaseFromUrl(url){
     } catch (e) { console.warn('layer load failed', L.layer_id, e); }
   });
 
-  setStatus('ready'); showSpinner(false);
+  // Note: setStatus('ready') and showSpinner(false) are now called in img.onload for PNG images
+  // For medical formats, they're still called here
+  if (!/\.(png|jpg|jpeg)$/i.test(imgUrl)) {
+    setStatus('ready'); showSpinner(false);
+  }
 }
 
 function renderOverlays(){
@@ -160,6 +177,116 @@ function highlight(roi){
   const x2=roi.xmax*transform.scale+transform.tx, y2=roi.ymax*transform.scale+transform.ty;
   overlayCtx.strokeRect(x1,y1,x2-x1,y2-y1); overlayCtx.restore(); setStatus(`ROI ${(roiIdx+1)}/${rois.length}`);
 }
+
+// Drag and Drop functionality
+function setupDragAndDrop() {
+  const viewer = document.getElementById('viewer');
+  
+  // Prevent default drag behaviors
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    viewer.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+  });
+
+  // Highlight drop zone when dragging over
+  ['dragenter', 'dragover'].forEach(eventName => {
+    viewer.addEventListener(eventName, highlightDropZone, false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    viewer.addEventListener(eventName, unhighlightDropZone, false);
+  });
+
+  // Handle dropped files
+  viewer.addEventListener('drop', handleDrop, false);
+
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  function highlightDropZone(e) {
+    viewer.style.backgroundColor = 'rgba(0, 229, 255, 0.1)';
+    viewer.style.border = '2px dashed #00E5FF';
+    setStatus('Drop image here...');
+  }
+
+  function unhighlightDropZone(e) {
+    viewer.style.backgroundColor = '';
+    viewer.style.border = '';
+  }
+
+  function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    
+    if (files.length > 0) {
+      handleDroppedFiles(files);
+    }
+  }
+}
+
+function handleDroppedFiles(files) {
+  const file = files[0];
+  
+  // Check if it's an image file
+  if (file.type.startsWith('image/')) {
+    setStatus(`Loading ${file.name}...`);
+    showSpinner(true);
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        // Clear existing content
+        layersEl.innerHTML = '';
+        overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+        layerCache.clear();
+        visibleLayers.clear();
+        lastBoxes = [];
+        rois = [];
+        roiIdx = -1;
+        
+        // Display the new image
+        displayImageOnCanvas(img);
+        fitOverlayToImage(img.width, img.height);
+        
+        // Update current slide info
+        currentSlideId = `DROPPED-${Date.now()}`;
+        currentSlideUri = file.name;
+        
+        // Update UI
+        setStatus(`${file.name} loaded - ${img.width}×${img.height}px`);
+        showSpinner(false);
+        
+        // Add a layer control for the dropped image
+        const el = document.createElement('div');
+        el.className = 'layer';
+        el.innerHTML = `<span>${file.name} <span class="muted">(dropped image)</span></span><label><input type="checkbox" checked disabled/> Show</label>`;
+        layersEl.appendChild(el);
+      };
+      
+      img.onerror = function() {
+        setStatus(`Failed to load ${file.name}`);
+        showSpinner(false);
+      };
+      
+      img.src = e.target.result;
+    };
+    
+    reader.onerror = function() {
+      setStatus(`Failed to read ${file.name}`);
+      showSpinner(false);
+    };
+    
+    reader.readAsDataURL(file);
+  } else {
+    setStatus(`Unsupported file type: ${file.type}. Please drop an image file (PNG, JPG, etc.)`);
+  }
+}
+
+// Setup drag and drop
+setupDragAndDrop();
 
 // initial load
 loadCaseFromUrl().catch(e=>{ console.error(e); setStatus('error'); showSpinner(false); });

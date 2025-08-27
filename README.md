@@ -7,7 +7,7 @@ Static web viewer using Niivue (vendored) to render a slide image (PNG/JPG) and 
 ## Run
 ```bash
 python3 -m http.server 8080
-# open http://localhost:8080
+# open http://localhost:8080/public 
 # 1) Load CQAI Demo  2) Classify
 ```
 
