@@ -108,21 +108,36 @@ def classify(req: ClassifyReq):
     slide_id = req.slide_id or "SLIDE-001"
     conf_threshold = req.conf_threshold or 0.25
     
+    print(f"=== CLASSIFY REQUEST ===")
+    print(f"slide_id: {slide_id}")
+    print(f"image_uri: {req.image_uri}")
+    
     try:
         if model_inference is None:
-            # Fallback to mock if model not loaded
             return get_mock_results(slide_id)
         
         # Use YOLO model inference
         if req.image_uri:
-            # Run inference on the provided image URI
-            result = model_inference.predict(req.image_uri, conf_threshold)
+            print(f"Running inference on image_uri: {req.image_uri}")
+            
+            # Convert relative paths to HTTP URLs with correct public/ prefix
+            if req.image_uri.startswith('images/'):
+                # Convert images/test-image.png to http://localhost:8080/public/images/test-image.png
+                image_url = f"http://localhost:8080/public/{req.image_uri}"
+                print(f"Converted to HTTP URL: {image_url}")
+            else:
+                image_url = req.image_uri
+            
+            result = model_inference.predict(image_url, conf_threshold)
             boxes = result["boxes"]
         else:
-            # For slide_id, map to actual image path
-            # This depends on your data structure
-            image_path = f"images/{slide_id}.png"  # Adjust based on your naming
-            result = model_inference.predict(image_path, conf_threshold)
+            print(f"Running inference on slide_id: {slide_id}")
+            # Use HTTP URL to the frontend-served image with public/ prefix
+            image_url = f"http://localhost:8080/public/images/{slide_id}.png"
+            print(f"Looking for image at: {image_url}")
+            
+            result = model_inference.predict(image_url, conf_threshold)
+            print(f"YOLO result: {result}")
             boxes = result["boxes"]
         
         # Get class summary
@@ -222,4 +237,4 @@ def get_mock_results(slide_id: str):
         "boxes": boxes,
         "total_detections": len(boxes),
         "class_summary": class_summary
-    }
+    }       
