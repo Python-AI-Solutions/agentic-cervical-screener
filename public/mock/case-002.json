@@ -1,0 +1,23 @@
+{
+  "schema_version": "0.1.0",
+  "case_id": "DEMO-002",
+  "program_id": "DemoProgram",
+  "patient_info": {
+    "age": 35,
+    "id": "PATIENT-002"
+  },
+  "slides": [{
+    "slide_id": "SLIDE-002",
+    "title": "Case 2 - Cervical Sample",
+    "uri": "images/case2.png",
+    "acquisition_date": "2025-08-26",
+    "layers": [
+      {
+        "layer_id": "ai-detections",
+        "kind": "detections",
+        "geometry": "rects",
+        "uri": "mock/detections-case2.json"
+      }
+    ]
+  }]
+}

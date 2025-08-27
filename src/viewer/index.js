@@ -27,11 +27,8 @@ let lastBoxes = [];                  // boxes from last classify
 
 function setStatus(s){ statusEl.textContent=s; }
 function showSpinner(v){ 
-  console.log('showSpinner called with:', v, 'spinnerEl:', spinnerEl);
   if (spinnerEl) {
     spinnerEl.hidden = !v; 
-  } else {
-    console.error('spinnerEl not found!');
   }
 }
 function fitOverlayToImage(w,h){
@@ -80,6 +77,7 @@ async function loadCaseFromUrl(url){
   lastLoadedCase=doc;
   const slide=doc.slides?.[0]; if(!slide) throw new Error('no slides');
   currentSlideId=slide.slide_id||'SLIDE-001'; currentSlideUri=slide.uri;
+  console.log('🔄 LOADED CASE:', {slideId: currentSlideId, uri: currentSlideUri});
 
   const imgUrl=resolveUri(slide.uri);
   if (/\.(png|jpg|jpeg)$/i.test(imgUrl)) {
@@ -159,6 +157,7 @@ btnLoadCase.addEventListener('click', ()=>{ const url=(caseUrlInput.value||'').t
 
 btnClassify.addEventListener('click', async ()=>{
   try {
+    console.log('🎯 CLASSIFYING:', {slideId: currentSlideId, uri: currentSlideUri});
     setStatus('classifying…'); showSpinner(true); btnClassify.disabled = true;
     const res=await classify(currentSlideId, currentSlideUri);
     lastBoxes = res.boxes || [];
@@ -287,6 +286,9 @@ function handleDroppedFiles(files) {
 
 // Setup drag and drop
 setupDragAndDrop();
+
+// Ensure spinner is hidden on page load
+showSpinner(false);
 
 // initial load
 loadCaseFromUrl().catch(e=>{ console.error(e); setStatus('error'); showSpinner(false); });

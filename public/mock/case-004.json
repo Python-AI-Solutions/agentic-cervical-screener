@@ -1,0 +1,23 @@
+{
+  "schema_version": "0.1.0",
+  "case_id": "DEMO-004",
+  "program_id": "DemoProgram",
+  "patient_info": {
+    "age": 42,
+    "id": "PATIENT-004"
+  },
+  "slides": [{
+    "slide_id": "SLIDE-004",
+    "title": "Case 4 - High Risk Sample",
+    "uri": "images/case4.png",
+    "acquisition_date": "2025-08-27",
+    "layers": [
+      {
+        "layer_id": "ai-detections",
+        "kind": "detections",
+        "geometry": "rects",
+        "uri": "mock/detections-case4.json"
+      }
+    ]
+  }]
+}

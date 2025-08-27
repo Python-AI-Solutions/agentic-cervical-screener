@@ -1,0 +1,5 @@
+{"type":"FeatureCollection","features":[
+  {"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[180,120],[300,120],[300,240],[180,240],[180,120]]]},"properties":{"class":"ASC-H","score":0.81}},
+  {"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[350,200],[450,200],[450,300],[350,300],[350,200]]]},"properties":{"class":"LSIL-like","score":0.74}},
+  {"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[120,350],[220,350],[220,450],[120,450],[120,350]]]},"properties":{"class":"Artifact","score":0.58}}
+]}

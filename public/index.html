@@ -23,6 +23,9 @@
       display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.35);
       border-top-color:#fff; border-radius:50%; animation: spin .8s linear infinite; margin-left:6px;
     }
+    .spinner[hidden] {
+      display: none !important;
+    }
     @keyframes spin { to { transform: rotate(360deg) } }
 
   </style>
@@ -41,6 +44,14 @@
   <main>
     <aside id="sidebar">
       <div class="row"><input id="caseUrl" placeholder="Case JSON URL" style="flex:1"/><button id="btnLoadCase">Load</button></div>
+      <div style="margin: 10px 0;">
+        <div class="muted" style="margin-bottom: 8px;">Quick Load Cases:</div>
+        <button onclick="document.getElementById('caseUrl').value='http://localhost:8000/cases/DEMO-001'; document.getElementById('btnLoadCase').click()" style="width:100%; margin-bottom:4px">Case 1 (Original)</button>
+        <button onclick="document.getElementById('caseUrl').value='http://localhost:8000/cases/DEMO-002'; document.getElementById('btnLoadCase').click()" style="width:100%; margin-bottom:4px">Case 2 (LSIL)</button>
+        <button onclick="document.getElementById('caseUrl').value='http://localhost:8000/cases/DEMO-003'; document.getElementById('btnLoadCase').click()" style="width:100%; margin-bottom:4px">Case 3 (Mixed)</button>
+        <button onclick="document.getElementById('caseUrl').value='http://localhost:8000/cases/DEMO-004'; document.getElementById('btnLoadCase').click()" style="width:100%; margin-bottom:4px">Case 4 (High Risk)</button>
+      </div>
+      <hr style="border:none; border-top:1px solid #e5e7eb; margin:12px 0">
       <div id="layers"></div>
     </aside>
     <section id="viewer">
@@ -50,6 +61,7 @@
   </main>
 
   <script src="niivue/niivue.js"></script>
+  <script>window.__ENV__={API_BASE:'http://localhost:8000'}</script>
   <script type="module" src="/src/viewer/index.js"></script>
 </body>
 </html>
