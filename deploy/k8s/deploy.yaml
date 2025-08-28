@@ -1,28 +1,76 @@
 apiVersion: apps/v1
 kind: Deployment
-metadata: { name: cervical-ai-viewer }
+metadata:
+  name: cervical-frontend
 spec:
   replicas: 1
-  selector: { matchLabels: { app: cervical-ai-viewer } }
+  selector:
+    matchLabels:
+      app: cervical-frontend
   template:
-    metadata: { labels: { app: cervical-ai-viewer } }
+    metadata:
+      labels:
+        app: cervical-frontend
     spec:
       containers:
         - name: web
-          image: your-registry/cervical-ai-viewer:latest
-          ports: [{ containerPort: 80 }]
+          image: prady0t/cervical-frontend:v1-amd64
+          ports:
+            - containerPort: 80
 ---
 apiVersion: v1
 kind: Service
-metadata: { name: cervical-ai-viewer }
+metadata:
+  name: cervical-frontend
 spec:
-  selector: { app: cervical-ai-viewer }
-  ports: [{ port: 80, targetPort: 80, name: http }]
+  selector:
+    app: cervical-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+      name: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cervical-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cervical-backend
+  template:
+    metadata:
+      labels:
+        app: cervical-backend
+    spec:
+      containers:
+        - name: api
+          image: prady0t/cervical-backend-stub:v1-amd64
+          ports:
+            - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cervical-backend
+spec:
+  selector:
+    app: cervical-backend
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: http
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
-metadata: { name: cervical-ai-viewer }
+metadata:
+  name: cervical
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    # For HTTPS with cert-manager, switch to websecure and add TLS below
 spec:
+  ingressClassName: traefik
   rules:
   - host: viewer.example.com
     http:
@@ -30,4 +78,14 @@ spec:
       - path: /
         pathType: Prefix
         backend:
-          service: { name: cervical-ai-viewer, port: { number: 80 } }
+          service:
+            name: cervical-frontend
+            port:
+              number: 80
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: cervical-backend
+            port:
+              number: 8000
