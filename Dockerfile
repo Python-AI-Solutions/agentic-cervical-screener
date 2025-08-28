@@ -1,15 +1,16 @@
-FROM python:3.11-slim
+FROM nginx:alpine
 
-WORKDIR /app
-
-# Copy the public directory first
-COPY public /app/public
+# Copy the public directory
+COPY public /usr/share/nginx/html
 
 # Copy the src directory inside public so relative paths work
-COPY src /app/public/src
+COPY src /usr/share/nginx/html/src
 
-# Expose port 8080 to match your local setup
-EXPOSE 8080
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Use Python's built-in HTTP server, just like your local command
-CMD ["python3", "-m", "http.server", "8080", "--bind", "0.0.0.0"]
+# Expose port 80 for K8s
+EXPOSE 80
+
+# Use nginx for production serving
+CMD ["nginx", "-g", "daemon off;"]

@@ -63,6 +63,10 @@
 
   <script src="niivue/niivue.js"></script>
   <script>window.__ENV__={API_BASE:'http://localhost:8000'}</script>
+  <script>
+    console.log('Environment loaded:', window.__ENV__);
+    console.log('API_BASE:', window.__ENV__.API_BASE);
+  </script>
   <script type="module" src="/src/viewer/index.js"></script>
 </body>
 </html>

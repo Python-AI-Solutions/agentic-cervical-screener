@@ -9,7 +9,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY requirements.txt .
+COPY backend-stub/requirements.txt .
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --upgrade pip && \
@@ -18,10 +18,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
       -r requirements.txt && \
     rm -rf /tmp/pip-*
 
-# Copy only backend code (no public directory)
-COPY main.py .
-COPY model_loader.py .
-COPY models/ ./models/
+# Copy backend code and public directory
+COPY backend-stub/main.py .
+COPY backend-stub/model_loader.py .
+COPY backend-stub/models/ ./models/
+COPY public/ ./public/
 
 EXPOSE 8000
 CMD ["python","-m","uvicorn","main:app","--host","0.0.0.0","--port","8000"]

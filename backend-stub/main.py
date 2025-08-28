@@ -23,8 +23,8 @@ app.add_middleware(
 )
 
 # Mount static files
-repo_root = os.path.dirname(os.path.dirname(__file__))
-public_dir = os.path.join(repo_root, "public")
+# Use current working directory since public is copied to /app/public
+public_dir = os.path.join(os.getcwd(), "public")
 
 app.mount("/images", StaticFiles(directory=os.path.join(public_dir, "images")), name="images")
 app.mount("/mock", StaticFiles(directory=os.path.join(public_dir, "mock")), name="mock")
@@ -120,23 +120,46 @@ def classify(req: ClassifyReq):
         if req.image_uri:
             print(f"Running inference on image_uri: {req.image_uri}")
             
-            # Convert relative paths to HTTP URLs with correct public/ prefix
+            # Use local file path since backend has access to public directory
             if req.image_uri.startswith('images/'):
-                # Convert images/test-image.png to http://localhost:8080/public/images/test-image.png
-                image_url = f"http://localhost:8080/public/{req.image_uri}"
-                print(f"Converted to HTTP URL: {image_url}")
+                # Convert images/test-image.png to ./public/images/test-image.png
+                image_path = os.path.join(public_dir, req.image_uri)
+                print(f"Using local image path: {image_path}")
             else:
-                image_url = req.image_uri
+                image_path = req.image_uri
             
-            result = model_inference.predict(image_url, conf_threshold)
+            result = model_inference.predict(image_path, conf_threshold)
             boxes = result["boxes"]
         else:
             print(f"Running inference on slide_id: {slide_id}")
-            # Use HTTP URL to the frontend-served image with public/ prefix
-            image_url = f"http://localhost:8080/public/images/{slide_id}.png"
-            print(f"Looking for image at: {image_url}")
+            # Look up the case data to find the actual image URI
+            try:
+                # Get case data to find the image URI
+                case_mapping = {
+                    "SLIDE-001": "DEMO-001",
+                    "SLIDE-002": "DEMO-002", 
+                    "SLIDE-003": "DEMO-003",
+                    "SLIDE-004": "DEMO-004"
+                }
+                case_id = case_mapping.get(slide_id, "DEMO-001")
+                case_path = os.path.join(public_dir, "mock", f"{case_id.lower().replace('-', '')}.json")
+                
+                with open(case_path, "r", encoding="utf-8") as f:
+                    case_data = json.load(f)
+                
+                # Extract image URI from case data
+                slide_data = case_data.get("slides", [{}])[0]
+                image_uri = slide_data.get("uri", "images/test-image.png")
+                image_path = os.path.join(public_dir, image_uri)
+                print(f"Found image URI '{image_uri}' from case data, using path: {image_path}")
+                
+            except Exception as e:
+                print(f"Failed to get case data, using fallback: {e}")
+                # Fallback to default image
+                image_path = os.path.join(public_dir, "images", "test-image.png")
+                print(f"Using fallback image path: {image_path}")
             
-            result = model_inference.predict(image_url, conf_threshold)
+            result = model_inference.predict(image_path, conf_threshold)
             print(f"YOLO result: {result}")
             boxes = result["boxes"]
         
@@ -190,7 +213,8 @@ async def classify_upload(file: UploadFile = File(...), conf_threshold: float = 
 def get_case(case_id: str):
     """Serve case JSON - maps case IDs to their JSON files"""
     try:
-        repo_root = os.path.dirname(os.path.dirname(__file__))
+        # Use current working directory since public is copied to /app/public
+        public_dir = os.path.join(os.getcwd(), "public")
         
         case_mapping = {
             "DEMO-001": "case-demo.json",
@@ -200,7 +224,7 @@ def get_case(case_id: str):
         }
         
         case_file = case_mapping.get(case_id, "case-demo.json")
-        case_path = os.path.join(repo_root, "public", "mock", case_file)
+        case_path = os.path.join(public_dir, "mock", case_file)
         
         with open(case_path, "r", encoding="utf-8") as f:
             return json.load(f)
