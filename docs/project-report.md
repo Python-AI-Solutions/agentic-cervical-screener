@@ -10,32 +10,32 @@ graph TD
     A["🏥 Cervical AI Viewer<br/>Medical Image Analysis Platform"] --> B["🖥️ Frontend<br/>(Static Web App)"]
     A --> C["🔧 Backend Stub<br/>(FastAPI)"]
     A --> D["🚀 Deployment<br/>(Docker + K8s)"]
-    
+
     B --> E["📄 public/index.html<br/>Main UI"]
     B --> F["🎨 Niivue Library<br/>Medical Imaging"]
     B --> G["📁 Mock Data<br/>Demo Cases"]
     B --> H["🧠 JavaScript Modules<br/>Core Logic"]
-    
+
     E --> E1["Header: Buttons & Status"]
     E --> E2["Sidebar: Case Loader & Layers"]
     E --> E3["Viewer: Canvas Display"]
-    
+
     F --> F1["niivue.js<br/>WebGL Renderer"]
     F --> F2["niivue.css<br/>Styling"]
-    
+
     G --> G1["case-demo.json<br/>Demo Configuration"]
     G --> G2["test-image.png<br/>Sample Cervical Image"]
     G --> G3["detections-*.json<br/>AI Overlay Data"]
     G --> G4["classify.json<br/>Mock Classification"]
-    
+
     H --> H1["🔌 API Clients<br/>Backend Communication"]
     H --> H2["👁️ Viewer Core<br/>Image Display Logic"]
     H --> H3["🎯 Overlay System<br/>AI Annotations"]
     H --> H4["🧭 ROI Navigation<br/>Region Browsing"]
-    
+
     C --> C1["🩺 /v1/classify<br/>AI Classification API"]
     C --> C2["❤️ /healthz<br/>Health Check"]
-    
+
     D --> D1["🐳 Dockerfile<br/>Nginx Container"]
     D --> D2["☸️ K8s Manifest<br/>Production Deploy"]
 ```
@@ -48,12 +48,12 @@ graph TD
 
 #### **📋 README.md**
 - **Purpose**: Project documentation and setup instructions
-- **Key Info**: 
+- **Key Info**:
   - Classification-only demo scope
   - Uses Niivue for medical imaging
   - Instructions for running locally and pointing to APIs
 
-#### **🐳 Dockerfile** 
+#### **🐳 Dockerfile**
 - **Purpose**: Production containerization
 - **Function**: Creates nginx-based container serving static files
 - **Usage**: `docker build -t cervical-viewer .`
@@ -73,7 +73,7 @@ graph TD
 ```html
 Structure:
 ├── Header: Navigation & Controls
-├── Sidebar: Case Management & Layer Controls  
+├── Sidebar: Case Management & Layer Controls
 └── Viewer: Canvas-based Image Display
 ```
 
@@ -98,7 +98,7 @@ Structure:
 {
   "case_id": "DEMO-001",
   "slides": [{
-    "slide_id": "SLIDE-001", 
+    "slide_id": "SLIDE-001",
     "uri": "images/test-image.png",
     "layers": [
       {"layer_id": "detections-rects", "geometry": "rects"},
@@ -112,7 +112,7 @@ Structure:
 - **Format**: Polygon features with classification properties
 - **Data**: HSIL-like (92% confidence), Artifact (65% confidence)
 
-**📍 detections-points.json** - Point Overlays (GeoJSON)  
+**📍 detections-points.json** - Point Overlays (GeoJSON)
 - **Format**: Point features for lesion markers
 - **Data**: LSIL-like (77%), TZ evidence (66%)
 
@@ -148,7 +148,7 @@ Functions:
 ```javascript
 Core Features:
 ├── 🖼️ Image Display (Canvas + Niivue hybrid)
-├── 📥 Drag & Drop Support  
+├── 📥 Drag & Drop Support
 ├── 🎯 Overlay Management (layers, ROIs)
 ├── 🔄 State Management (caching, visibility)
 ├── 🎛️ UI Event Handling
@@ -169,7 +169,7 @@ Capabilities:
 ```javascript
 Features:
 ├── 🔍 ROI extraction from polygons
-├── 📍 Bounding box calculations  
+├── 📍 Bounding box calculations
 ├── 🎯 Center point computation
 └── 🔄 Navigation utilities
 ```
@@ -198,7 +198,7 @@ Endpoints:
 ```yaml
 Resources:
 ├── 🚀 Deployment: Nginx container
-├── 🌐 Service: Internal networking  
+├── 🌐 Service: Internal networking
 └── 🔗 Ingress: External access
 ```
 
@@ -214,9 +214,9 @@ Resources:
 
 ### **🎛️ Button Functions Explained**
 
-#### **🔵 "Load CQAI Demo"** 
+#### **🔵 "Load CQAI Demo"**
 - **Function**: Loads the default demo case
-- **Process**: 
+- **Process**:
   1. Fetches `case-demo.json` configuration
   2. Loads `test-image.png` cervical slide
   3. Overlays detection rectangles and points
@@ -284,7 +284,7 @@ Drop Image → FileReader → Image Processing → Canvas Update → Layer Reset
 
 ### **🚀 Production Readiness**
 1. **🔌 Real API Integration**: Replace mock with actual AI service
-2. **🔐 Authentication**: User login, session management  
+2. **🔐 Authentication**: User login, session management
 3. **📊 Case Management**: Database integration, patient records
 4. **🏥 DICOM Support**: Medical imaging standards compliance
 5. **📋 Reporting**: PDF reports, annotations export

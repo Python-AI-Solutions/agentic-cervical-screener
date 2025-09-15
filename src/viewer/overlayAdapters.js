@@ -42,16 +42,16 @@ export function drawGeoJSON(ctx, fc, color, transform) {
       const [x, y] = g.coordinates;
       const sx = x * transform.scale + transform.tx;
       const sy = y * transform.scale + transform.ty;
-      
+
       // Draw larger, more visible point with cross-hair
       const radius = Math.max(8, 12 * transform.scale);
-      
+
       // Draw filled circle
       ctx.beginPath();
       ctx.arc(sx, sy, radius, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-      
+
       // Draw cross-hair for better visibility
       ctx.save();
       ctx.beginPath();

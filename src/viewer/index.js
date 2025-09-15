@@ -29,9 +29,9 @@ let roiMode = 'ground_truth';        // 'ground_truth' or 'ai_detections'
 let showAIDetections = true;         // Whether to show AI classification boxes
 
 function setStatus(s){ statusEl.textContent=s; }
-function showSpinner(v){ 
+function showSpinner(v){
   if (spinnerEl) {
-    spinnerEl.hidden = !v; 
+    spinnerEl.hidden = !v;
   }
 }
 function fitOverlayToImage(w,h){
@@ -85,12 +85,12 @@ async function loadCaseFromUrl(url){
   const imgUrl=resolveUri(slide.uri);
   if (/\.(png|jpg|jpeg)$/i.test(imgUrl)) {
     const img = new Image();
-    img.onload = () => { 
-      displayImageOnCanvas(img); 
-      fitOverlayToImage(img.width, img.height); 
-      renderOverlays(); 
-      setStatus('ready'); 
-      showSpinner(false); 
+    img.onload = () => {
+      displayImageOnCanvas(img);
+      fitOverlayToImage(img.width, img.height);
+      renderOverlays();
+      setStatus('ready');
+      showSpinner(false);
     };
     img.onerror = () => { console.error('Failed to load image:', imgUrl); setStatus('error loading image'); showSpinner(false); };
     img.src = imgUrl;
@@ -160,16 +160,16 @@ function renderOverlays(){
 function addAIDetectionsToggle() {
   // Check if AI detections toggle already exists
   if (document.querySelector('[data-layer="ai-detections"]')) return;
-  
+
   // Create AI detections toggle
   const el = document.createElement('div');
   el.className = 'layer';
   el.innerHTML = `
     <span>ai-detections <span class="muted">(rects)</span></span>
     <label><input type="checkbox" data-layer="ai-detections" checked/> Show</label>`;
-  
+
   layersEl.appendChild(el);
-  
+
   // Add event listener
   const cb = el.querySelector('input[type="checkbox"]');
   cb.addEventListener('change', () => {
@@ -186,35 +186,35 @@ btnClassify.addEventListener('click', async ()=>{
     setStatus('classifying…'); showSpinner(true); btnClassify.disabled = true;
     const res=await classify(currentSlideId, currentSlideUri);
     lastBoxes = res.boxes || [];
-    
+
     // Add AI detections toggle if it doesn't exist
     addAIDetectionsToggle();
-    
+
     renderOverlays();
     setStatus('classified');
   } catch(e){ console.error(e); setStatus('error'); }
   finally { showSpinner(false); btnClassify.disabled = false; }
 });
 
-btnPrevRoi.addEventListener('click', ()=>{ 
+btnPrevRoi.addEventListener('click', ()=>{
   const currentRois = getCurrentRois();
-  if(!currentRois.length) return; 
-  roiIdx=(roiIdx-1+currentRois.length)%currentRois.length; 
-  highlight(currentRois[roiIdx]); 
+  if(!currentRois.length) return;
+  roiIdx=(roiIdx-1+currentRois.length)%currentRois.length;
+  highlight(currentRois[roiIdx]);
 });
 
-btnNextRoi.addEventListener('click', ()=>{ 
+btnNextRoi.addEventListener('click', ()=>{
   const currentRois = getCurrentRois();
-  if(!currentRois.length) return; 
-  roiIdx=(roiIdx+1)%currentRois.length; 
-  highlight(currentRois[roiIdx]); 
+  if(!currentRois.length) return;
+  roiIdx=(roiIdx+1)%currentRois.length;
+  highlight(currentRois[roiIdx]);
 });
 
 btnToggleRoiMode.addEventListener('click', ()=>{
   // Toggle between ground truth and AI detections
   roiMode = roiMode === 'ground_truth' ? 'ai_detections' : 'ground_truth';
   roiIdx = -1; // Reset ROI index
-  
+
   // Update button text and style
   if (roiMode === 'ai_detections') {
     btnToggleRoiMode.textContent = 'AI Detections';
@@ -223,7 +223,7 @@ btnToggleRoiMode.addEventListener('click', ()=>{
     btnToggleRoiMode.textContent = 'Ground Truth';
     btnToggleRoiMode.style.background = '#374151'; // Gray for ground truth
   }
-  
+
   // Clear any existing highlights
   renderOverlays();
   setStatus(`Switched to ${roiMode === 'ai_detections' ? 'AI Detections' : 'Ground Truth'} navigation`);
@@ -234,7 +234,7 @@ function getCurrentRois() {
     // Convert AI detection boxes to ROI format
     return lastBoxes.map(box => ({
       xmin: box.x,
-      ymin: box.y, 
+      ymin: box.y,
       xmax: box.x + box.w,
       ymax: box.y + box.h,
       label: box.label,
@@ -247,22 +247,22 @@ function getCurrentRois() {
 function highlight(roi){
   // Redraw all overlays first to clear previous highlights
   renderOverlays();
-  
+
   const currentRois = getCurrentRois();
   const isAI = roiMode === 'ai_detections';
-  
+
   // Then draw the highlight on top
-  overlayCtx.save(); 
+  overlayCtx.save();
   overlayCtx.strokeStyle = isAI ? '#FFD700' : '#22C55E'; // Gold for AI, Green for ground truth
   overlayCtx.lineWidth=4*transform.scale;
   overlayCtx.setLineDash([8, 4]); // Dashed line to make it more visible
-  
+
   const x1=roi.xmin*transform.scale+transform.tx, y1=roi.ymin*transform.scale+transform.ty;
   const x2=roi.xmax*transform.scale+transform.tx, y2=roi.ymax*transform.scale+transform.ty;
-  overlayCtx.strokeRect(x1,y1,x2-x1,y2-y1); 
-  
-  overlayCtx.restore(); 
-  
+  overlayCtx.strokeRect(x1,y1,x2-x1,y2-y1);
+
+  overlayCtx.restore();
+
   // Show different status for AI vs ground truth
   if (isAI && roi.label && roi.score) {
     setStatus(`AI Detection ${(roiIdx+1)}/${currentRois.length}: ${roi.label} (${Math.round(roi.score*100)}%)`);
@@ -274,7 +274,7 @@ function highlight(roi){
 // Drag and Drop functionality
 function setupDragAndDrop() {
   const viewer = document.getElementById('viewer');
-  
+
   // Prevent default drag behaviors
   ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
     viewer.addEventListener(eventName, preventDefaults, false);
@@ -312,7 +312,7 @@ function setupDragAndDrop() {
   function handleDrop(e) {
     const dt = e.dataTransfer;
     const files = dt.files;
-    
+
     if (files.length > 0) {
       handleDroppedFiles(files);
     }
@@ -321,12 +321,12 @@ function setupDragAndDrop() {
 
 function handleDroppedFiles(files) {
   const file = files[0];
-  
+
   // Check if it's an image file
   if (file.type.startsWith('image/')) {
     setStatus(`Loading ${file.name}...`);
     showSpinner(true);
-    
+
     const reader = new FileReader();
     reader.onload = function(e) {
       const img = new Image();
@@ -339,39 +339,39 @@ function handleDroppedFiles(files) {
         lastBoxes = [];
         rois = [];
         roiIdx = -1;
-        
+
         // Display the new image
         displayImageOnCanvas(img);
         fitOverlayToImage(img.width, img.height);
-        
+
         // Update current slide info
         currentSlideId = `DROPPED-${Date.now()}`;
         currentSlideUri = file.name;
-        
+
         // Update UI
         setStatus(`${file.name} loaded - ${img.width}×${img.height}px`);
         showSpinner(false);
-        
+
         // Add a layer control for the dropped image
         const el = document.createElement('div');
         el.className = 'layer';
         el.innerHTML = `<span>${file.name} <span class="muted">(dropped image)</span></span><label><input type="checkbox" checked disabled/> Show</label>`;
         layersEl.appendChild(el);
       };
-      
+
       img.onerror = function() {
         setStatus(`Failed to load ${file.name}`);
         showSpinner(false);
       };
-      
+
       img.src = e.target.result;
     };
-    
+
     reader.onerror = function() {
       setStatus(`Failed to read ${file.name}`);
       showSpinner(false);
     };
-    
+
     reader.readAsDataURL(file);
   } else {
     setStatus(`Unsupported file type: ${file.type}. Please drop an image file (PNG, JPG, etc.)`);

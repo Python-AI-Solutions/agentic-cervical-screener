@@ -1,16 +1,25 @@
-FROM nginx:alpine
+# syntax=docker/dockerfile:1.6
+FROM mambaorg/micromamba:1.5-focal
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+     && rm -rf /var/lib/apt/lists/*
 
-# Copy the public directory
-COPY public /usr/share/nginx/html
+# Install pixi (curl is included in the micromamba base image)
+RUN curl -fsSL https://pixi.sh/install.sh | bash
+ENV PATH="/root/.pixi/bin:$PATH"
 
-# Copy the src directory inside public so relative paths work
-COPY src /usr/share/nginx/html/src
+WORKDIR /app
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
+# Copy pixi configuration
+COPY pixi.toml .
 
-# Expose port 8080 for K8s (unprivileged)
-EXPOSE 8080
+# Install dependencies using pixi
+RUN pixi install
 
-# Use nginx for production serving
-CMD ["nginx", "-g", "daemon off;"]
+# Copy application files
+COPY src/ ./src/
+COPY public/ ./public/
+
+EXPOSE 8000
+CMD ["pixi", "run", "start"]

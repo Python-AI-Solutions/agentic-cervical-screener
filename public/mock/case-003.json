@@ -14,7 +14,7 @@
     "layers": [
       {
         "layer_id": "detections-rects",
-        "kind": "detections", 
+        "kind": "detections",
         "geometry": "rects",
         "uri": "mock/detections-case3.json"
       },
