@@ -1,18 +1,27 @@
+# syntax=docker/dockerfile:1.6
 FROM python:3.11-slim
+ENV PIP_NO_CACHE_DIR=1 PIP_ROOT_USER_ACTION=ignore PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      libglib2.0-0 libsm6 libxext6 libxrender1 libgomp1 libgl1 \
+      libjpeg62-turbo libpng16-16 libtiff6 ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
-
-# Copy requirements and install dependencies
 COPY backend-stub/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the main application
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install --upgrade pip && \
+    python -m pip install --only-binary=:all: --prefer-binary \
+      --extra-index-url https://download.pytorch.org/whl/cpu \
+      -r requirements.txt && \
+    rm -rf /tmp/pip-*
+
+# Copy backend code and public directory
 COPY backend-stub/main.py .
+COPY backend-stub/model_loader.py .
+COPY backend-stub/models/ ./models/
+COPY public/ ./public/
 
-# Copy the public directory with images and mock data
-COPY public /app/public
-
-# Expose port
 EXPOSE 8000
-
-# Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python","-m","uvicorn","main:app","--host","0.0.0.0","--port","8000"]

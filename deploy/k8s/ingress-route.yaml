@@ -1,0 +1,31 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: cervical
+  namespace: default
+spec:
+  entryPoints:
+    - web
+  routes:
+    # Backend API routes via /api (strip the prefix before it hits the service)
+    - match: (Host(`34-60-50-172.nip.io`) || Host(`34.60.50.172`)) && PathPrefix(`/api`)
+      kind: Rule
+      middlewares:
+        - name: strip-api
+      services:
+        - name: cervical-backend
+          port: 8000
+
+    # Backend static files - these must come BEFORE the frontend catch-all
+    - match: (Host(`34-60-50-172.nip.io`) || Host(`34.60.50.172`)) && (PathPrefix(`/images`) || PathPrefix(`/mock`) || PathPrefix(`/cases`) || PathPrefix(`/healthz`))
+      kind: Rule
+      services:
+        - name: cervical-backend
+          port: 8000
+
+    # Frontend for everything else - this must be LAST (catch-all)
+    - match: (Host(`34-60-50-172.nip.io`) || Host(`34.60.50.172`))
+      kind: Rule
+      services:
+        - name: cervical-frontend
+          port: 80

@@ -3,14 +3,20 @@ const API_BASE = ENV.API_BASE || '';
 const useMock = !API_BASE;
 
 export async function fetchCase(caseId = 'DEMO-001') {
-  if (useMock) { const r = await fetch('/public/mock/case-demo.json'); if(!r.ok) throw new Error('mock case failed'); return r.json(); }
+  if (useMock) { 
+    // For mock mode, use backend service for case data
+    const r = await fetch(`${API_BASE}/cases/${caseId}`); 
+    if(!r.ok) throw new Error('mock case failed'); 
+    return r.json(); 
+  }
   const r = await fetch(`${API_BASE}/cases/${caseId}`); if(!r.ok) throw new Error('case fetch failed'); return r.json();
 }
 export function resolveUri(uri) {
   if (useMock) {
-    // For mock mode, prefix relative paths with /public/
+    // For mock mode, use backend service for images and mock data
     if (uri.startsWith('mock/') || uri.startsWith('images/')) {
-      return `/public/${uri}`;
+      // Use backend service instead of /public/ prefix
+      return `${API_BASE}/${uri}`;
     }
     return uri;
   }
