@@ -8,7 +8,10 @@ import os, json
 import base64
 import io
 from PIL import Image
-from model_loader import initialize_model, model_inference
+try:
+    from model_loader import initialize_model, model_inference
+except ImportError:
+    from .model_loader import initialize_model, model_inference
 
 model_inference = None
 app = FastAPI(title="Cervical AI Classifier (YOLO)", version="1.0.0")
@@ -142,7 +145,16 @@ def classify(req: ClassifyReq):
                     "SLIDE-004": "DEMO-004"
                 }
                 case_id = case_mapping.get(slide_id, "DEMO-001")
-                case_path = os.path.join(public_dir, "mock", f"{case_id.lower().replace('-', '')}.json")
+                
+                # Use the same case file mapping as the /cases endpoint
+                case_file_mapping = {
+                    "DEMO-001": "case-demo.json",
+                    "DEMO-002": "case-002.json",
+                    "DEMO-003": "case-003.json", 
+                    "DEMO-004": "case-004.json"
+                }
+                case_file = case_file_mapping.get(case_id, "case-demo.json")
+                case_path = os.path.join(public_dir, "mock", case_file)
                 
                 with open(case_path, "r", encoding="utf-8") as f:
                     case_data = json.load(f)

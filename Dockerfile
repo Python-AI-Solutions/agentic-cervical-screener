@@ -9,8 +9,8 @@ COPY src /usr/share/nginx/html/src
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Expose port 80 for K8s
-EXPOSE 80
+# Expose port 8080 for K8s (unprivileged)
+EXPOSE 8080
 
 # Use nginx for production serving
 CMD ["nginx", "-g", "daemon off;"]

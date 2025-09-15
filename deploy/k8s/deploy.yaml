@@ -12,9 +12,11 @@ spec:
       labels:
         app: cervical-frontend
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: web
-          image: cervical-frontend:latest
+          image: ghcr.io/prady0t/agentic-cervical-screener-frontend:v1.0.1
           ports:
             - containerPort: 80
           resources:
@@ -63,9 +65,11 @@ spec:
       labels:
         app: cervical-backend
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: api
-          image: cervical-backend:latest
+          image: ghcr.io/prady0t/agentic-cervical-screener-backend:v1.0.1-amd
           ports:
             - containerPort: 8000
           resources:

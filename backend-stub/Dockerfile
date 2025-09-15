@@ -2,8 +2,7 @@
 FROM python:3.11-slim
 ENV PIP_NO_CACHE_DIR=1 PIP_ROOT_USER_ACTION=ignore PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 
-RUN --mount=type=cache,target=/var/cache/apt \
-    apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
       libglib2.0-0 libsm6 libxext6 libxrender1 libgomp1 libgl1 \
       libjpeg62-turbo libpng16-16 libtiff6 ca-certificates \
     && rm -rf /var/lib/apt/lists/*
