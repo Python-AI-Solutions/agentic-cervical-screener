@@ -120,7 +120,7 @@ class YOLOCervicalClassifier:
 
     def get_class_summary(self, boxes: list[dict]) -> dict[str, int]:
         """Get count of each class detected"""
-        summary = {class_name: 0 for class_name in self.class_names}
+        summary = dict.fromkeys(self.class_names, 0)
         for box in boxes:
             label = box["label"]
             if label in summary:
