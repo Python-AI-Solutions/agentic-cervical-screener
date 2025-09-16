@@ -1,5 +1,10 @@
 name: CI/CD Pipeline
 
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+  
 on:
   push:
     branches: [ main, final-deployment ]
@@ -29,7 +34,7 @@ jobs:
       run: pixi run install
 
     - name: Install Playwright browsers
-      run: pixi run install-playwright
+      run: pixi run install-browsers
 
     - name: Run unit tests
       run: pixi run test
@@ -120,7 +125,7 @@ jobs:
         output: 'trivy-results.sarif'
 
     - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'
@@ -140,7 +145,7 @@ jobs:
       run: pixi install
 
     - name: Install pre-commit hooks
-      run: pixi run pre-commit install
+      run: pixi run pre-commit-install
 
     - name: Run pre-commit
       run: pixi run format

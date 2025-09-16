@@ -15,6 +15,7 @@ install-browsers = "playwright install chromium"
 setup = { depends-on = ["install", "install-browsers"] }
 format = "pre-commit run --all-files"
 lint = "ruff check src/ tests/"
+pre-commit-install= "pre-commit install"
 
 [dependencies]
 # Core runtime
