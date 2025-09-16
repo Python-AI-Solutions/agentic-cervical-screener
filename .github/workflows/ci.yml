@@ -114,9 +114,20 @@ jobs:
           format: 'sarif'
           output: 'trivy-results.sarif'
 
+      - name: Display Trivy scan results
+        run: |
+          echo "=== Trivy Security Scan Results ==="
+          if [ -f "trivy-results.sarif" ]; then
+            echo "SARIF file generated successfully"
+            echo "File size: $(wc -c < trivy-results.sarif) bytes"
+          else
+            echo "No SARIF file generated"
+          fi
+
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true
         with:
           sarif_file: 'trivy-results.sarif'
 
@@ -133,6 +144,9 @@ jobs:
 
       - name: Install dependencies
         run: pixi install
+
+      - name: Install Python dependencies via pip
+        run: pixi run install
 
       - name: Install pre-commit hooks
         run: |
