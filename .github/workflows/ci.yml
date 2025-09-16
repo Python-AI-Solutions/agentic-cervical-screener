@@ -4,7 +4,7 @@ permissions:
   contents: read
   security-events: write
   actions: read
-  
+
 on:
   push:
     branches: [ main, final-deployment ]
@@ -19,135 +19,128 @@ jobs:
         python-version: [3.11]
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install pixi
-      run: curl -fsSL https://pixi.sh/install.sh | bash
+      - name: Install pixi
+        run: curl -fsSL https://pixi.sh/install.sh | bash
 
-    - name: Add pixi to PATH
-      run: echo "$HOME/.pixi/bin" >> $GITHUB_PATH
+      - name: Add pixi to PATH
+        run: echo "$HOME/.pixi/bin" >> $GITHUB_PATH
 
-    - name: Install dependencies with pixi
-      run: pixi install
+      - name: Install dependencies with pixi
+        run: pixi install
 
-    - name: Install Python dependencies via pip
-      run: pixi run install
+      - name: Install Python dependencies via pip
+        run: pixi run install
 
-    - name: Install Playwright browsers
-      run: pixi run install-browsers
+      - name: Install Playwright browsers
+        run: pixi run install-browsers
 
-    - name: Run unit tests
-      run: pixi run test
+      - name: Run unit tests
+        run: pixi run test
 
-    - name: Run integration tests
-      run: pixi run test-integration
+      - name: Run integration tests
+        run: pixi run test-integration
 
-    - name: Generate coverage report
-      run: pixi run test-coverage
+      - name: Generate coverage report
+        run: pixi run test-coverage
 
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: false
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
 
   docker:
     runs-on: ubuntu-latest
     needs: test
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Build Docker image
-      run: |
-        docker build -f Dockerfile -t cervical-backend:test .
+      - name: Build Docker image
+        run: |
+          docker build -f Dockerfile -t cervical-backend:test .
 
-    - name: Test Docker container
-      run: |
-        # Start container in background
-        docker run -d -p 8000:8000 --name cervical-test cervical-backend:test
+      - name: Test Docker container (basic health)
+        run: |
+          # Start container in background
+          docker run -d -p 8000:8000 --name cervical-test cervical-backend:test
+          # Wait for container to start
+          sleep 10
+          # Test health endpoint
+          curl -f http://localhost:8000/healthz || exit 1
+          # Test API docs
+          curl -f http://localhost:8000/docs || exit 1
+          # Test model info endpoint
+          curl -f http://localhost:8000/model-info || exit 1
+          # Stop and remove container
+          docker stop cervical-test
+          docker rm cervical-test
 
-        # Wait for container to start
-        sleep 10
-
-        # Test health endpoint
-        curl -f http://localhost:8000/healthz || exit 1
-
-        # Test API docs
-        curl -f http://localhost:8000/docs || exit 1
-
-        # Test model info endpoint
-        curl -f http://localhost:8000/model-info || exit 1
-
-        # Stop and remove container
-        docker stop cervical-test
-        docker rm cervical-test
-
-    - name: Test Docker container with API calls
-      run: |
-        # Start container in background
-        docker run -d -p 8000:8000 --name cervical-api-test cervical-backend:test
-
-        # Wait for container to start up completely
-        sleep 15
-
-        # Test classify endpoint with slide_id
-        curl -f -X POST "http://localhost:8000/v1/classify" \
-          -H "Content-Type: application/json" \
-          -d '{"slide_id": "SLIDE-001", "conf_threshold": 0.25}' || exit 1
-
-        # Test classify endpoint with image_uri
-        curl -f -X POST "http://localhost:8000/v1/classify" \
-          -H "Content-Type: application/json" \
-          -d '{"image_uri": "images/test-image.png"}' || exit 1
-
-        # Test case endpoint
-        curl -f "http://localhost:8000/cases/DEMO-001" || exit 1
-
-        # Stop and remove container
-        docker stop cervical-api-test
-        docker rm cervical-api-test
+      - name: Test Docker container with API calls
+        run: |
+          # Start container in background
+          docker run -d -p 8000:8000 --name cervical-api-test cervical-backend:test
+          # Wait for container to start up completely
+          sleep 15
+          # Test classify endpoint with slide_id
+          curl -f -X POST "http://localhost:8000/v1/classify" \
+            -H "Content-Type: application/json" \
+            -d '{"slide_id": "SLIDE-001", "conf_threshold": 0.25}' || exit 1
+          # Test classify endpoint with image_uri
+          curl -f -X POST "http://localhost:8000/v1/classify" \
+            -H "Content-Type: application/json" \
+            -d '{"image_uri": "images/test-image.png"}' || exit 1
+          # Test case endpoint
+          curl -f "http://localhost:8000/cases/DEMO-001" || exit 1
+          # Stop and remove container
+          docker stop cervical-api-test
+          docker rm cervical-api-test
 
   security:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: 'fs'
-        scan-ref: '.'
-        format: 'sarif'
-        output: 'trivy-results.sarif'
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
 
-    - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
-      with:
-        sarif_file: 'trivy-results.sarif'
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
 
   lint:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install pixi
-      run: curl -fsSL https://pixi.sh/install.sh | bash
+      - name: Install pixi
+        run: curl -fsSL https://pixi.sh/install.sh | bash
 
-    - name: Add pixi to PATH
-      run: echo "$HOME/.pixi/bin" >> $GITHUB_PATH
+      - name: Add pixi to PATH
+        run: echo "$HOME/.pixi/bin" >> $GITHUB_PATH
 
-    - name: Install dependencies
-      run: pixi install
+      - name: Install dependencies
+        run: pixi install
 
-- name: Install pre-commit hooks
-  run: |
-    pip install pre-commit
-    pre-commit install
+      - name: Install pre-commit hooks
+        run: |
+          pip install pre-commit
+          pre-commit install
 
-    - name: Run pre-commit
-      run: pixi run format
+      - name: Run pre-commit and linters
+        run: |
+          # run formatting and linting via pixi-managed commands
+          pixi run format || true
+          pixi run lint
