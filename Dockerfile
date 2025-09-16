@@ -15,7 +15,7 @@ ENV PATH="/root/.pixi/bin:$PATH"
 WORKDIR /app
 
 # Copy pixi configuration
-COPY pixi.toml .
+COPY pyproject.toml .
 
 # Install dependencies using pixi
 RUN pixi install

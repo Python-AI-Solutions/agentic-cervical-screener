@@ -163,3 +163,62 @@ packages = ["src"]
 exclude_dirs = ["tests", "models", "public"]
 exclude = ["**/__init__.py"]
 skips = ["B101", "B601"]
+
+[tool.pixi.project]
+channels = ["conda-forge", "pytorch"]
+platforms = ["osx-arm64", "linux-64"]
+
+[tool.pixi.tasks]
+dev = "uvicorn src.main:app --reload --host localhost --port 8000"
+start = "uvicorn src.main:app --host 0.0.0.0 --port 8000"
+test = "python -m pytest tests/ -x -q"
+test-ci = "python -m pytest tests/ -v --tb=short"
+test-integration = "python -m pytest tests/ -m integration -v"
+test-coverage = "python -m pytest tests/ --cov=src --cov-report=html --cov-report=term"
+install-browsers = "playwright install chromium"
+format = "ruff format ."
+lint = "ruff check src/ tests/"
+check-all = "pre-commit run --all-files"
+pre-commit-install = "pre-commit install"
+
+[tool.pixi.dependencies]
+# Core runtime dependencies
+python = "3.12.*"
+fastapi = ">=0.116.0"
+uvicorn = ">=0.35.0"
+pydantic = ">=2.11.0"
+python-multipart = ">=0.0.20"
+pillow = ">=10.0.0"
+numpy = ">=1.24.0,<2.0.0"
+opencv = ">=4.10.0"
+
+# ML dependencies
+pytorch = ">=2.3.1"
+torchvision = ">=0.18.1"
+scikit-learn = ">=1.5.0"
+ultralytics = ">=8.3.0"
+matplotlib = ">=3.7.0"
+pandas = ">=2.0.0"
+tqdm = ">=4.65.0"
+seaborn = ">=0.12.0"
+psutil = ">=5.9.0"
+py-cpuinfo = ">=9.0.0"
+
+# System dependencies for OpenCV and image processing
+glib = "*"
+libjpeg-turbo = "*"
+libpng = "*"
+libtiff = "*"
+
+# Test dependencies
+pytest = ">=7.0.0"
+pytest-asyncio = ">=0.21.0"
+pytest-cov = ">=4.0.0"
+httpx = ">=0.24.0"
+requests = ">=2.28.0"
+playwright-python = "*"
+
+# Dev dependencies
+pre-commit = ">=3.0.0"
+ruff = ">=0.1.0"
+mypy = ">=1.0.0"
