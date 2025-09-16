@@ -45,7 +45,7 @@ if [ "$1" = "--remote" ]; then
     echo "kubectl apply -f deploy/k8s/"
 else
     echo "🏠 Deploying to local cluster (minikube/kind)..."
-    
+
     # Check if we're in minikube context
     if kubectl config current-context | grep -q "minikube"; then
         echo "📱 Detected minikube context"
@@ -64,23 +64,23 @@ else
     else
         echo "⚠️  Warning: Not in minikube/kind context. Make sure your local cluster can access the images."
     fi
-    
+
     echo "🚀 Applying Kubernetes manifests..."
     kubectl apply -f deploy/k8s/
-    
+
     echo "⏳ Waiting for deployments to be ready..."
     kubectl wait --for=condition=available --timeout=300s deployment/cervical-frontend
     kubectl wait --for=condition=available --timeout=300s deployment/cervical-backend
-    
+
     echo "✅ Deployment completed!"
-    
+
     # Show status
     echo ""
     echo "📊 Deployment Status:"
     kubectl get pods
     kubectl get services
     kubectl get ingress
-    
+
     echo ""
     echo "🌐 Access your application:"
     if kubectl config current-context | grep -q "minikube"; then

@@ -1,16 +1,28 @@
-FROM nginx:alpine
+# syntax=docker/dockerfile:1.6
+FROM debian:12-slim
 
-# Copy the public directory
-COPY public /usr/share/nginx/html
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy the src directory inside public so relative paths work
-COPY src /usr/share/nginx/html/src
+# Install pixi
+RUN curl -fsSL https://pixi.sh/install.sh | bash
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
+ENV PATH="/root/.pixi/bin:$PATH"
 
-# Expose port 8080 for K8s (unprivileged)
-EXPOSE 8080
+WORKDIR /app
 
-# Use nginx for production serving
-CMD ["nginx", "-g", "daemon off;"]
+# Copy pixi configuration
+COPY pyproject.toml .
+
+# Install dependencies using pixi
+RUN pixi install
+
+# Copy application files
+COPY src/ ./src/
+COPY public/ ./public/
+
+EXPOSE 8000
+CMD ["pixi", "run", "start"]

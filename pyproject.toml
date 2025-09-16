@@ -1,0 +1,224 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-cervical-screener"
+version = "0.1.0"
+description = "AI-powered cervical cancer screening application"
+authors = [
+    {name = "Python-AI-Solutions"},
+]
+readme = "README.md"
+keywords = ["ai", "medical", "cervical-cancer", "screening", "yolo"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Healthcare Industry",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.116.0",
+    "uvicorn>=0.35.0",
+    "pydantic>=2.11.0",
+    "python-multipart>=0.0.20",
+    "pillow>=10.0.0",
+    "numpy>=1.24.0,<2.0.0",
+    "opencv-python-headless>=4.10.0",
+]
+
+[project.optional-dependencies]
+ml = [
+    "torch==2.3.1",
+    "torchvision==0.18.1",
+    "scikit-learn==1.5.*",
+    "ultralytics==8.3.188",
+    "matplotlib>=3.7.0",
+    "pandas>=2.0.0",
+    "tqdm>=4.65.0",
+    "seaborn>=0.12.0",
+    "psutil>=5.9.0",
+    "py-cpuinfo>=9.0.0",
+]
+test = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "httpx>=0.24.0",
+    "playwright>=1.40.0",
+    "requests>=2.28.0",
+]
+dev = [
+    "pre-commit>=3.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Python-AI-Solutions/agentic-cervical-screener"
+Repository = "https://github.com/Python-AI-Solutions/agentic-cervical-screener"
+Issues = "https://github.com/Python-AI-Solutions/agentic-cervical-screener/issues"
+
+[project.scripts]
+cervical-api = "src.main:app"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--disable-warnings",
+]
+markers = [
+    "unit: marks tests as unit tests (deselect with '-m \"not unit\"')",
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore:.*Ultralytics.*:UserWarning",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "tests/*",
+    "src/models/*",
+    "public/*",
+    ".pixi/*",
+    "build/*",
+    "dist/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "B008",  # do not perform function calls in argument defaults
+    "B905",  # zip() without strict parameter
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]  # allow assert statements in tests
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+
+[tool.ruff.format]
+# Use single quotes for strings
+quote-style = "double"
+# Respect magic trailing commas
+skip-magic-trailing-comma = false
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+disallow_untyped_decorators = false
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+ignore_missing_imports = true
+
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.bandit]
+exclude_dirs = ["tests", "models", "public"]
+exclude = ["**/__init__.py"]
+skips = ["B101", "B601"]
+
+[tool.pixi.project]
+channels = ["conda-forge", "pytorch"]
+platforms = ["osx-arm64", "linux-64"]
+
+[tool.pixi.tasks]
+dev = "uvicorn src.main:app --reload --host localhost --port 8000"
+start = "uvicorn src.main:app --host 0.0.0.0 --port 8000"
+test = "python -m pytest tests/ -x -q"
+test-ci = "python -m pytest tests/ -v --tb=short"
+test-integration = "python -m pytest tests/ -m integration -v"
+test-coverage = "python -m pytest tests/ --cov=src --cov-report=html --cov-report=term"
+install-browsers = "playwright install chromium"
+format = "ruff format ."
+lint = "ruff check src/ tests/"
+check-all = "pre-commit run --all-files"
+pre-commit-install = "pre-commit install"
+
+[tool.pixi.dependencies]
+# Core runtime dependencies
+python = "3.12.*"
+fastapi = ">=0.116.0"
+uvicorn = ">=0.35.0"
+pydantic = ">=2.11.0"
+python-multipart = ">=0.0.20"
+pillow = ">=10.0.0"
+numpy = ">=1.24.0,<2.0.0"
+opencv = ">=4.10.0"
+
+# ML dependencies
+pytorch = ">=2.3.1"
+torchvision = ">=0.18.1"
+scikit-learn = ">=1.5.0"
+ultralytics = ">=8.3.0"
+matplotlib = ">=3.7.0"
+pandas = ">=2.0.0"
+tqdm = ">=4.65.0"
+seaborn = ">=0.12.0"
+psutil = ">=5.9.0"
+py-cpuinfo = ">=9.0.0"
+
+# System dependencies for OpenCV and image processing
+glib = "*"
+libjpeg-turbo = "*"
+libpng = "*"
+libtiff = "*"
+
+# Test dependencies
+pytest = ">=7.0.0"
+pytest-asyncio = ">=0.21.0"
+pytest-cov = ">=4.0.0"
+httpx = ">=0.24.0"
+requests = ">=2.28.0"
+playwright-python = "*"
+
+# Dev dependencies
+pre-commit = ">=3.0.0"
+ruff = ">=0.1.0"
+mypy = ">=1.0.0"
