@@ -264,7 +264,14 @@ def get_mock_results(slide_id: str):
     """Fallback mock results when model fails"""
     mock_results = {
         "SLIDE-001": [
-            {"x": 120, "y": 120, "w": 100, "h": 100, "label": "unhealthy", "score": 0.92},
+            {
+                "x": 120,
+                "y": 120,
+                "w": 100,
+                "h": 100,
+                "label": "unhealthy",
+                "score": 0.92,
+            },
             {"x": 300, "y": 200, "w": 60, "h": 60, "label": "rubbish", "score": 0.65},
         ],
         "SLIDE-002": [

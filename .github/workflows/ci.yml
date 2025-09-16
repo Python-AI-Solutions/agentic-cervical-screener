@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.11]
+        python-version: [3.12]
 
     steps:
       - uses: actions/checkout@v4
@@ -29,9 +29,6 @@ jobs:
 
       - name: Install dependencies with pixi
         run: pixi install
-
-      - name: Install Python dependencies via pip
-        run: pixi run install
 
       - name: Install Playwright browsers
         run: pixi run install-browsers
@@ -145,16 +142,12 @@ jobs:
       - name: Install dependencies
         run: pixi install
 
-      - name: Install Python dependencies via pip
-        run: pixi run install
-
       - name: Install pre-commit hooks
         run: |
           pip install pre-commit
           pre-commit install
 
-      - name: Run pre-commit and linters
+      - name: Run quality checks
         run: |
-          # run formatting and linting via pixi-managed commands
-          pixi run format || true
-          pixi run lint
+          # run all pre-commit hooks (includes formatting, linting, etc.)
+          pixi run check-all

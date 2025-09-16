@@ -17,9 +17,9 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Medical Science Apps.",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.116.0",
     "uvicorn>=0.35.0",
@@ -55,7 +55,6 @@ dev = [
     "pre-commit>=3.0.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
-    "black>=23.0.0",
 ]
 
 [project.urls]
@@ -110,7 +109,7 @@ exclude_lines = [
 ]
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
 line-length = 100
 
 [tool.ruff.lint]
@@ -125,7 +124,6 @@ select = [
     "SIM", # flake8-simplify
 ]
 ignore = [
-    "E501",  # line too long, handled by black
     "B008",  # do not perform function calls in argument defaults
     "B905",  # zip() without strict parameter
 ]
@@ -136,8 +134,14 @@ ignore = [
 [tool.ruff.lint.isort]
 known-first-party = ["src"]
 
+[tool.ruff.format]
+# Use single quotes for strings
+quote-style = "double"
+# Respect magic trailing commas
+skip-magic-trailing-comma = false
+
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
@@ -151,26 +155,6 @@ warn_unreachable = true
 strict_equality = true
 ignore_missing_imports = true
 
-[tool.black]
-target-version = ['py311']
-line-length = 100
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | models
-  | public
-)/
-'''
 
 [tool.hatch.build.targets.wheel]
 packages = ["src"]

@@ -278,7 +278,9 @@ class TestRobustness:
 
         for payload in invalid_payloads:
             response = client.post(
-                "/v1/classify", content=payload, headers={"Content-Type": "application/json"}
+                "/v1/classify",
+                content=payload,
+                headers={"Content-Type": "application/json"},
             )
             # Should handle gracefully, not crash
             assert response.status_code in [200, 422]

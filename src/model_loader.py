@@ -71,7 +71,11 @@ class YOLOCervicalClassifier:
             # Process results
             boxes = self.process_yolo_results(results[0], image.shape)
 
-            return {"boxes": boxes, "image_shape": image.shape, "total_detections": len(boxes)}
+            return {
+                "boxes": boxes,
+                "image_shape": image.shape,
+                "total_detections": len(boxes),
+            }
 
         except Exception as e:
             print(f"Error during YOLO inference: {e}")

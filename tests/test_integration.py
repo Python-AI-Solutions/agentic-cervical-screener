@@ -22,7 +22,16 @@ def server_process():
     env["PYTHONPATH"] = root_dir
 
     process = subprocess.Popen(
-        ["python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8001"],
+        [
+            "python",
+            "-m",
+            "uvicorn",
+            "src.main:app",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "8001",
+        ],
         cwd=root_dir,
         env=env,
         stdout=subprocess.PIPE,

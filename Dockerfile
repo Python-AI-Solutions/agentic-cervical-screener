@@ -1,12 +1,15 @@
 # syntax=docker/dockerfile:1.6
-FROM mambaorg/micromamba:1.5-focal
-USER root
+FROM debian:12-slim
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-     && rm -rf /var/lib/apt/lists/*
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install pixi (curl is included in the micromamba base image)
+# Install pixi
 RUN curl -fsSL https://pixi.sh/install.sh | bash
+
 ENV PATH="/root/.pixi/bin:$PATH"
 
 WORKDIR /app
