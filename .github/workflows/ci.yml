@@ -145,7 +145,7 @@ jobs:
       run: pixi install
 
     - name: Install pre-commit hooks
-      run: pixi run pre-commit-install
+      run: pre-commit install
 
     - name: Run pre-commit
       run: pixi run format
