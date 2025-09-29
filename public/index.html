@@ -83,6 +83,15 @@
       gap: var(--spacing-sm);
       flex-wrap: wrap;
       min-width: 0;
+      margin-left: var(--spacing-md);
+    }
+
+    .sidebar-btn {
+      order: 1;
+    }
+
+    .hidden-button {
+      order: 2;
     }
 
     .header-status {
@@ -400,6 +409,29 @@
         overflow: visible !important;
         grid-template-columns: none !important;
         gap: var(--spacing-sm);
+        margin-left: var(--spacing-md);
+      }
+
+      .header-buttons .hidden-button {
+        visibility: hidden !important;
+        opacity: 0 !important;
+        width: 0 !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        min-width: 0 !important;
+      }
+
+      .header-buttons.expanded .hidden-button {
+        visibility: visible !important;
+        opacity: 1 !important;
+        width: auto !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        padding: var(--spacing-sm) var(--spacing-md) !important;
+        border: 1px solid var(--border-color) !important;
+        min-width: var(--button-height) !important;
       }
     }
 
@@ -445,6 +477,7 @@
         transition: transform 0.3s ease;
         grid-template-columns: 1fr 1fr;
         gap: var(--spacing-sm);
+        margin-left: 0;
       }
 
       .header-buttons.mobile-visible {
@@ -466,15 +499,89 @@
         padding: var(--spacing-sm);
       }
 
+      /* Mobile button styles */
+      .header-buttons.mobile-visible .hidden-button {
+        display: block !important;
+        width: 100%;
+        margin-bottom: var(--spacing-xs);
+        font-size: 0.8rem;
+        padding: var(--spacing-sm);
+        opacity: 1;
+        transform: none;
+        visibility: visible !important;
+        overflow: visible !important;
+        min-width: auto !important;
+      }
+
       .sidebar-btn {
         background: #1e40af !important;
         border-color: #1e40af !important;
+        color: transparent;
       }
 
-      .sidebar-btn:hover {
-        background: #1d4ed8 !important;
-        border-color: #1d4ed8 !important;
+      .sidebar-btn::before {
+        content: "📁 Cases";
+        color: var(--text-primary);
+        font-size: 0.875rem;
       }
+
+    .sidebar-btn:hover {
+      background: #1d4ed8 !important;
+      border-color: #1d4ed8 !important;
+    }
+
+    /* Hidden Button Styles */
+    .hidden-button {
+      visibility: hidden;
+      opacity: 0;
+      transform: translateX(-10px);
+      transition: all 0.3s ease;
+      width: 0;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      border: none;
+      min-width: 0;
+    }
+
+    .hidden-button.show {
+      visibility: visible;
+      opacity: 1;
+      transform: translateX(0);
+      width: auto;
+      overflow: visible;
+      margin: 0;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: 1px solid var(--border-color);
+      min-width: var(--button-height);
+    }
+
+    .header-buttons.expanded .hidden-button {
+      visibility: visible;
+      opacity: 1;
+      transform: translateX(0);
+      width: auto;
+      overflow: visible;
+      margin: 0;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: 1px solid var(--border-color);
+      min-width: var(--button-height);
+    }
+
+    .sidebar-btn.open {
+      background: #1d4ed8 !important;
+      border-color: #1d4ed8 !important;
+    }
+
+    .sidebar-btn::after {
+      content: ' ▼';
+      font-size: 0.7em;
+      margin-left: var(--spacing-xs);
+    }
+
+    .sidebar-btn.open::after {
+      content: ' ▲';
+    }
 
       /* Mobile header layout fixes */
       .header-content {
@@ -806,12 +913,12 @@
     <div class="header-content">
       <div class="header-title">Cervical AI Viewer</div>
       <div class="header-buttons" id="headerButtons">
-        <button id="btnLoadDemo">Load CQAI Demo</button>
-        <button id="btnClassify">Classify</button>
-        <button id="btnPrevRoi">◀ Prev ROI</button>
-        <button id="btnNextRoi">Next ROI ▶</button>
-        <button id="btnToggleRoiMode" style="background: #374151; color: #fff;">Ground Truth</button>
-        <button id="btnSidebar" class="sidebar-btn">📁 Cases & Layers</button>
+        <button id="btnLoadDemo" class="hidden-button">Load CQAI Demo</button>
+        <button id="btnClassify" class="hidden-button">Classify</button>
+        <button id="btnPrevRoi" class="hidden-button">◀ Prev ROI</button>
+        <button id="btnNextRoi" class="hidden-button">Next ROI ▶</button>
+        <button id="btnToggleRoiMode" class="hidden-button" style="background: #374151; color: #fff;">Ground Truth</button>
+        <button id="btnSidebar" class="sidebar-btn">📁 Layers</button>
       </div>
     </div>
     <div class="header-status">
@@ -893,6 +1000,43 @@
       }
     }
 
+    function toggleButtons() {
+      const headerButtons = document.getElementById('headerButtons');
+      const toggle = document.getElementById('btnSidebar');
+      const hiddenButtons = document.querySelectorAll('.hidden-button');
+      
+      console.log('toggleButtons called', { headerButtons, toggle, hiddenButtonsCount: hiddenButtons.length });
+      
+      if (headerButtons && toggle) {
+        headerButtons.classList.toggle('expanded');
+        toggle.classList.toggle('open');
+        
+        console.log('Classes after toggle:', {
+          expanded: headerButtons.classList.contains('expanded'),
+          open: toggle.classList.contains('open')
+        });
+        
+        // Check each hidden button
+        hiddenButtons.forEach((btn, index) => {
+          console.log(`Button ${index}:`, {
+            id: btn.id,
+            computedStyle: window.getComputedStyle(btn).visibility,
+            classList: Array.from(btn.classList)
+          });
+        });
+      }
+    }
+
+    function closeButtons() {
+      const headerButtons = document.getElementById('headerButtons');
+      const toggle = document.getElementById('btnSidebar');
+      
+      if (headerButtons && toggle) {
+        headerButtons.classList.remove('expanded');
+        toggle.classList.remove('open');
+      }
+    }
+
     function closeAllPanels() {
       const headerButtons = document.getElementById('headerButtons');
       const sidebar = document.getElementById('sidebar');
@@ -901,6 +1045,7 @@
       if (headerButtons) headerButtons.classList.remove('mobile-visible');
       if (sidebar) sidebar.classList.remove('mobile-visible');
       if (mobileOverlay) mobileOverlay.classList.remove('visible');
+      closeButtons();
       document.body.style.overflow = '';
     }
 
@@ -936,8 +1081,18 @@
         btnSidebar.addEventListener('click', function(e) {
           e.preventDefault();
           const headerButtons = document.getElementById('headerButtons');
-          if (headerButtons) headerButtons.classList.remove('mobile-visible');
-          toggleSidebar();
+          const isMobile = window.innerWidth <= 1024;
+          
+          console.log('btnSidebar clicked', { isMobile, windowWidth: window.innerWidth });
+          
+          if (isMobile) {
+            // On mobile, show the buttons in the mobile menu
+            if (headerButtons) headerButtons.classList.remove('mobile-visible');
+            toggleSidebar();
+          } else {
+            // On desktop, toggle the buttons horizontally
+            toggleButtons();
+          }
         });
       }
 
@@ -952,6 +1107,18 @@
       document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
           closeAllPanels();
+        }
+      });
+
+      // Close buttons when clicking outside
+      document.addEventListener('click', function(e) {
+        const headerButtons = document.getElementById('headerButtons');
+        const toggle = document.getElementById('btnSidebar');
+        
+        if (headerButtons && toggle && 
+            !headerButtons.contains(e.target) && 
+            headerButtons.classList.contains('expanded')) {
+          closeButtons();
         }
       });
     });
