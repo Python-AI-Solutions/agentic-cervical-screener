@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Design Test - Cervical AI Viewer</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #1f2937;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            color: #ffffff;
+        }
+        .test-header {
+            background: #0f172a;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .test-content {
+            padding: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            background: #374151;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #ffffff;
+        }
+        .breakpoint-test {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .breakpoint {
+            padding: 15px;
+            background: #1f2937;
+            border: 2px solid #4b5563;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .breakpoint.active {
+            border-color: #3b82f6;
+            background: #1e3a8a;
+        }
+        .breakpoint h4 {
+            margin: 0 0 10px 0;
+            color: #60a5fa;
+        }
+        .breakpoint p {
+            margin: 5px 0;
+            font-size: 0.9rem;
+            color: #9ca3af;
+        }
+        .current-size {
+            background: #1e3a8a;
+            border: 1px solid #3b82f6;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #ffffff;
+        }
+        .test-iframe {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #374151;
+            border-radius: 6px;
+        }
+        .instructions {
+            background: #1e3a8a;
+            border: 1px solid #3b82f6;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .instructions h4 {
+            margin-top: 0;
+            color: #60a5fa;
+        }
+        .instructions ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 5px 0;
+            color: #93c5fd;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🧪 Responsive Design Test</h1>
+            <p>Cervical AI Viewer - Mobile & Desktop Compatibility</p>
+        </div>
+        
+        <div class="test-content">
+            <div class="instructions">
+                <h4>📋 Testing Instructions</h4>
+                <ul>
+                    <li>Resize your browser window to test different screen sizes</li>
+                    <li>Use browser dev tools to simulate mobile devices (F12 → Device Toolbar)</li>
+                    <li>Test on actual mobile devices if possible</li>
+                    <li>Verify that the sidebar collapses on mobile and shows as overlay</li>
+                    <li>Check that all buttons are at least 44px tall for touch targets</li>
+                    <li>Ensure no horizontal scrolling occurs on any screen size</li>
+                </ul>
+            </div>
+
+            <div class="current-size">
+                <h3>Current Viewport Size</h3>
+                <p id="viewport-size">Loading...</p>
+                <p id="device-type">Loading...</p>
+            </div>
+
+            <div class="test-section">
+                <h3>📱 Breakpoint Testing</h3>
+                <p>Test the application at these common breakpoints:</p>
+                <div class="breakpoint-test">
+                    <div class="breakpoint" id="breakpoint-320">
+                        <h4>320px</h4>
+                        <p>Small phones</p>
+                        <p>Very small screens</p>
+                    </div>
+                    <div class="breakpoint" id="breakpoint-480">
+                        <h4>480px</h4>
+                        <p>Large phones</p>
+                        <p>Portrait tablets</p>
+                    </div>
+                    <div class="breakpoint" id="breakpoint-768">
+                        <h4>768px</h4>
+                        <p>Tablets</p>
+                        <p>Small laptops</p>
+                    </div>
+                    <div class="breakpoint" id="breakpoint-1024">
+                        <h4>1024px</h4>
+                        <p>Laptops</p>
+                        <p>Desktop sidebar</p>
+                    </div>
+                    <div class="breakpoint" id="breakpoint-1200">
+                        <h4>1200px+</h4>
+                        <p>Large desktops</p>
+                        <p>Full layout</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3>🎯 Live Application Test</h3>
+                <p>Test the actual Cervical AI Viewer application:</p>
+                <iframe src="index.html" class="test-iframe" title="Cervical AI Viewer"></iframe>
+            </div>
+
+            <div class="test-section">
+                <h3>✅ Responsive Features Checklist</h3>
+                <ul>
+                    <li>✅ Viewport meta tag with proper scaling</li>
+                    <li>✅ CSS Grid layout for main structure</li>
+                    <li>✅ Mobile-first responsive design</li>
+                    <li>✅ Collapsible sidebar on mobile</li>
+                    <li>✅ Touch-friendly button sizes (44px+)</li>
+                    <li>✅ Responsive canvas scaling</li>
+                    <li>✅ Media queries for all breakpoints</li>
+                    <li>✅ No horizontal scrolling</li>
+                    <li>✅ Proper text scaling</li>
+                    <li>✅ Mobile menu functionality</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateViewportInfo() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const dpr = window.devicePixelRatio || 1;
+            
+            document.getElementById('viewport-size').textContent = 
+                `${width} × ${height}px (DPR: ${dpr})`;
+            
+            let deviceType = 'Desktop';
+            if (width <= 320) deviceType = 'Very Small Phone';
+            else if (width <= 480) deviceType = 'Phone';
+            else if (width <= 768) deviceType = 'Tablet';
+            else if (width <= 1024) deviceType = 'Small Laptop';
+            else deviceType = 'Desktop/Large Screen';
+            
+            document.getElementById('device-type').textContent = deviceType;
+            
+            // Update active breakpoint
+            const breakpoints = [
+                { id: 'breakpoint-320', max: 320 },
+                { id: 'breakpoint-480', max: 480 },
+                { id: 'breakpoint-768', max: 768 },
+                { id: 'breakpoint-1024', max: 1024 },
+                { id: 'breakpoint-1200', max: Infinity }
+            ];
+            
+            breakpoints.forEach(bp => {
+                const element = document.getElementById(bp.id);
+                element.classList.remove('active');
+                if (width <= bp.max) {
+                    element.classList.add('active');
+                }
+            });
+        }
+        
+        // Update on load and resize
+        updateViewportInfo();
+        window.addEventListener('resize', updateViewportInfo);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(updateViewportInfo, 100);
+        });
+    </script>
+</body>
+</html>
