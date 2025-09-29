@@ -914,7 +914,6 @@
     <div class="header-content">
       <div class="header-title">Cervical AI Viewer</div>
       <div class="header-buttons" id="headerButtons">
-        <button id="btnLoadDemo" class="hidden-button">Load CQAI Demo</button>
         <button id="btnClassify" class="hidden-button">Classify</button>
         <button id="btnToggleRoiMode" class="hidden-button" style="background: #374151; color: #fff;">Ground Truth</button>
         <button id="btnPrevRoi" class="hidden-button">◀</button>
@@ -939,6 +938,10 @@
         <input id="caseUrl" placeholder="Case JSON URL" type="url"/>
         <button id="btnLoadCase">Load</button>
       </div>
+      <div class="row">
+        <input id="imageFile" type="file" accept="image/*" style="display: none;"/>
+        <button id="btnLoadImage" style="width: 100%;">📁 Load Image from Computer</button>
+      </div>
       <div class="quick-load-section">
         <div class="muted">Quick Load Cases:</div>
         <button onclick="loadQuickCase('http://localhost:8000/cases/DEMO-001')" class="quick-load-btn">Case 1 (Original)</button>
@@ -953,6 +956,11 @@
       </div>
     </aside>
     <section id="viewer">
+      <div id="dropZone" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text-muted); pointer-events: none; z-index: 5;">
+        <div style="font-size: 2rem; margin-bottom: var(--spacing-md);">📁</div>
+        <div>Drop image here or use the "Load Image from Computer" button</div>
+        <div style="font-size: 0.8rem; margin-top: var(--spacing-sm);">Supports PNG, JPG, JPEG formats</div>
+      </div>
       <canvas id="glCanvas"></canvas>
       <canvas id="overlayCanvas"></canvas>
     </section>
@@ -1125,6 +1133,6 @@
     });
     console.log('API_BASE:', window.__ENV__.API_BASE);
   </script>
-  <script type="module" src="/src/viewer/index.js"></script>
+  <script type="module" src="/src/viewer/index.js?v=3"></script>
 </body>
 </html>

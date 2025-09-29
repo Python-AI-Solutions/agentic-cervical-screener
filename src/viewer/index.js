@@ -1,12 +1,11 @@
 import { fetchCase, resolveUri } from '../api/cqaiClient.js';
-import { classify } from '../api/classifyClient.js';
+import { classify } from '../api/classifyClient.js?v=3';
 import { addLayerToNiivue, drawLabeledBoxes, drawGeoJSON } from './overlayAdapters.js';
 import { collectRois } from './roiNav.js';
 
 const statusEl     = document.getElementById('status');
 const spinnerEl    = document.getElementById('spinner');
 const layersEl     = document.getElementById('layers');
-const btnLoadDemo  = document.getElementById('btnLoadDemo');
 const btnLoadCase  = document.getElementById('btnLoadCase');
 const btnClassify  = document.getElementById('btnClassify');
 const caseUrlInput = document.getElementById('caseUrl');
@@ -34,6 +33,7 @@ let drawingStart = null;
 let drawingRect = null;
 let userDrawnRois = [];              // User-drawn rectangles
 let showUserDrawnRois = true;        // Toggle for user-drawn rectangles visibility
+let currentImageFile = null;         // Store the current image file for classification
 
 // Available labels for cervical cytology
 const CERVICAL_LABELS = [
@@ -98,6 +98,12 @@ function debouncedResize() {
 }
 
 function displayImageOnCanvas(img) {
+  // Hide the drop zone when image is loaded
+  const dropZone = document.getElementById('dropZone');
+  if (dropZone) {
+    dropZone.style.display = 'none';
+  }
+  
   let imageCanvas = document.getElementById('imageCanvas');
   if (!imageCanvas) {
     imageCanvas = document.createElement('canvas');
@@ -125,7 +131,14 @@ async function loadCaseFromUrl(url){
   layersEl.innerHTML=''; overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
   rois=[]; roiIdx=-1; layerCache.clear(); visibleLayers.clear(); lastBoxes = [];
   userDrawnRois = []; // Clear user-drawn ROIs
+  currentImageFile = null; // Clear current image file
   showAIDetections = true; // Reset AI detections visibility
+  
+  // Show drop zone when loading new case
+  const dropZone = document.getElementById('dropZone');
+  if (dropZone) {
+    dropZone.style.display = 'block';
+  }
 
   const NvCtor = window.Niivue || (window.niivue && window.niivue.Niivue);
   if (!NvCtor) throw new Error('Niivue not loaded');
@@ -202,16 +215,21 @@ async function loadCaseFromUrl(url){
 }
 
 function renderOverlays(){
+  console.log('🎨 renderOverlays called:', { showUserDrawnRois, showAIDetections, roiMode, lastBoxesLength: lastBoxes.length });
   overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
   
   // Only show user-drawn ROIs (no hardcoded detections)
   if (showUserDrawnRois) {
+    console.log('🎨 Drawing user-drawn ROIs');
     drawUserRois();
   }
   
   // Show AI detection boxes only if enabled and in AI mode
   if (showAIDetections && roiMode === 'ai_detections') {
+    console.log('🎨 Drawing AI detection boxes');
     drawLabeledBoxes(overlayCtx, lastBoxes, transform);
+  } else {
+    console.log('🎨 Not drawing AI boxes:', { showAIDetections, roiMode });
   }
 }
 
@@ -257,21 +275,53 @@ function addUserDrawnRoisToggle() {
   });
 }
 
-btnLoadDemo.addEventListener('click', ()=> loadCaseFromUrl());
 btnLoadCase.addEventListener('click', ()=>{ const url=(caseUrlInput.value||'').trim(); if(url) loadCaseFromUrl(url); });
+
+// Image file loading
+const imageFileInput = document.getElementById('imageFile');
+const btnLoadImage = document.getElementById('btnLoadImage');
+
+if (btnLoadImage) {
+  btnLoadImage.addEventListener('click', () => {
+    imageFileInput.click();
+  });
+}
+
+if (imageFileInput) {
+  imageFileInput.addEventListener('change', (e) => {
+    const files = e.target.files;
+    console.log('File input changed:', files);
+    if (files.length > 0) {
+      console.log('Selected file:', files[0]);
+      handleDroppedFiles(files);
+    }
+    // Reset the input so the same file can be selected again
+    e.target.value = '';
+  });
+}
 
 btnClassify.addEventListener('click', async ()=>{
   try {
     setStatus('classifying…'); showSpinner(true); btnClassify.disabled = true;
-    const res=await classify(currentSlideId, currentSlideUri);
+    console.log('🔍 Classification request:', { currentSlideId, currentSlideUri, currentImageFile });
+    console.log('🔍 currentImageFile type:', typeof currentImageFile);
+    console.log('🔍 currentImageFile instanceof File:', currentImageFile instanceof File);
+    
+    const res=await classify(currentSlideId, currentSlideUri, currentImageFile);
+    console.log('🔍 Classification response:', res);
+    
     lastBoxes = res.boxes || [];
+    console.log('🔍 lastBoxes set to:', lastBoxes);
 
     // Add AI detections toggle if it doesn't exist
     addAIDetectionsToggle();
 
     renderOverlays();
-    setStatus('classified');
-  } catch(e){ console.error(e); setStatus('error'); }
+    setStatus(`classified - ${lastBoxes.length} detections found`);
+  } catch(e){ 
+    console.error('❌ Classification error:', e); 
+    setStatus('classification failed: ' + e.message); 
+  }
   finally { showSpinner(false); btnClassify.disabled = false; }
 });
 
@@ -385,7 +435,7 @@ function setupDragAndDrop() {
   function highlightDropZone(e) {
     viewer.style.backgroundColor = 'rgba(0, 229, 255, 0.1)';
     viewer.style.border = '2px dashed #00E5FF';
-    setStatus('Drop image here...');
+    setStatus('Drop image here to load from computer...');
   }
 
   function unhighlightDropZone(e) {
@@ -405,6 +455,7 @@ function setupDragAndDrop() {
 
 function handleDroppedFiles(files) {
   const file = files[0];
+  console.log('handleDroppedFiles called with:', file);
 
   // Check if it's an image file
   if (file.type.startsWith('image/')) {
@@ -424,6 +475,7 @@ function handleDroppedFiles(files) {
         rois = [];
         roiIdx = -1;
         userDrawnRois = []; // Clear user-drawn ROIs
+        currentImageFile = null; // Clear current image file
 
         // Display the new image
         displayImageOnCanvas(img);
@@ -432,6 +484,12 @@ function handleDroppedFiles(files) {
         // Update current slide info
         currentSlideId = `DROPPED-${Date.now()}`;
         currentSlideUri = file.name;
+        currentImageFile = file; // Store the file for classification
+        console.log('Set currentImageFile:', currentImageFile);
+        
+        // Set ROI mode to AI detections for custom images
+        roiMode = 'ai_detections';
+        console.log('Set roiMode to ai_detections for custom image');
 
         // Update UI
         setStatus(`${file.name} loaded - ${img.width}×${img.height}px`);
