@@ -1,4 +1,5 @@
 import base64
+import contextlib
 import hashlib
 import io
 import os
@@ -48,14 +49,11 @@ class YOLOCervicalClassifier:
             model = YOLO(model_path)
 
             # try to move internal torch model to device if available
-            try:
+            with contextlib.suppress(Exception):
                 # Some ultralytics versions expose a `.model` torch module
                 internal = getattr(model, "model", None)
                 if internal is not None and hasattr(internal, "to"):
                     internal.to(self.device)
-            except Exception:
-                # ignore device move errors; model inference call accepts device arg
-                pass
 
             self.model_path = model_path
             self.model_hash = self._compute_file_hash(model_path)
@@ -81,13 +79,13 @@ class YOLOCervicalClassifier:
                     # Prefer numeric ordering of keys
                     keys = sorted(nm.keys(), key=lambda k: int(k))
                     return [str(nm[k]) for k in keys]
-                except Exception:
+                except (ValueError, TypeError):
                     # fallback to values order
                     return [str(v) for v in nm.values()]
             # If it's list/tuple or other iterable
             try:
                 return [str(x) for x in list(nm)]
-            except Exception:
+            except (TypeError, ValueError):
                 return None
 
         # 1) Try attributes exposed by ultralytics model instance
@@ -106,7 +104,7 @@ class YOLOCervicalClassifier:
                         normalized = _normalize_names_obj(names_inner)
                         if normalized:
                             return normalized
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             pass
 
         # 2) Try reading checkpoint file directly (defensive)
@@ -128,7 +126,7 @@ class YOLOCervicalClassifier:
                         normalized = _normalize_names_obj(m["names"])
                         if normalized:
                             return normalized
-        except Exception:
+        except (OSError, KeyError, TypeError, ValueError):
             pass
 
         # Not found
@@ -154,7 +152,7 @@ class YOLOCervicalClassifier:
                 return img
 
             # local path
-            if isinstance(image_input, (str, os.PathLike)):
+            if isinstance(image_input, str | os.PathLike):
                 img = cv2.imread(str(image_input))
                 return img
 
@@ -181,7 +179,7 @@ class YOLOCervicalClassifier:
             results = self.model(image, conf=conf_threshold, device=self.device, verbose=False)
 
             # results may be a list or single Results object
-            result = results[0] if isinstance(results, (list, tuple)) else results
+            result = results[0] if isinstance(results, list | tuple) else results
             boxes = self.process_yolo_results(result, image.shape)
 
             return {
@@ -210,10 +208,10 @@ class YOLOCervicalClassifier:
             # Iterate safely over Box objects or box tensors
             try:
                 iter_boxes = list(result.boxes)
-            except Exception:
+            except (AttributeError, TypeError):
                 # fallback: try to build from tensors on result.boxes
                 iter_boxes = []
-                try:
+                with contextlib.suppress(Exception):
                     all_xyxy = getattr(result.boxes, "xyxy", None)
                     all_conf = getattr(result.boxes, "conf", None)
                     all_cls = getattr(result.boxes, "cls", None)
@@ -231,8 +229,6 @@ class YOLOCervicalClassifier:
                         )
                         for i, row in enumerate(xy_arr):
                             iter_boxes.append((row, conf_arr[i], int(cls_arr[i])))
-                except Exception:
-                    pass
 
             # If iter_boxes contains Box objects, parse them; if contains tuples, handle accordingly
             for b in iter_boxes:
@@ -247,24 +243,24 @@ class YOLOCervicalClassifier:
                         if xyxy_attr is not None:
                             try:
                                 vals = xyxy_attr[0].cpu().numpy()
-                            except Exception:
+                            except (AttributeError, IndexError):
                                 vals = xyxy_attr.cpu().numpy().flatten()
                             xyxy = [int(v) for v in vals[:4]]
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         pass
 
                     try:
                         conf_attr = getattr(b, "conf", None)
                         if conf_attr is not None:
                             conf = float(conf_attr[0].cpu().numpy())
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         pass
 
                     try:
                         cls_attr = getattr(b, "cls", None)
                         if cls_attr is not None:
                             cls_id = int(cls_attr[0].cpu().numpy())
-                    except Exception:
+                    except (AttributeError, TypeError, ValueError):
                         pass
                 else:
                     # Case B: b is a tuple (xyxy_row, conf, cls)
@@ -273,7 +269,7 @@ class YOLOCervicalClassifier:
                         xyxy = [int(v) for v in np.array(row)[:4]]
                         conf = float(conf)
                         cls_id = int(cls_id)
-                    except Exception:
+                    except (ValueError, TypeError, IndexError):
                         pass
 
                 # If we still don't have coordinates, skip
@@ -287,7 +283,7 @@ class YOLOCervicalClassifier:
                 class_id = int(cls_id) if cls_id is not None else -1
                 confidence = float(conf) if conf is not None else 0.0
 
-                # Defensive label mapping: try self.class_names (list) first, then model.names (dict/list)
+                # Defensive label mapping: try self.class_names (list) first, then model.names
                 label = f"class_{class_id}"
                 try:
                     if 0 <= class_id < len(self.class_names):
@@ -307,13 +303,11 @@ class YOLOCervicalClassifier:
                                 # assume sequence
                                 try:
                                     label = str(names_map[class_id])
-                                except Exception:
+                                except (IndexError, KeyError, TypeError):
                                     # fallback: attempt to obtain first item as string
-                                    try:
+                                    with contextlib.suppress(Exception):
                                         label = str(list(names_map)[int(class_id)])
-                                    except Exception:
-                                        pass
-                except Exception:
+                except (AttributeError, TypeError, ValueError):
                     label = str(label)
 
                 boxes.append(
@@ -333,7 +327,7 @@ class YOLOCervicalClassifier:
         return boxes
 
     def get_class_summary(self, boxes: list[dict]) -> dict[str, int]:
-        """Get count of each class detected, keyed by the current class_names (and any unexpected labels)."""
+        """Get count of each class detected, keyed by the current class_names."""
         summary: dict[str, int] = dict.fromkeys(self.class_names, 0)
         for box in boxes:
             label = str(box.get("label"))
