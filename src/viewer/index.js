@@ -47,25 +47,25 @@ function handleCanvasResize() {
   if (glCanvas && overlayCanvas) {
     const rect = glCanvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    
+
     // Set canvas size to match display size
     glCanvas.width = rect.width * dpr;
     glCanvas.height = rect.height * dpr;
     overlayCanvas.width = rect.width * dpr;
     overlayCanvas.height = rect.height * dpr;
-    
+
     // Scale canvas back down using CSS
     glCanvas.style.width = rect.width + 'px';
     glCanvas.style.height = rect.height + 'px';
     overlayCanvas.style.width = rect.width + 'px';
     overlayCanvas.style.height = rect.height + 'px';
-    
+
     // Scale the drawing context so everything draws at the correct size
     const ctx = glCanvas.getContext('2d');
     const overlayCtx = overlayCanvas.getContext('2d');
     if (ctx) ctx.scale(dpr, dpr);
     if (overlayCtx) overlayCtx.scale(dpr, dpr);
-    
+
     // Re-render overlays if they exist
     if (lastBoxes.length > 0 || layerCache.size > 0) {
       renderOverlays();
@@ -423,28 +423,28 @@ setupDragAndDrop();
 function setupResponsiveFeatures() {
   // Add resize listener for canvas
   window.addEventListener('resize', debouncedResize);
-  
+
   // Add orientation change listener for mobile devices
   window.addEventListener('orientationchange', () => {
     setTimeout(handleCanvasResize, 500); // Delay to allow orientation change to complete
   });
-  
+
   // Setup touch events for better mobile interaction
   if (glCanvas) {
     // Prevent default touch behaviors that might interfere with canvas
     glCanvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
     }, { passive: false });
-    
+
     glCanvas.addEventListener('touchmove', (e) => {
       e.preventDefault();
     }, { passive: false });
-    
+
     glCanvas.addEventListener('touchend', (e) => {
       e.preventDefault();
     }, { passive: false });
   }
-  
+
   // Handle viewport changes (like mobile keyboard appearing)
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', debouncedResize);

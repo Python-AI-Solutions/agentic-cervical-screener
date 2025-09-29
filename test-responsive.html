@@ -108,7 +108,7 @@
             <h1>🧪 Responsive Design Test</h1>
             <p>Cervical AI Viewer - Mobile & Desktop Compatibility</p>
         </div>
-        
+
         <div class="test-content">
             <div class="instructions">
                 <h4>📋 Testing Instructions</h4>
@@ -189,19 +189,19 @@
             const width = window.innerWidth;
             const height = window.innerHeight;
             const dpr = window.devicePixelRatio || 1;
-            
-            document.getElementById('viewport-size').textContent = 
+
+            document.getElementById('viewport-size').textContent =
                 `${width} × ${height}px (DPR: ${dpr})`;
-            
+
             let deviceType = 'Desktop';
             if (width <= 320) deviceType = 'Very Small Phone';
             else if (width <= 480) deviceType = 'Phone';
             else if (width <= 768) deviceType = 'Tablet';
             else if (width <= 1024) deviceType = 'Small Laptop';
             else deviceType = 'Desktop/Large Screen';
-            
+
             document.getElementById('device-type').textContent = deviceType;
-            
+
             // Update active breakpoint
             const breakpoints = [
                 { id: 'breakpoint-320', max: 320 },
@@ -210,7 +210,7 @@
                 { id: 'breakpoint-1024', max: 1024 },
                 { id: 'breakpoint-1200', max: Infinity }
             ];
-            
+
             breakpoints.forEach(bp => {
                 const element = document.getElementById(bp.id);
                 element.classList.remove('active');
@@ -219,7 +219,7 @@
                 }
             });
         }
-        
+
         // Update on load and resize
         updateViewportInfo();
         window.addEventListener('resize', updateViewportInfo);
