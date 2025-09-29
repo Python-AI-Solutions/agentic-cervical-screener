@@ -6,9 +6,7 @@ import { collectRois } from './roiNav.js';
 const statusEl     = document.getElementById('status');
 const spinnerEl    = document.getElementById('spinner');
 const layersEl     = document.getElementById('layers');
-const btnLoadCase  = document.getElementById('btnLoadCase');
 const btnClassify  = document.getElementById('btnClassify');
-const caseUrlInput = document.getElementById('caseUrl');
 const btnPrevRoi   = document.getElementById('btnPrevRoi');
 const btnNextRoi   = document.getElementById('btnNextRoi');
 const btnToggleRoiMode = document.getElementById('btnToggleRoiMode');
@@ -57,6 +55,12 @@ function fitOverlayToImage(w,h){
   glCanvas.width=boxW; glCanvas.height=boxH; overlayCanvas.width=boxW; overlayCanvas.height=boxH;
   overlayCanvas.style.width=boxW+'px'; overlayCanvas.style.height=boxH+'px';
   transform.scale=scale; transform.tx=tx; transform.ty=ty;
+  
+  console.log('🔧 fitOverlayToImage called:', { 
+    imageSize: { w, h }, 
+    canvasSize: { boxW, boxH }, 
+    transform: { scale, tx, ty } 
+  });
 }
 
 // Responsive canvas resizing
@@ -126,7 +130,8 @@ function displayImageOnCanvas(img) {
   ctx.drawImage(img, x, y, width, height);
 }
 
-async function loadCaseFromUrl(url){
+// Make loadCaseFromUrl available globally for quick case buttons
+window.loadCaseFromUrl = async function loadCaseFromUrl(url){
   setStatus('loading…'); showSpinner(true);
   layersEl.innerHTML=''; overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
   rois=[]; roiIdx=-1; layerCache.clear(); visibleLayers.clear(); lastBoxes = [];
@@ -182,7 +187,10 @@ async function loadCaseFromUrl(url){
     const el=document.createElement('div'); el.className='layer';
     el.innerHTML = `
       <span>${L.layer_id} <span class="muted">(${L.geometry})</span></span>
-      <label><input type="checkbox" data-layer="${L.layer_id}" checked/> Show</label>`;
+      <label class="toggle-switch">
+        <input type="checkbox" data-layer="${L.layer_id}" checked/>
+        <span class="toggle-slider"></span>
+      </label>`;
     layersEl.appendChild(el);
     visibleLayers.add(L.layer_id);
 
@@ -242,7 +250,10 @@ function addAIDetectionsToggle() {
   el.className = 'layer';
   el.innerHTML = `
     <span>ai-detections <span class="muted">(rects)</span></span>
-    <label><input type="checkbox" data-layer="ai-detections" checked/> Show</label>`;
+    <label class="toggle-switch">
+      <input type="checkbox" data-layer="ai-detections" checked/>
+      <span class="toggle-slider"></span>
+    </label>`;
 
   layersEl.appendChild(el);
 
@@ -263,7 +274,10 @@ function addUserDrawnRoisToggle() {
   el.className = 'layer';
   el.innerHTML = `
     <span>user-drawn-rois <span class="muted">(rects)</span></span>
-    <label><input type="checkbox" data-layer="user-drawn-rois" checked/> Show</label>`;
+    <label class="toggle-switch">
+      <input type="checkbox" data-layer="user-drawn-rois" checked/>
+      <span class="toggle-slider"></span>
+    </label>`;
 
   layersEl.appendChild(el);
 
@@ -275,7 +289,6 @@ function addUserDrawnRoisToggle() {
   });
 }
 
-btnLoadCase.addEventListener('click', ()=>{ const url=(caseUrlInput.value||'').trim(); if(url) loadCaseFromUrl(url); });
 
 // Image file loading
 const imageFileInput = document.getElementById('imageFile');
@@ -480,6 +493,24 @@ function handleDroppedFiles(files) {
         // Display the new image
         displayImageOnCanvas(img);
         fitOverlayToImage(img.width, img.height);
+        
+        // Ensure overlay canvas is properly positioned and sized
+        overlayCanvas.style.position = 'absolute';
+        overlayCanvas.style.top = '0';
+        overlayCanvas.style.left = '0';
+        overlayCanvas.style.width = glCanvas.clientWidth + 'px';
+        overlayCanvas.style.height = glCanvas.clientHeight + 'px';
+        overlayCanvas.style.zIndex = '10';
+        
+        // Force a re-render after a short delay to ensure everything is positioned correctly
+        setTimeout(() => {
+          console.log('🔧 Transform after fitOverlayToImage:', transform);
+          console.log('🔧 Canvas dimensions:', {
+            glCanvas: { width: glCanvas.clientWidth, height: glCanvas.clientHeight },
+            overlayCanvas: { width: overlayCanvas.width, height: overlayCanvas.height }
+          });
+          renderOverlays();
+        }, 100);
 
         // Update current slide info
         currentSlideId = `DROPPED-${Date.now()}`;
@@ -501,7 +532,9 @@ function handleDroppedFiles(files) {
         // Add a layer control for the dropped image
         const el = document.createElement('div');
         el.className = 'layer';
-        el.innerHTML = `<span>${file.name} <span class="muted">(dropped image)</span></span><label><input type="checkbox" checked disabled/> Show</label>`;
+        // Truncate long filenames to prevent overflow
+        const displayName = file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name;
+        el.innerHTML = `<span title="${file.name}">${displayName} <span class="muted">(dropped image)</span></span><label class="toggle-switch"><input type="checkbox" checked disabled/><span class="toggle-slider"></span></label>`;
         layersEl.appendChild(el);
       };
 
