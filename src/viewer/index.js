@@ -39,7 +39,7 @@ let currentImageFile = null;         // Store the current image file for classif
 const CERVICAL_LABELS = [
   'Negative for intraepithelial lesion',
   'ASC-US',
-  'ASC-H', 
+  'ASC-H',
   'LSIL',
   'HSIL',
   'SCC'
@@ -103,7 +103,7 @@ function displayImageOnCanvas(img) {
   if (dropZone) {
     dropZone.style.display = 'none';
   }
-  
+
   let imageCanvas = document.getElementById('imageCanvas');
   if (!imageCanvas) {
     imageCanvas = document.createElement('canvas');
@@ -133,7 +133,7 @@ async function loadCaseFromUrl(url){
   userDrawnRois = []; // Clear user-drawn ROIs
   currentImageFile = null; // Clear current image file
   showAIDetections = true; // Reset AI detections visibility
-  
+
   // Show drop zone when loading new case
   const dropZone = document.getElementById('dropZone');
   if (dropZone) {
@@ -217,13 +217,13 @@ async function loadCaseFromUrl(url){
 function renderOverlays(){
   console.log('🎨 renderOverlays called:', { showUserDrawnRois, showAIDetections, roiMode, lastBoxesLength: lastBoxes.length });
   overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
-  
+
   // Only show user-drawn ROIs (no hardcoded detections)
   if (showUserDrawnRois) {
     console.log('🎨 Drawing user-drawn ROIs');
     drawUserRois();
   }
-  
+
   // Show AI detection boxes only if enabled and in AI mode
   if (showAIDetections && roiMode === 'ai_detections') {
     console.log('🎨 Drawing AI detection boxes');
@@ -306,10 +306,10 @@ btnClassify.addEventListener('click', async ()=>{
     console.log('🔍 Classification request:', { currentSlideId, currentSlideUri, currentImageFile });
     console.log('🔍 currentImageFile type:', typeof currentImageFile);
     console.log('🔍 currentImageFile instanceof File:', currentImageFile instanceof File);
-    
+
     const res=await classify(currentSlideId, currentSlideUri, currentImageFile);
     console.log('🔍 Classification response:', res);
-    
+
     lastBoxes = res.boxes || [];
     console.log('🔍 lastBoxes set to:', lastBoxes);
 
@@ -318,9 +318,9 @@ btnClassify.addEventListener('click', async ()=>{
 
     renderOverlays();
     setStatus(`classified - ${lastBoxes.length} detections found`);
-  } catch(e){ 
-    console.error('❌ Classification error:', e); 
-    setStatus('classification failed: ' + e.message); 
+  } catch(e){
+    console.error('❌ Classification error:', e);
+    setStatus('classification failed: ' + e.message);
   }
   finally { showSpinner(false); btnClassify.disabled = false; }
 });
@@ -486,7 +486,7 @@ function handleDroppedFiles(files) {
         currentSlideUri = file.name;
         currentImageFile = file; // Store the file for classification
         console.log('Set currentImageFile:', currentImageFile);
-        
+
         // Set ROI mode to AI detections for custom images
         roiMode = 'ai_detections';
         console.log('Set roiMode to ai_detections for custom image');
@@ -550,68 +550,68 @@ function handleMouseDown(e) {
     console.log('Not in ground truth mode, ignoring');
     return;
   }
-  
+
   const rect = overlayCanvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
-  
+
   console.log('Starting drawing at', { x, y });
   startDrawing(x, y);
 }
 
 function handleMouseMove(e) {
   if (!isDrawing || roiMode !== 'ground_truth') return;
-  
+
   const rect = overlayCanvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
-  
+
   updateDrawing(x, y);
 }
 
 function handleMouseUp(e) {
   if (!isDrawing || roiMode !== 'ground_truth') return;
-  
+
   const rect = overlayCanvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
-  
+
   finishDrawing(x, y);
 }
 
 function handleTouchStart(e) {
   e.preventDefault();
   if (roiMode !== 'ground_truth') return;
-  
+
   const rect = overlayCanvas.getBoundingClientRect();
   const touch = e.touches[0];
   const x = touch.clientX - rect.left;
   const y = touch.clientY - rect.top;
-  
+
   startDrawing(x, y);
 }
 
 function handleTouchMove(e) {
   e.preventDefault();
   if (!isDrawing || roiMode !== 'ground_truth') return;
-  
+
   const rect = overlayCanvas.getBoundingClientRect();
   const touch = e.touches[0];
   const x = touch.clientX - rect.left;
   const y = touch.clientY - rect.top;
-  
+
   updateDrawing(x, y);
 }
 
 function handleTouchEnd(e) {
   e.preventDefault();
   if (!isDrawing || roiMode !== 'ground_truth') return;
-  
+
   const rect = overlayCanvas.getBoundingClientRect();
   const touch = e.changedTouches[0];
   const x = touch.clientX - rect.left;
   const y = touch.clientY - rect.top;
-  
+
   finishDrawing(x, y);
 }
 
@@ -625,14 +625,14 @@ function startDrawing(x, y) {
 
 function updateDrawing(x, y) {
   if (!isDrawing || !drawingStart) return;
-  
+
   drawingRect = {
     x: Math.min(drawingStart.x, x),
     y: Math.min(drawingStart.y, y),
     width: Math.abs(x - drawingStart.x),
     height: Math.abs(y - drawingStart.y)
   };
-  
+
   // Redraw overlays and current drawing
   renderOverlays();
   drawCurrentRectangle();
@@ -640,14 +640,14 @@ function updateDrawing(x, y) {
 
 function finishDrawing(x, y) {
   if (!isDrawing || !drawingStart) return;
-  
+
   const rect = {
     x: Math.min(drawingStart.x, x),
     y: Math.min(drawingStart.y, y),
     width: Math.abs(x - drawingStart.x),
     height: Math.abs(y - drawingStart.y)
   };
-  
+
   // Only add if rectangle is large enough
   if (rect.width > 10 && rect.height > 10) {
     // Convert to image coordinates
@@ -657,11 +657,11 @@ function finishDrawing(x, y) {
       xmax: (rect.x + rect.width - transform.tx) / transform.scale,
       ymax: (rect.y + rect.height - transform.ty) / transform.scale
     };
-    
+
     // Show label selection dialog
     showLabelSelectionDialog(imageRect);
   }
-  
+
   isDrawing = false;
   drawingStart = null;
   drawingRect = null;
@@ -670,7 +670,7 @@ function finishDrawing(x, y) {
 
 function drawCurrentRectangle() {
   if (!drawingRect) return;
-  
+
   overlayCtx.save();
   overlayCtx.strokeStyle = '#FF6B6B';
   overlayCtx.lineWidth = 2;
@@ -694,7 +694,7 @@ function showLabelSelectionDialog(imageRect) {
     justify-content: center;
     z-index: 10000;
   `;
-  
+
   const dialog = document.createElement('div');
   dialog.style.cssText = `
     background: var(--bg-primary);
@@ -706,7 +706,7 @@ function showLabelSelectionDialog(imageRect) {
     max-height: 80vh;
     overflow-y: auto;
   `;
-  
+
   dialog.innerHTML = `
     <h3 style="margin: 0 0 var(--spacing-md) 0; color: var(--text-primary);">Select Label for Rectangle</h3>
     <div style="margin-bottom: var(--spacing-md);">
@@ -722,27 +722,27 @@ function showLabelSelectionDialog(imageRect) {
       <button id="confirmLabel" style="background: #1e40af; color: white; border: 1px solid #1e40af; padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--border-radius); cursor: pointer;">Add Rectangle</button>
     </div>
   `;
-  
+
   modal.appendChild(dialog);
   document.body.appendChild(modal);
-  
+
   // Event listeners
   document.getElementById('cancelLabel').addEventListener('click', () => {
     document.body.removeChild(modal);
   });
-  
+
   document.getElementById('confirmLabel').addEventListener('click', () => {
     const selectedLabel = dialog.querySelector('input[name="label"]:checked').value;
-    
+
     // Add label to the rectangle
     imageRect.label = selectedLabel;
     userDrawnRois.push(imageRect);
-    
+
     setStatus(`Rectangle added with label: ${selectedLabel}. Total ROIs: ${userDrawnRois.length}`);
     renderOverlays();
     document.body.removeChild(modal);
   });
-  
+
   // Close on escape key
   const handleEscape = (e) => {
     if (e.key === 'Escape') {
@@ -755,41 +755,41 @@ function showLabelSelectionDialog(imageRect) {
 
 function drawUserRois() {
   if (userDrawnRois.length === 0) return;
-  
+
   overlayCtx.save();
   overlayCtx.strokeStyle = '#4ECDC4';
   overlayCtx.lineWidth = 2;
   overlayCtx.fillStyle = 'rgba(78, 205, 196, 0.1)';
   overlayCtx.font = 'bold 13px Arial';
-  
+
   userDrawnRois.forEach((roi, index) => {
     const x1 = roi.xmin * transform.scale + transform.tx;
     const y1 = roi.ymin * transform.scale + transform.ty;
     const x2 = roi.xmax * transform.scale + transform.tx;
     const y2 = roi.ymax * transform.scale + transform.ty;
-    
+
     // Draw rectangle
     overlayCtx.fillStyle = 'rgba(78, 205, 196, 0.1)';
     overlayCtx.fillRect(x1, y1, x2 - x1, y2 - y1);
     overlayCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-    
+
     // Draw label with dark background for better visibility
     if (roi.label) {
       const labelText = `${index + 1}: ${roi.label}`;
       const textMetrics = overlayCtx.measureText(labelText);
       const textWidth = textMetrics.width;
       const textHeight = 15;
-      
+
       // Draw dark background rectangle for text
       overlayCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
       overlayCtx.fillRect(x1, y1 - textHeight - 2, textWidth + 8, textHeight + 4);
-      
+
       // Draw white text
       overlayCtx.fillStyle = '#FFFFFF';
       overlayCtx.fillText(labelText, x1 + 4, y1 - 5);
     }
   });
-  
+
   overlayCtx.restore();
 }
 

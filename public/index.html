@@ -1013,18 +1013,18 @@
       const headerButtons = document.getElementById('headerButtons');
       const toggle = document.getElementById('btnSidebar');
       const hiddenButtons = document.querySelectorAll('.hidden-button');
-      
+
       console.log('toggleButtons called', { headerButtons, toggle, hiddenButtonsCount: hiddenButtons.length });
-      
+
       if (headerButtons && toggle) {
         headerButtons.classList.toggle('expanded');
         toggle.classList.toggle('open');
-        
+
         console.log('Classes after toggle:', {
           expanded: headerButtons.classList.contains('expanded'),
           open: toggle.classList.contains('open')
         });
-        
+
         // Check each hidden button
         hiddenButtons.forEach((btn, index) => {
           console.log(`Button ${index}:`, {
@@ -1039,7 +1039,7 @@
     function closeButtons() {
       const headerButtons = document.getElementById('headerButtons');
       const toggle = document.getElementById('btnSidebar');
-      
+
       if (headerButtons && toggle) {
         headerButtons.classList.remove('expanded');
         toggle.classList.remove('open');
@@ -1091,9 +1091,9 @@
           e.preventDefault();
           const headerButtons = document.getElementById('headerButtons');
           const isMobile = window.innerWidth <= 1024;
-          
+
           console.log('btnSidebar clicked', { isMobile, windowWidth: window.innerWidth });
-          
+
           if (isMobile) {
             // On mobile, show the buttons in the mobile menu
             if (headerButtons) headerButtons.classList.remove('mobile-visible');
@@ -1123,9 +1123,9 @@
       document.addEventListener('click', function(e) {
         const headerButtons = document.getElementById('headerButtons');
         const toggle = document.getElementById('btnSidebar');
-        
-        if (headerButtons && toggle && 
-            !headerButtons.contains(e.target) && 
+
+        if (headerButtons && toggle &&
+            !headerButtons.contains(e.target) &&
             headerButtons.classList.contains('expanded')) {
           closeButtons();
         }
