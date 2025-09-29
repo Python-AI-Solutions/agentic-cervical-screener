@@ -262,11 +262,11 @@
       color: var(--text-primary);
       flex-shrink: 0; /* Don't shrink the label */
     }
-    
+
     .layer .toggle-switch {
       margin-left: auto; /* Push toggle to the right */
     }
-    
+
     .layer span {
       flex: 1;
       min-width: 0; /* Allow text to wrap */
@@ -280,7 +280,7 @@
       height: 16px;
       accent-color: #3b82f6;
     }
-    
+
     /* Toggle Switch Styles */
     .toggle-switch {
       position: relative;
@@ -288,13 +288,13 @@
       width: 44px;
       height: 24px;
     }
-    
+
     .toggle-switch input {
       opacity: 0;
       width: 0;
       height: 0;
     }
-    
+
     .toggle-slider {
       position: absolute;
       cursor: pointer;
@@ -306,7 +306,7 @@
       transition: 0.3s;
       border-radius: 24px;
     }
-    
+
     .toggle-slider:before {
       position: absolute;
       content: "";
@@ -318,34 +318,34 @@
       transition: 0.3s;
       border-radius: 50%;
     }
-    
+
     .toggle-switch input:checked + .toggle-slider {
       background-color: #3b82f6;
     }
-    
+
     .toggle-switch input:checked + .toggle-slider:before {
       transform: translateX(20px);
     }
-    
+
     .toggle-switch input:disabled + .toggle-slider {
       opacity: 0.5;
       cursor: not-allowed;
     }
-    
+
     /* Mobile responsive toggle switches */
     @media (max-width: 1024px) {
       .toggle-switch {
         width: 48px;
         height: 26px;
       }
-      
+
       .toggle-slider:before {
         height: 20px;
         width: 20px;
         left: 3px;
         bottom: 3px;
       }
-      
+
       .toggle-switch input:checked + .toggle-slider:before {
         transform: translateX(22px);
       }

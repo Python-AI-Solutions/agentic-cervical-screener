@@ -55,11 +55,11 @@ function fitOverlayToImage(w,h){
   glCanvas.width=boxW; glCanvas.height=boxH; overlayCanvas.width=boxW; overlayCanvas.height=boxH;
   overlayCanvas.style.width=boxW+'px'; overlayCanvas.style.height=boxH+'px';
   transform.scale=scale; transform.tx=tx; transform.ty=ty;
-  
-  console.log('🔧 fitOverlayToImage called:', { 
-    imageSize: { w, h }, 
-    canvasSize: { boxW, boxH }, 
-    transform: { scale, tx, ty } 
+
+  console.log('🔧 fitOverlayToImage called:', {
+    imageSize: { w, h },
+    canvasSize: { boxW, boxH },
+    transform: { scale, tx, ty }
   });
 }
 
@@ -493,7 +493,7 @@ function handleDroppedFiles(files) {
         // Display the new image
         displayImageOnCanvas(img);
         fitOverlayToImage(img.width, img.height);
-        
+
         // Ensure overlay canvas is properly positioned and sized
         overlayCanvas.style.position = 'absolute';
         overlayCanvas.style.top = '0';
@@ -501,7 +501,7 @@ function handleDroppedFiles(files) {
         overlayCanvas.style.width = glCanvas.clientWidth + 'px';
         overlayCanvas.style.height = glCanvas.clientHeight + 'px';
         overlayCanvas.style.zIndex = '10';
-        
+
         // Force a re-render after a short delay to ensure everything is positioned correctly
         setTimeout(() => {
           console.log('🔧 Transform after fitOverlayToImage:', transform);

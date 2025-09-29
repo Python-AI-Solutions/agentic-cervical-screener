@@ -87,11 +87,11 @@ export function drawLabeledBoxes(ctx, boxes, transform) {
     const y1 = b.y * transform.scale + transform.ty;
     const w  = b.w * transform.scale;
     const h  = b.h * transform.scale;
-    
-    console.log('🎨 Drawing box:', { 
-      original: { x: b.x, y: b.y, w: b.w, h: b.h }, 
+
+    console.log('🎨 Drawing box:', {
+      original: { x: b.x, y: b.y, w: b.w, h: b.h },
       transformed: { x1, y1, w, h },
-      transform 
+      transform
     });
 
     // box
