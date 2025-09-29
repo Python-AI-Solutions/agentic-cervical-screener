@@ -11,19 +11,6 @@
     "title": "Case 4 - High Risk Sample",
     "uri": "images/case4.png",
     "acquisition_date": "2025-08-27",
-    "layers": [
-      {
-        "layer_id": "detections-rects",
-        "kind": "detections",
-        "geometry": "rects",
-        "uri": "mock/detections-case4.json"
-      },
-      {
-        "layer_id": "lesion-points",
-        "kind": "lesion_token",
-        "geometry": "points",
-        "uri": "mock/detections-points-case4.json"
-      }
-    ]
+    "layers": []
   }]
 }

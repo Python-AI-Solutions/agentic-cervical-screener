@@ -11,19 +11,6 @@
     "title": "Case 3 - Mixed Findings",
     "uri": "images/case3.png",
     "acquisition_date": "2025-08-27",
-    "layers": [
-      {
-        "layer_id": "detections-rects",
-        "kind": "detections",
-        "geometry": "rects",
-        "uri": "mock/detections-case3.json"
-      },
-      {
-        "layer_id": "lesion-points",
-        "kind": "lesion_token",
-        "geometry": "points",
-        "uri": "mock/detections-points-case3.json"
-      }
-    ]
+    "layers": []
   }]
 }

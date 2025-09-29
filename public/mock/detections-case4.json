@@ -1,6 +1,0 @@
-{"type":"FeatureCollection","features":[
-  {"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[150,100],[280,100],[280,230],[150,230],[150,100]]]},"properties":{"class":"HSIL-like","score":0.89}},
-  {"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[320,180],[400,180],[400,260],[320,260],[320,180]]]},"properties":{"class":"HSIL-like","score":0.91}},
-  {"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[180,300],[260,300],[260,380],[180,380],[180,300]]]},"properties":{"class":"AGC","score":0.73}},
-  {"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[400,350],[480,350],[480,430],[400,430],[400,350]]]},"properties":{"class":"HSIL-like","score":0.85}}
-]}

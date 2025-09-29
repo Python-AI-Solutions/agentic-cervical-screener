@@ -28,6 +28,23 @@ let lastBoxes = [];                  // boxes from last classify
 let roiMode = 'ground_truth';        // 'ground_truth' or 'ai_detections'
 let showAIDetections = true;         // Whether to show AI classification boxes
 
+// Drawing mode variables
+let isDrawing = false;
+let drawingStart = null;
+let drawingRect = null;
+let userDrawnRois = [];              // User-drawn rectangles
+let showUserDrawnRois = true;        // Toggle for user-drawn rectangles visibility
+
+// Available labels for cervical cytology
+const CERVICAL_LABELS = [
+  'Negative for intraepithelial lesion',
+  'ASC-US',
+  'ASC-H', 
+  'LSIL',
+  'HSIL',
+  'SCC'
+];
+
 function setStatus(s){ statusEl.textContent=s; }
 function showSpinner(v){
   if (spinnerEl) {
@@ -107,6 +124,7 @@ async function loadCaseFromUrl(url){
   setStatus('loading…'); showSpinner(true);
   layersEl.innerHTML=''; overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
   rois=[]; roiIdx=-1; layerCache.clear(); visibleLayers.clear(); lastBoxes = [];
+  userDrawnRois = []; // Clear user-drawn ROIs
   showAIDetections = true; // Reset AI detections visibility
 
   const NvCtor = window.Niivue || (window.niivue && window.niivue.Niivue);
@@ -142,6 +160,9 @@ async function loadCaseFromUrl(url){
     }
   }
 
+  // Add user-drawn ROIs toggle
+  addUserDrawnRoisToggle();
+
   // Build layer controls + prefetch & cache
   (slide.layers||[]).forEach(async (L)=>{
     // UI
@@ -159,7 +180,7 @@ async function loadCaseFromUrl(url){
       renderOverlays();
     });
 
-    // Cache data (rects/points/polygons)
+    // Cache data (rects/points/polygons) - but don't display them
     try {
       const fc = await addLayerToNiivue(nv, L, resolveUri, overlayCtx, transform);
       if (fc) {
@@ -168,7 +189,7 @@ async function loadCaseFromUrl(url){
         if (L.geometry === 'rects' || L.kind === 'roi') {
           try { rois.push(...collectRois(fc)); } catch {}
         }
-        renderOverlays(); // ensure it appears even before classify
+        // Don't render overlays here - we only want user-drawn ROIs
       }
     } catch (e) { console.warn('layer load failed', L.layer_id, e); }
   });
@@ -182,15 +203,14 @@ async function loadCaseFromUrl(url){
 
 function renderOverlays(){
   overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
-  // visible static layers
-  for (const [layer_id, obj] of layerCache.entries()) {
-    if (!visibleLayers.has(layer_id)) continue;
-    // reuse draw function with appropriate color by kind
-    // we pass a color per kind using overlayAdapters' internal rules
-    drawGeoJSON(overlayCtx, obj.fc, '#00E5FF', transform); // color is recomputed inside fc if you prefer
+  
+  // Only show user-drawn ROIs (no hardcoded detections)
+  if (showUserDrawnRois) {
+    drawUserRois();
   }
-  // redraw last classifier boxes on top (only if enabled)
-  if (showAIDetections) {
+  
+  // Show AI detection boxes only if enabled and in AI mode
+  if (showAIDetections && roiMode === 'ai_detections') {
     drawLabeledBoxes(overlayCtx, lastBoxes, transform);
   }
 }
@@ -212,6 +232,27 @@ function addAIDetectionsToggle() {
   const cb = el.querySelector('input[type="checkbox"]');
   cb.addEventListener('change', () => {
     showAIDetections = cb.checked;
+    renderOverlays();
+  });
+}
+
+function addUserDrawnRoisToggle() {
+  // Check if user-drawn ROIs toggle already exists
+  if (document.querySelector('[data-layer="user-drawn-rois"]')) return;
+
+  // Create user-drawn ROIs toggle
+  const el = document.createElement('div');
+  el.className = 'layer';
+  el.innerHTML = `
+    <span>user-drawn-rois <span class="muted">(rects)</span></span>
+    <label><input type="checkbox" data-layer="user-drawn-rois" checked/> Show</label>`;
+
+  layersEl.appendChild(el);
+
+  // Add event listener
+  const cb = el.querySelector('input[type="checkbox"]');
+  cb.addEventListener('change', () => {
+    showUserDrawnRois = cb.checked;
     renderOverlays();
   });
 }
@@ -257,9 +298,11 @@ btnToggleRoiMode.addEventListener('click', ()=>{
   if (roiMode === 'ai_detections') {
     btnToggleRoiMode.textContent = 'AI Detections';
     btnToggleRoiMode.style.background = '#DC2626'; // Red for AI
+    overlayCanvas.style.cursor = 'default';
   } else {
     btnToggleRoiMode.textContent = 'Ground Truth';
     btnToggleRoiMode.style.background = '#374151'; // Gray for ground truth
+    overlayCanvas.style.cursor = 'crosshair';
   }
 
   // Clear any existing highlights
@@ -279,7 +322,8 @@ function getCurrentRois() {
       score: box.score
     }));
   }
-  return rois; // ground truth ROIs
+  // In ground truth mode, use user-drawn ROIs if available, otherwise use loaded ROIs
+  return userDrawnRois.length > 0 ? userDrawnRois : rois;
 }
 
 function highlight(roi){
@@ -304,6 +348,8 @@ function highlight(roi){
   // Show different status for AI vs ground truth
   if (isAI && roi.label && roi.score) {
     setStatus(`AI Detection ${(roiIdx+1)}/${currentRois.length}: ${roi.label} (${Math.round(roi.score*100)}%)`);
+  } else if (roi.label) {
+    setStatus(`ROI ${(roiIdx+1)}/${currentRois.length}: ${roi.label}`);
   } else {
     setStatus(`ROI ${(roiIdx+1)}/${currentRois.length} - Ground Truth`);
   }
@@ -377,6 +423,7 @@ function handleDroppedFiles(files) {
         lastBoxes = [];
         rois = [];
         roiIdx = -1;
+        userDrawnRois = []; // Clear user-drawn ROIs
 
         // Display the new image
         displayImageOnCanvas(img);
@@ -389,6 +436,9 @@ function handleDroppedFiles(files) {
         // Update UI
         setStatus(`${file.name} loaded - ${img.width}×${img.height}px`);
         showSpinner(false);
+
+        // Add user-drawn ROIs toggle for dropped images
+        addUserDrawnRoisToggle();
 
         // Add a layer control for the dropped image
         const el = document.createElement('div');
@@ -416,8 +466,280 @@ function handleDroppedFiles(files) {
   }
 }
 
+// Drawing functionality
+function setupDrawingMode() {
+  if (!overlayCanvas) return;
+
+  // Enable pointer events for drawing
+  overlayCanvas.style.pointerEvents = 'auto';
+  overlayCanvas.style.cursor = 'crosshair';
+
+  // Mouse events for drawing
+  overlayCanvas.addEventListener('mousedown', handleMouseDown);
+  overlayCanvas.addEventListener('mousemove', handleMouseMove);
+  overlayCanvas.addEventListener('mouseup', handleMouseUp);
+  overlayCanvas.addEventListener('mouseleave', handleMouseUp);
+
+  // Touch events for mobile
+  overlayCanvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+  overlayCanvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+  overlayCanvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+}
+
+function handleMouseDown(e) {
+  console.log('Mouse down event', { roiMode, isDrawing });
+  if (roiMode !== 'ground_truth') {
+    console.log('Not in ground truth mode, ignoring');
+    return;
+  }
+  
+  const rect = overlayCanvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  
+  console.log('Starting drawing at', { x, y });
+  startDrawing(x, y);
+}
+
+function handleMouseMove(e) {
+  if (!isDrawing || roiMode !== 'ground_truth') return;
+  
+  const rect = overlayCanvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  
+  updateDrawing(x, y);
+}
+
+function handleMouseUp(e) {
+  if (!isDrawing || roiMode !== 'ground_truth') return;
+  
+  const rect = overlayCanvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  
+  finishDrawing(x, y);
+}
+
+function handleTouchStart(e) {
+  e.preventDefault();
+  if (roiMode !== 'ground_truth') return;
+  
+  const rect = overlayCanvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  const x = touch.clientX - rect.left;
+  const y = touch.clientY - rect.top;
+  
+  startDrawing(x, y);
+}
+
+function handleTouchMove(e) {
+  e.preventDefault();
+  if (!isDrawing || roiMode !== 'ground_truth') return;
+  
+  const rect = overlayCanvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  const x = touch.clientX - rect.left;
+  const y = touch.clientY - rect.top;
+  
+  updateDrawing(x, y);
+}
+
+function handleTouchEnd(e) {
+  e.preventDefault();
+  if (!isDrawing || roiMode !== 'ground_truth') return;
+  
+  const rect = overlayCanvas.getBoundingClientRect();
+  const touch = e.changedTouches[0];
+  const x = touch.clientX - rect.left;
+  const y = touch.clientY - rect.top;
+  
+  finishDrawing(x, y);
+}
+
+function startDrawing(x, y) {
+  console.log('Starting drawing', { x, y });
+  isDrawing = true;
+  drawingStart = { x, y };
+  drawingRect = { x, y, width: 0, height: 0 };
+  setStatus('Drawing rectangle... (release to finish)');
+}
+
+function updateDrawing(x, y) {
+  if (!isDrawing || !drawingStart) return;
+  
+  drawingRect = {
+    x: Math.min(drawingStart.x, x),
+    y: Math.min(drawingStart.y, y),
+    width: Math.abs(x - drawingStart.x),
+    height: Math.abs(y - drawingStart.y)
+  };
+  
+  // Redraw overlays and current drawing
+  renderOverlays();
+  drawCurrentRectangle();
+}
+
+function finishDrawing(x, y) {
+  if (!isDrawing || !drawingStart) return;
+  
+  const rect = {
+    x: Math.min(drawingStart.x, x),
+    y: Math.min(drawingStart.y, y),
+    width: Math.abs(x - drawingStart.x),
+    height: Math.abs(y - drawingStart.y)
+  };
+  
+  // Only add if rectangle is large enough
+  if (rect.width > 10 && rect.height > 10) {
+    // Convert to image coordinates
+    const imageRect = {
+      xmin: (rect.x - transform.tx) / transform.scale,
+      ymin: (rect.y - transform.ty) / transform.scale,
+      xmax: (rect.x + rect.width - transform.tx) / transform.scale,
+      ymax: (rect.y + rect.height - transform.ty) / transform.scale
+    };
+    
+    // Show label selection dialog
+    showLabelSelectionDialog(imageRect);
+  }
+  
+  isDrawing = false;
+  drawingStart = null;
+  drawingRect = null;
+  renderOverlays();
+}
+
+function drawCurrentRectangle() {
+  if (!drawingRect) return;
+  
+  overlayCtx.save();
+  overlayCtx.strokeStyle = '#FF6B6B';
+  overlayCtx.lineWidth = 2;
+  overlayCtx.setLineDash([5, 5]);
+  overlayCtx.strokeRect(drawingRect.x, drawingRect.y, drawingRect.width, drawingRect.height);
+  overlayCtx.restore();
+}
+
+function showLabelSelectionDialog(imageRect) {
+  // Create modal dialog
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  `;
+  
+  const dialog = document.createElement('div');
+  dialog.style.cssText = `
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+  `;
+  
+  dialog.innerHTML = `
+    <h3 style="margin: 0 0 var(--spacing-md) 0; color: var(--text-primary);">Select Label for Rectangle</h3>
+    <div style="margin-bottom: var(--spacing-md);">
+      ${CERVICAL_LABELS.map((label, index) => `
+        <label style="display: block; margin-bottom: var(--spacing-sm); cursor: pointer; color: var(--text-primary);">
+          <input type="radio" name="label" value="${label}" ${index === 0 ? 'checked' : ''} style="margin-right: var(--spacing-sm);">
+          ${label}
+        </label>
+      `).join('')}
+    </div>
+    <div style="display: flex; gap: var(--spacing-sm); justify-content: flex-end;">
+      <button id="cancelLabel" style="background: var(--bg-button); color: var(--text-primary); border: 1px solid var(--border-color); padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--border-radius); cursor: pointer;">Cancel</button>
+      <button id="confirmLabel" style="background: #1e40af; color: white; border: 1px solid #1e40af; padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--border-radius); cursor: pointer;">Add Rectangle</button>
+    </div>
+  `;
+  
+  modal.appendChild(dialog);
+  document.body.appendChild(modal);
+  
+  // Event listeners
+  document.getElementById('cancelLabel').addEventListener('click', () => {
+    document.body.removeChild(modal);
+  });
+  
+  document.getElementById('confirmLabel').addEventListener('click', () => {
+    const selectedLabel = dialog.querySelector('input[name="label"]:checked').value;
+    
+    // Add label to the rectangle
+    imageRect.label = selectedLabel;
+    userDrawnRois.push(imageRect);
+    
+    setStatus(`Rectangle added with label: ${selectedLabel}. Total ROIs: ${userDrawnRois.length}`);
+    renderOverlays();
+    document.body.removeChild(modal);
+  });
+  
+  // Close on escape key
+  const handleEscape = (e) => {
+    if (e.key === 'Escape') {
+      document.body.removeChild(modal);
+      document.removeEventListener('keydown', handleEscape);
+    }
+  };
+  document.addEventListener('keydown', handleEscape);
+}
+
+function drawUserRois() {
+  if (userDrawnRois.length === 0) return;
+  
+  overlayCtx.save();
+  overlayCtx.strokeStyle = '#4ECDC4';
+  overlayCtx.lineWidth = 2;
+  overlayCtx.fillStyle = 'rgba(78, 205, 196, 0.1)';
+  overlayCtx.font = 'bold 13px Arial';
+  
+  userDrawnRois.forEach((roi, index) => {
+    const x1 = roi.xmin * transform.scale + transform.tx;
+    const y1 = roi.ymin * transform.scale + transform.ty;
+    const x2 = roi.xmax * transform.scale + transform.tx;
+    const y2 = roi.ymax * transform.scale + transform.ty;
+    
+    // Draw rectangle
+    overlayCtx.fillStyle = 'rgba(78, 205, 196, 0.1)';
+    overlayCtx.fillRect(x1, y1, x2 - x1, y2 - y1);
+    overlayCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    
+    // Draw label with dark background for better visibility
+    if (roi.label) {
+      const labelText = `${index + 1}: ${roi.label}`;
+      const textMetrics = overlayCtx.measureText(labelText);
+      const textWidth = textMetrics.width;
+      const textHeight = 15;
+      
+      // Draw dark background rectangle for text
+      overlayCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      overlayCtx.fillRect(x1, y1 - textHeight - 2, textWidth + 8, textHeight + 4);
+      
+      // Draw white text
+      overlayCtx.fillStyle = '#FFFFFF';
+      overlayCtx.fillText(labelText, x1 + 4, y1 - 5);
+    }
+  });
+  
+  overlayCtx.restore();
+}
+
 // Setup drag and drop
 setupDragAndDrop();
+
+// Setup drawing mode
+setupDrawingMode();
 
 // Setup responsive features
 function setupResponsiveFeatures() {
