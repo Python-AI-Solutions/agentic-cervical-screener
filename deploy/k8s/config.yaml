@@ -10,22 +10,22 @@ data:
   APP_NAME: "Cervical AI Viewer"
   APP_VERSION: "v2.0.0"
   ENVIRONMENT: "production"
-  
+
   # Model configuration
   MODEL_PATH: "/app/models"
   MODEL_FILE: "best.pt"
   CONFIDENCE_THRESHOLD: "0.25"
-  
+
   # API configuration
   API_HOST: "0.0.0.0"
   API_PORT: "8000"
   API_WORKERS: "2"
-  
+
   # CORS configuration
   CORS_ORIGINS: "*"
   CORS_METHODS: "GET,POST,PUT,DELETE,OPTIONS"
   CORS_HEADERS: "Content-Type,Authorization"
-  
+
   # Logging configuration
   LOG_LEVEL: "INFO"
   LOG_FORMAT: "json"

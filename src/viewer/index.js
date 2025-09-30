@@ -10,6 +10,7 @@ const btnClassify  = document.getElementById('btnClassify');
 const btnPrevRoi   = document.getElementById('btnPrevRoi');
 const btnNextRoi   = document.getElementById('btnNextRoi');
 const btnToggleRoiMode = document.getElementById('btnToggleRoiMode');
+const btnDownload  = document.getElementById('btnDownload');
 
 const glCanvas     = document.getElementById('glCanvas');
 const overlayCanvas= document.getElementById('overlayCanvas');
@@ -332,7 +333,7 @@ btnClassify.addEventListener('click', async ()=>{
     // Automatically switch to AI detection mode after classification
     roiMode = 'ai_detections';
     roiIdx = -1; // Reset ROI index
-    
+
     // Update button text and style to reflect AI mode
     btnToggleRoiMode.textContent = 'AI Detections';
     btnToggleRoiMode.style.background = '#DC2626'; // Red for AI
@@ -380,6 +381,10 @@ btnToggleRoiMode.addEventListener('click', ()=>{
   // Clear any existing highlights
   renderOverlays();
   setStatus(`Switched to ${roiMode === 'ai_detections' ? 'AI Detections' : 'Ground Truth'} navigation`);
+});
+
+btnDownload.addEventListener('click', () => {
+  downloadImageWithOverlays();
 });
 
 function getCurrentRois() {
@@ -862,6 +867,142 @@ function setupResponsiveFeatures() {
   // Handle viewport changes (like mobile keyboard appearing)
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', debouncedResize);
+  }
+}
+
+function downloadImageWithOverlays() {
+  try {
+    setStatus('Preparing download...');
+
+    // Create a temporary canvas to combine the image and overlays
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+
+    // Get the original image dimensions
+    const img = new Image();
+    img.onload = function() {
+      // Set canvas size to match the original image
+      tempCanvas.width = img.width;
+      tempCanvas.height = img.height;
+
+      // Draw the original image
+      tempCtx.drawImage(img, 0, 0);
+
+      // Calculate scale factors to convert overlay coordinates to image coordinates
+      const scaleX = img.width / overlayCanvas.width;
+      const scaleY = img.height / overlayCanvas.height;
+
+      // Draw user-drawn ROIs
+      if (showUserDrawnRois && userDrawnRois.length > 0) {
+        tempCtx.save();
+        tempCtx.strokeStyle = '#4ECDC4';
+        tempCtx.lineWidth = 2;
+        tempCtx.fillStyle = 'rgba(78, 205, 196, 0.1)';
+        tempCtx.font = 'bold 16px Arial';
+
+        userDrawnRois.forEach((roi, index) => {
+          const x1 = roi.xmin * scaleX;
+          const y1 = roi.ymin * scaleY;
+          const x2 = roi.xmax * scaleX;
+          const y2 = roi.ymax * scaleY;
+
+          // Draw rectangle
+          tempCtx.fillStyle = 'rgba(78, 205, 196, 0.1)';
+          tempCtx.fillRect(x1, y1, x2 - x1, y2 - y1);
+          tempCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+          // Draw label
+          if (roi.label) {
+            const labelText = `${index + 1}: ${roi.label}`;
+            const textMetrics = tempCtx.measureText(labelText);
+            const textWidth = textMetrics.width;
+            const textHeight = 20;
+
+            // Draw dark background rectangle for text
+            tempCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            tempCtx.fillRect(x1, y1 - textHeight - 2, textWidth + 8, textHeight + 4);
+
+            // Draw white text
+            tempCtx.fillStyle = '#FFFFFF';
+            tempCtx.fillText(labelText, x1 + 4, y1 - 5);
+          }
+        });
+        tempCtx.restore();
+      }
+
+      // Draw AI detection boxes
+      if (showAIDetections && lastBoxes.length > 0) {
+        tempCtx.save();
+        tempCtx.strokeStyle = '#FF6B6B';
+        tempCtx.lineWidth = 2;
+        tempCtx.fillStyle = 'rgba(255, 107, 107, 0.1)';
+        tempCtx.font = 'bold 16px Arial';
+
+        lastBoxes.forEach((box, index) => {
+          // AI boxes use x, y, w, h format (not xmin, ymin, xmax, ymax)
+          const x1 = box.x * scaleX;
+          const y1 = box.y * scaleY;
+          const x2 = (box.x + box.w) * scaleX;
+          const y2 = (box.y + box.h) * scaleY;
+
+          // Draw rectangle
+          tempCtx.fillStyle = 'rgba(255, 107, 107, 0.1)';
+          tempCtx.fillRect(x1, y1, x2 - x1, y2 - y1);
+          tempCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+          // Draw label
+          if (box.label) {
+            const labelText = `AI ${index + 1}: ${box.label} (${Math.round((box.score || 0) * 100)}%)`;
+            const textMetrics = tempCtx.measureText(labelText);
+            const textWidth = textMetrics.width;
+            const textHeight = 20;
+
+            // Draw dark background rectangle for text
+            tempCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            tempCtx.fillRect(x1, y1 - textHeight - 2, textWidth + 8, textHeight + 4);
+
+            // Draw white text
+            tempCtx.fillStyle = '#FFFFFF';
+            tempCtx.fillText(labelText, x1 + 4, y1 - 5);
+          }
+        });
+        tempCtx.restore();
+      }
+
+      // Convert canvas to blob and download
+      tempCanvas.toBlob(function(blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cervical-analysis-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        setStatus('Image downloaded successfully');
+      }, 'image/png');
+    };
+
+    // Use the current image source
+    if (currentImageFile) {
+      // For uploaded images, create object URL
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(currentImageFile);
+    } else if (currentSlideUri) {
+      // For case images, use the URI
+      img.src = resolveUri(currentSlideUri);
+    } else {
+      setStatus('No image loaded to download');
+      return;
+    }
+
+  } catch (error) {
+    console.error('Download failed:', error);
+    setStatus('Download failed: ' + error.message);
   }
 }
 

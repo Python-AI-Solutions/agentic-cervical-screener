@@ -654,6 +654,28 @@
       min-width: var(--button-height);
     }
 
+    /* Always visible header buttons */
+    #headerButtons button {
+      background: var(--bg-button);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-left: var(--spacing-xs);
+      transition: all 0.2s ease;
+    }
+
+    #headerButtons button:hover {
+      background: var(--bg-button-hover);
+      border-color: var(--border-hover);
+    }
+
+    #headerButtons button:active {
+      transform: translateY(1px);
+    }
+
     .sidebar-btn.open {
       background: #1d4ed8 !important;
       border-color: #1d4ed8 !important;
@@ -999,11 +1021,11 @@
     <div class="header-content">
       <div class="header-title">Cervical AI Viewer</div>
       <div class="header-buttons" id="headerButtons">
-        <button id="btnClassify" class="hidden-button">Classify</button>
-        <button id="btnToggleRoiMode" class="hidden-button" style="background: #374151; color: #fff;">Ground Truth</button>
-        <button id="btnPrevRoi" class="hidden-button">◀</button>
-        <button id="btnNextRoi" class="hidden-button">▶</button>
-        <button id="btnSidebar" class="sidebar-btn">📁 Layers</button>
+        <button id="btnClassify">Classify</button>
+        <button id="btnToggleRoiMode" style="background: #374151; color: #fff;">Ground Truth</button>
+        <button id="btnPrevRoi">◀</button>
+        <button id="btnNextRoi">▶</button>
+        <button id="btnDownload">💾 Download</button>
       </div>
     </div>
     <div class="header-status">
@@ -1090,18 +1112,15 @@
 
     function toggleButtons() {
       const headerButtons = document.getElementById('headerButtons');
-      const toggle = document.getElementById('btnSidebar');
       const hiddenButtons = document.querySelectorAll('.hidden-button');
 
-      console.log('toggleButtons called', { headerButtons, toggle, hiddenButtonsCount: hiddenButtons.length });
+      console.log('toggleButtons called', { headerButtons, hiddenButtonsCount: hiddenButtons.length });
 
-      if (headerButtons && toggle) {
+      if (headerButtons) {
         headerButtons.classList.toggle('expanded');
-        toggle.classList.toggle('open');
 
         console.log('Classes after toggle:', {
-          expanded: headerButtons.classList.contains('expanded'),
-          open: toggle.classList.contains('open')
+          expanded: headerButtons.classList.contains('expanded')
         });
 
         // Check each hidden button
@@ -1117,11 +1136,9 @@
 
     function closeButtons() {
       const headerButtons = document.getElementById('headerButtons');
-      const toggle = document.getElementById('btnSidebar');
 
-      if (headerButtons && toggle) {
+      if (headerButtons) {
         headerButtons.classList.remove('expanded');
-        toggle.classList.remove('open');
       }
     }
 
@@ -1142,7 +1159,6 @@
       const mobileMenuBtn = document.getElementById('mobileMenuBtn');
       const mobileCloseBtn = document.getElementById('mobileCloseBtn');
       const mobileOverlay = document.getElementById('mobileOverlay');
-      const btnSidebar = document.getElementById('btnSidebar');
 
       if (mobileMenuBtn) {
         mobileMenuBtn.addEventListener('click', function(e) {
@@ -1165,24 +1181,6 @@
         });
       }
 
-      if (btnSidebar) {
-        btnSidebar.addEventListener('click', function(e) {
-          e.preventDefault();
-          const headerButtons = document.getElementById('headerButtons');
-          const isMobile = window.innerWidth <= 1024;
-
-          console.log('btnSidebar clicked', { isMobile, windowWidth: window.innerWidth });
-
-          if (isMobile) {
-            // On mobile, show the buttons in the mobile menu
-            if (headerButtons) headerButtons.classList.remove('mobile-visible');
-            toggleSidebar();
-          } else {
-            // On desktop, toggle the buttons horizontally
-            toggleButtons();
-          }
-        });
-      }
 
       // Handle window resize
       window.addEventListener('resize', function() {
@@ -1201,9 +1199,8 @@
       // Close buttons when clicking outside
       document.addEventListener('click', function(e) {
         const headerButtons = document.getElementById('headerButtons');
-        const toggle = document.getElementById('btnSidebar');
 
-        if (headerButtons && toggle &&
+        if (headerButtons &&
             !headerButtons.contains(e.target) &&
             headerButtons.classList.contains('expanded')) {
           closeButtons();
