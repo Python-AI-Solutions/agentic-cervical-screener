@@ -1,6 +1,6 @@
 const ENV = window.__ENV__ || {};
 const API_BASE = ENV.API_BASE || '';
-const useMock = !API_BASE;
+const useMock = API_BASE === null || API_BASE === undefined;
 
 export async function classify(slideId='SLIDE-001', imageUri=null, imageData=null) {
   console.log('classify called with:', { slideId, imageUri, imageData, useMock, API_BASE });

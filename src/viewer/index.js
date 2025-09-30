@@ -232,12 +232,12 @@ function renderOverlays(){
     drawUserRois();
   }
 
-  // Show AI detection boxes only if enabled and in AI mode
-  if (showAIDetections && roiMode === 'ai_detections') {
+  // Show AI detection boxes if enabled (regardless of mode)
+  if (showAIDetections) {
     console.log('🎨 Drawing AI detection boxes');
     drawLabeledBoxes(overlayCtx, lastBoxes, transform);
   } else {
-    console.log('🎨 Not drawing AI boxes:', { showAIDetections, roiMode });
+    console.log('🎨 Not drawing AI boxes:', { showAIDetections });
   }
 }
 
@@ -329,8 +329,17 @@ btnClassify.addEventListener('click', async ()=>{
     // Add AI detections toggle if it doesn't exist
     addAIDetectionsToggle();
 
+    // Automatically switch to AI detection mode after classification
+    roiMode = 'ai_detections';
+    roiIdx = -1; // Reset ROI index
+    
+    // Update button text and style to reflect AI mode
+    btnToggleRoiMode.textContent = 'AI Detections';
+    btnToggleRoiMode.style.background = '#DC2626'; // Red for AI
+    overlayCanvas.style.cursor = 'default';
+
     renderOverlays();
-    setStatus(`classified - ${lastBoxes.length} detections found`);
+    setStatus(`classified - ${lastBoxes.length} detections found - switched to AI mode`);
   } catch(e){
     console.error('❌ Classification error:', e);
     setStatus('classification failed: ' + e.message);
@@ -528,14 +537,6 @@ function handleDroppedFiles(files) {
 
         // Add user-drawn ROIs toggle for dropped images
         addUserDrawnRoisToggle();
-
-        // Add a layer control for the dropped image
-        const el = document.createElement('div');
-        el.className = 'layer';
-        // Truncate long filenames to prevent overflow
-        const displayName = file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name;
-        el.innerHTML = `<span title="${file.name}">${displayName} <span class="muted">(dropped image)</span></span><label class="toggle-switch"><input type="checkbox" checked disabled/><span class="toggle-slider"></span></label>`;
-        layersEl.appendChild(el);
       };
 
       img.onerror = function() {
@@ -741,7 +742,7 @@ function showLabelSelectionDialog(imageRect) {
   `;
 
   dialog.innerHTML = `
-    <h3 style="margin: 0 0 var(--spacing-md) 0; color: var(--text-primary);">Select Label for Rectangle</h3>
+    <h3 style="margin: 0 0 var(--spacing-md) 0; color: var(--text-primary);">Select Labels</h3>
     <div style="margin-bottom: var(--spacing-md);">
       ${CERVICAL_LABELS.map((label, index) => `
         <label style="display: block; margin-bottom: var(--spacing-sm); cursor: pointer; color: var(--text-primary);">
@@ -752,7 +753,7 @@ function showLabelSelectionDialog(imageRect) {
     </div>
     <div style="display: flex; gap: var(--spacing-sm); justify-content: flex-end;">
       <button id="cancelLabel" style="background: var(--bg-button); color: var(--text-primary); border: 1px solid var(--border-color); padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--border-radius); cursor: pointer;">Cancel</button>
-      <button id="confirmLabel" style="background: #1e40af; color: white; border: 1px solid #1e40af; padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--border-radius); cursor: pointer;">Add Rectangle</button>
+      <button id="confirmLabel" style="background: #1e40af; color: white; border: 1px solid #1e40af; padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--border-radius); cursor: pointer;">Add</button>
     </div>
   `;
 

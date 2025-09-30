@@ -16,7 +16,7 @@ WORKDIR /app
 
 # Copy pixi configuration
 COPY pyproject.toml .
-
+RUN pixi workspace platform add linux-aarch64
 # Install dependencies using pixi
 RUN pixi install
 

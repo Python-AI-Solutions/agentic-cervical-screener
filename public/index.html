@@ -1025,10 +1025,10 @@
       </div>
       <div class="quick-load-section">
         <div class="muted">Quick Load Cases:</div>
-        <button onclick="loadQuickCase('http://localhost:8000/cases/DEMO-001')" class="quick-load-btn">Case 1 </button>
-        <button onclick="loadQuickCase('http://localhost:8000/cases/DEMO-002')" class="quick-load-btn">Case 2 </button>
-        <button onclick="loadQuickCase('http://localhost:8000/cases/DEMO-003')" class="quick-load-btn">Case 3 </button>
-        <button onclick="loadQuickCase('http://localhost:8000/cases/DEMO-004')" class="quick-load-btn">Case 4 </button>
+        <button onclick="loadQuickCase('/cases/DEMO-001')" class="quick-load-btn">Case 1 </button>
+        <button onclick="loadQuickCase('/cases/DEMO-002')" class="quick-load-btn">Case 2 </button>
+        <button onclick="loadQuickCase('/cases/DEMO-003')" class="quick-load-btn">Case 3 </button>
+        <button onclick="loadQuickCase('/cases/DEMO-004')" class="quick-load-btn">Case 4 </button>
       </div>
       <hr style="border: none; border-top: 1px solid var(--border-color); margin: var(--spacing-lg) 0;">
       <div class="layers-section">
@@ -1048,7 +1048,7 @@
   </main>
 
   <script src="niivue/niivue.js"></script>
-  <script>window.__ENV__={API_BASE:'http://localhost:8000'}</script>
+  <script>window.__ENV__={API_BASE:''}</script>
   <script>
     console.log('Environment loaded:', window.__ENV__);
 
