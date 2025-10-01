@@ -175,7 +175,7 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
   currentSlideId=slide.slide_id||'SLIDE-001'; currentSlideUri=slide.uri;
 
   const imgUrl=resolveUri(slide.uri);
-
+  
   // Load image asynchronously
   const loadImage = async () => {
     if (/\.(png|jpg|jpeg)$/i.test(imgUrl)) {
@@ -189,10 +189,10 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
           showSpinner(false);
           resolve(img);
         };
-        img.onerror = () => {
-          console.error('Failed to load image:', imgUrl);
-          setStatus('error loading image');
-          showSpinner(false);
+        img.onerror = () => { 
+          console.error('Failed to load image:', imgUrl); 
+          setStatus('error loading image'); 
+          showSpinner(false); 
           reject(new Error('Image load failed'));
         };
         img.src = imgUrl;
@@ -200,9 +200,10 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
     } else {
       try {
         await nv.loadImages([{ url: imgUrl, name:'slide', colormap:'gray', opacity:1 }]);
-        const img = new Image();
-        img.onload=()=>{ fitOverlayToImage(img.width, img.height); renderOverlays(); };
+        const img = new Image(); 
+        img.onload=()=>{ fitOverlayToImage(img.width, img.height); renderOverlays(); }; 
         img.src=imgUrl;
+        setStatus('ready'); showSpinner(false);
         return img;
       } catch (error) {
         console.warn('unsupported image format for demo:', imgUrl, error);
