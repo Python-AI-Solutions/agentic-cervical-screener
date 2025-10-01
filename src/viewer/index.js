@@ -11,6 +11,7 @@ const btnPrevRoi   = document.getElementById('btnPrevRoi');
 const btnNextRoi   = document.getElementById('btnNextRoi');
 const btnToggleRoiMode = document.getElementById('btnToggleRoiMode');
 const btnDownload  = document.getElementById('btnDownload');
+const btnClearRois = document.getElementById('btnClearRois');
 
 const glCanvas     = document.getElementById('glCanvas');
 const overlayCanvas= document.getElementById('overlayCanvas');
@@ -33,6 +34,7 @@ let drawingRect = null;
 let userDrawnRois = [];              // User-drawn rectangles
 let showUserDrawnRois = true;        // Toggle for user-drawn rectangles visibility
 let currentImageFile = null;         // Store the current image file for classification
+let hoveredRoiIndex = -1;            // Index of currently hovered ROI (-1 if none)
 
 // Available labels for cervical cytology
 const CERVICAL_LABELS = [
@@ -387,6 +389,19 @@ btnDownload.addEventListener('click', () => {
   downloadImageWithOverlays();
 });
 
+btnClearRois.addEventListener('click', () => {
+  if (userDrawnRois.length === 0) {
+    setStatus('No ROIs to clear');
+    return;
+  }
+  
+  const count = userDrawnRois.length;
+  userDrawnRois = [];
+  roiIdx = -1;
+  renderOverlays();
+  setStatus(`Cleared ${count} ROIs`);
+});
+
 function getCurrentRois() {
   if (roiMode === 'ai_detections' && lastBoxes.length > 0) {
     // Convert AI detection boxes to ROI format
@@ -576,11 +591,23 @@ function setupDrawingMode() {
   overlayCanvas.addEventListener('mousemove', handleMouseMove);
   overlayCanvas.addEventListener('mouseup', handleMouseUp);
   overlayCanvas.addEventListener('mouseleave', handleMouseUp);
+  
+  // Mouse events for hover detection
+  overlayCanvas.addEventListener('mousemove', handleMouseMoveHover);
+  overlayCanvas.addEventListener('mouseleave', () => {
+    if (hoveredRoiIndex !== -1) {
+      hoveredRoiIndex = -1;
+      renderOverlays();
+    }
+  });
 
   // Touch events for mobile
   overlayCanvas.addEventListener('touchstart', handleTouchStart, { passive: false });
   overlayCanvas.addEventListener('touchmove', handleTouchMove, { passive: false });
   overlayCanvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+  
+  // Touch events for hover detection on mobile
+  overlayCanvas.addEventListener('touchmove', handleTouchMoveHover, { passive: false });
 }
 
 function handleMouseDown(e) {
@@ -594,6 +621,23 @@ function handleMouseDown(e) {
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
 
+  // Check if clicking on a delete button (only if hovering over one)
+  if (hoveredRoiIndex >= 0 && hoveredRoiIndex < userDrawnRois.length) {
+    const roi = userDrawnRois[hoveredRoiIndex];
+    if (roi._deleteButton) {
+      const deleteBtn = roi._deleteButton;
+      if (x >= deleteBtn.x && x <= deleteBtn.x + deleteBtn.width &&
+          y >= deleteBtn.y && y <= deleteBtn.y + deleteBtn.height) {
+        // Delete this ROI
+        userDrawnRois.splice(hoveredRoiIndex, 1);
+        hoveredRoiIndex = -1;
+        setStatus(`Deleted ROI. Total ROIs: ${userDrawnRois.length}`);
+        renderOverlays();
+        return;
+      }
+    }
+  }
+
   console.log('Starting drawing at', { x, y });
   startDrawing(x, y);
 }
@@ -606,6 +650,37 @@ function handleMouseMove(e) {
   const y = e.clientY - rect.top;
 
   updateDrawing(x, y);
+}
+
+function handleMouseMoveHover(e) {
+  if (roiMode !== 'ground_truth') return;
+
+  const rect = overlayCanvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  // Check if hovering over any ROI rectangle (not just the delete button)
+  let newHoveredIndex = -1;
+  for (let i = 0; i < userDrawnRois.length; i++) {
+    const roi = userDrawnRois[i];
+    // Convert ROI coordinates to screen coordinates
+    const x1 = roi.xmin * transform.scale + transform.tx;
+    const y1 = roi.ymin * transform.scale + transform.ty;
+    const x2 = roi.xmax * transform.scale + transform.tx;
+    const y2 = roi.ymax * transform.scale + transform.ty;
+    
+    // Check if mouse is within the ROI rectangle
+    if (x >= x1 && x <= x2 && y >= y1 && y <= y2) {
+      newHoveredIndex = i;
+      break;
+    }
+  }
+
+  // Update hover state and redraw if changed
+  if (newHoveredIndex !== hoveredRoiIndex) {
+    hoveredRoiIndex = newHoveredIndex;
+    renderOverlays();
+  }
 }
 
 function handleMouseUp(e) {
@@ -627,7 +702,57 @@ function handleTouchStart(e) {
   const x = touch.clientX - rect.left;
   const y = touch.clientY - rect.top;
 
+  // Check if clicking on a delete button (only if hovering over one)
+  if (hoveredRoiIndex >= 0 && hoveredRoiIndex < userDrawnRois.length) {
+    const roi = userDrawnRois[hoveredRoiIndex];
+    if (roi._deleteButton) {
+      const deleteBtn = roi._deleteButton;
+      if (x >= deleteBtn.x && x <= deleteBtn.x + deleteBtn.width &&
+          y >= deleteBtn.y && y <= deleteBtn.y + deleteBtn.height) {
+        // Delete this ROI
+        userDrawnRois.splice(hoveredRoiIndex, 1);
+        hoveredRoiIndex = -1;
+        setStatus(`Deleted ROI. Total ROIs: ${userDrawnRois.length}`);
+        renderOverlays();
+        return;
+      }
+    }
+  }
+
   startDrawing(x, y);
+}
+
+function handleTouchMoveHover(e) {
+  e.preventDefault();
+  if (roiMode !== 'ground_truth') return;
+
+  const rect = overlayCanvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  const x = touch.clientX - rect.left;
+  const y = touch.clientY - rect.top;
+
+  // Check if hovering over any ROI rectangle (not just the delete button)
+  let newHoveredIndex = -1;
+  for (let i = 0; i < userDrawnRois.length; i++) {
+    const roi = userDrawnRois[i];
+    // Convert ROI coordinates to screen coordinates
+    const x1 = roi.xmin * transform.scale + transform.tx;
+    const y1 = roi.ymin * transform.scale + transform.ty;
+    const x2 = roi.xmax * transform.scale + transform.tx;
+    const y2 = roi.ymax * transform.scale + transform.ty;
+    
+    // Check if touch is within the ROI rectangle
+    if (x >= x1 && x <= x2 && y >= y1 && y <= y2) {
+      newHoveredIndex = i;
+      break;
+    }
+  }
+
+  // Update hover state and redraw if changed
+  if (newHoveredIndex !== hoveredRoiIndex) {
+    hoveredRoiIndex = newHoveredIndex;
+    renderOverlays();
+  }
 }
 
 function handleTouchMove(e) {
@@ -826,6 +951,40 @@ function drawUserRois() {
       // Draw white text
       overlayCtx.fillStyle = '#FFFFFF';
       overlayCtx.fillText(labelText, x1 + 4, y1 - 5);
+    }
+
+    // Store delete button coordinates for click detection (always store for hover detection)
+    const deleteButtonSize = 16;
+    const deleteX = x2 - deleteButtonSize - 2;
+    const deleteY = y1 + 2;
+    
+    roi._deleteButton = {
+      x: deleteX,
+      y: deleteY,
+      width: deleteButtonSize,
+      height: deleteButtonSize
+    };
+    
+    // Draw delete button only if this ROI is being hovered
+    if (hoveredRoiIndex === index) {
+      // Draw delete button background
+      overlayCtx.fillStyle = 'rgba(255, 0, 0, 0.9)';
+      overlayCtx.fillRect(deleteX, deleteY, deleteButtonSize, deleteButtonSize);
+      
+      // Draw delete button border
+      overlayCtx.strokeStyle = '#FFFFFF';
+      overlayCtx.lineWidth = 1;
+      overlayCtx.strokeRect(deleteX, deleteY, deleteButtonSize, deleteButtonSize);
+      
+      // Draw X symbol
+      overlayCtx.strokeStyle = '#FFFFFF';
+      overlayCtx.lineWidth = 1.5;
+      overlayCtx.beginPath();
+      overlayCtx.moveTo(deleteX + 3, deleteY + 3);
+      overlayCtx.lineTo(deleteX + deleteButtonSize - 3, deleteY + deleteButtonSize - 3);
+      overlayCtx.moveTo(deleteX + deleteButtonSize - 3, deleteY + 3);
+      overlayCtx.lineTo(deleteX + 3, deleteY + deleteButtonSize - 3);
+      overlayCtx.stroke();
     }
   });
 
