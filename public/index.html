@@ -242,7 +242,7 @@
       align-items: center;
       justify-content: space-between;
       gap: var(--spacing-sm);
-      padding: var(--spacing-sm);
+      padding: var(--spacing-md);
       border: 1px solid var(--border-color);
       border-radius: var(--border-radius);
       margin-bottom: var(--spacing-sm);
@@ -251,6 +251,7 @@
       word-wrap: break-word;
       overflow-wrap: break-word;
       min-width: 0; /* Allow flex item to shrink */
+      min-height: 48px;
     }
 
     .layer label {
@@ -320,11 +321,11 @@
     }
 
     .toggle-switch input:checked + .toggle-slider {
-      background-color: #3b82f6;
+      background-color: #3b82f6 !important;
     }
 
     .toggle-switch input:checked + .toggle-slider:before {
-      transform: translateX(20px);
+      transform: translateX(20px) !important;
     }
 
     .toggle-switch input:disabled + .toggle-slider {
@@ -332,24 +333,6 @@
       cursor: not-allowed;
     }
 
-    /* Mobile responsive toggle switches */
-    @media (max-width: 1024px) {
-      .toggle-switch {
-        width: 48px;
-        height: 26px;
-      }
-
-      .toggle-slider:before {
-        height: 20px;
-        width: 20px;
-        left: 3px;
-        bottom: 3px;
-      }
-
-      .toggle-switch input:checked + .toggle-slider:before {
-        transform: translateX(22px);
-      }
-    }
 
     .spinner {
       display: inline-block;
@@ -484,6 +467,10 @@
         display: none !important;
       }
 
+      .sidebar-btn {
+        display: none !important;
+      }
+
       .header-buttons {
         display: flex !important;
         position: static !important;
@@ -605,11 +592,6 @@
         color: transparent;
       }
 
-      .sidebar-btn::before {
-        content: "📁 Cases";
-        color: var(--text-primary);
-        font-size: 0.875rem;
-      }
 
     .sidebar-btn:hover {
       background: #1d4ed8 !important;
@@ -676,20 +658,22 @@
       transform: translateY(1px);
     }
 
+    .sidebar-btn {
+      background: #1e40af !important;
+      border-color: #1e40af !important;
+      color: white !important;
+    }
+
+    .sidebar-btn:hover {
+      background: #1d4ed8 !important;
+      border-color: #1d4ed8 !important;
+    }
+
     .sidebar-btn.open {
       background: #1d4ed8 !important;
       border-color: #1d4ed8 !important;
     }
 
-    .sidebar-btn::after {
-      content: ' ▼';
-      font-size: 0.7em;
-      margin-left: var(--spacing-xs);
-    }
-
-    .sidebar-btn.open::after {
-      content: ' ▲';
-    }
 
       /* Mobile header layout fixes */
       .header-content {
@@ -1025,8 +1009,9 @@
         <button id="btnToggleRoiMode" style="background: #374151; color: #fff;">Ground Truth</button>
         <button id="btnPrevRoi">◀</button>
         <button id="btnNextRoi">▶</button>
-        <button id="btnClearRois">🗑️ Clear ROIs</button>
-        <button id="btnDownload">💾 Download</button>
+        <button id="btnClearRois">Clear ROIs</button>
+        <button id="btnDownload">Download</button>
+        <button id="btnSidebar" class="sidebar-btn">Load Image</button>
       </div>
     </div>
     <div class="header-status">
@@ -1044,7 +1029,7 @@
       </div>
       <div class="row">
         <input id="imageFile" type="file" accept="image/*" style="display: none;"/>
-        <button id="btnLoadImage" style="width: 100%;">📁 Load Image from Computer</button>
+        <button id="btnLoadImage" style="width: 100%;">Load Image from Computer</button>
       </div>
       <div class="quick-load-section">
         <div class="muted">Quick Load Cases:</div>
@@ -1160,6 +1145,7 @@
       const mobileMenuBtn = document.getElementById('mobileMenuBtn');
       const mobileCloseBtn = document.getElementById('mobileCloseBtn');
       const mobileOverlay = document.getElementById('mobileOverlay');
+      const btnSidebar = document.getElementById('btnSidebar');
 
       if (mobileMenuBtn) {
         mobileMenuBtn.addEventListener('click', function(e) {
@@ -1172,6 +1158,23 @@
         mobileCloseBtn.addEventListener('click', function(e) {
           e.preventDefault();
           closeAllPanels();
+        });
+      }
+
+      if (btnSidebar) {
+        btnSidebar.addEventListener('click', function(e) {
+          e.preventDefault();
+          const headerButtons = document.getElementById('headerButtons');
+          const isMobile = window.innerWidth <= 1024;
+
+          if (isMobile) {
+            // On mobile, hide the buttons menu and show the sidebar
+            if (headerButtons) headerButtons.classList.remove('mobile-visible');
+            toggleSidebar();
+          } else {
+            // On desktop, this shouldn't be visible, but just in case
+            toggleSidebar();
+          }
         });
       }
 
