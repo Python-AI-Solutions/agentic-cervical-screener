@@ -26,6 +26,7 @@ let visibleLayers = new Set();       // layer_ids currently shown
 let lastBoxes = [];                  // boxes from last classify
 let roiMode = 'ground_truth';        // 'ground_truth' or 'ai_detections'
 let showAIDetections = true;         // Whether to show AI classification boxes
+let caseCache = new Map();           // Cache for case data to avoid re-fetching
 
 // Drawing mode variables
 let isDrawing = false;
@@ -153,40 +154,74 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
   nv = new NvCtor({ isResizeCanvas:false }); await nv.attachTo('glCanvas');
 
   let doc=null;
-  if (url){ const r=await fetch(url, { cache:'no-store' }); if(!r.ok) throw new Error('case json fetch failed'); doc=await r.json(); }
-  else { doc=await fetchCase(); }
+  if (url){ 
+    // Check cache first
+    if (caseCache.has(url)) {
+      doc = caseCache.get(url);
+      console.log('Using cached case data for:', url);
+    } else {
+      const r=await fetch(url, { cache:'no-store' }); 
+      if(!r.ok) throw new Error('case json fetch failed'); 
+      doc=await r.json();
+      caseCache.set(url, doc); // Cache the result
+      console.log('Cached case data for:', url);
+    }
+  }
+  else { 
+    doc=await fetchCase(); 
+  }
   lastLoadedCase=doc;
   const slide=doc.slides?.[0]; if(!slide) throw new Error('no slides');
   currentSlideId=slide.slide_id||'SLIDE-001'; currentSlideUri=slide.uri;
 
   const imgUrl=resolveUri(slide.uri);
-  if (/\.(png|jpg|jpeg)$/i.test(imgUrl)) {
-    const img = new Image();
-    img.onload = () => {
-      displayImageOnCanvas(img);
-      fitOverlayToImage(img.width, img.height);
-      renderOverlays();
-      setStatus('ready');
-      showSpinner(false);
-    };
-    img.onerror = () => { console.error('Failed to load image:', imgUrl); setStatus('error loading image'); showSpinner(false); };
-    img.src = imgUrl;
-  } else {
-    try {
-      await nv.loadImages([{ url: imgUrl, name:'slide', colormap:'gray', opacity:1 }]);
-      const img = new Image(); img.onload=()=>{ fitOverlayToImage(img.width, img.height); renderOverlays(); }; img.src=imgUrl;
-    } catch (error) {
-      console.warn('unsupported image format for demo:', imgUrl, error);
-      fitOverlayToImage(1024,1024); renderOverlays();
+  
+  // Load image asynchronously
+  const loadImage = async () => {
+    if (/\.(png|jpg|jpeg)$/i.test(imgUrl)) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          displayImageOnCanvas(img);
+          fitOverlayToImage(img.width, img.height);
+          renderOverlays();
+          setStatus('ready');
+          showSpinner(false);
+          resolve(img);
+        };
+        img.onerror = () => { 
+          console.error('Failed to load image:', imgUrl); 
+          setStatus('error loading image'); 
+          showSpinner(false); 
+          reject(new Error('Image load failed'));
+        };
+        img.src = imgUrl;
+      });
+    } else {
+      try {
+        await nv.loadImages([{ url: imgUrl, name:'slide', colormap:'gray', opacity:1 }]);
+        const img = new Image(); 
+        img.onload=()=>{ fitOverlayToImage(img.width, img.height); renderOverlays(); }; 
+        img.src=imgUrl;
+        return img;
+      } catch (error) {
+        console.warn('unsupported image format for demo:', imgUrl, error);
+        fitOverlayToImage(1024,1024); renderOverlays();
+        setStatus('ready'); showSpinner(false);
+        return null;
+      }
     }
-  }
+  };
+
+  // Start image loading immediately (non-blocking)
+  loadImage().catch(console.error);
 
   // Add user-drawn ROIs toggle
   addUserDrawnRoisToggle();
 
-  // Build layer controls + prefetch & cache
-  (slide.layers||[]).forEach(async (L)=>{
-    // UI
+  // Build layer controls + prefetch & cache asynchronously
+  const layerPromises = (slide.layers||[]).map(async (L) => {
+    // UI - create immediately for better UX
     const el=document.createElement('div'); el.className='layer';
     el.innerHTML = `
       <span>${L.layer_id} <span class="muted">(${L.geometry})</span></span>
@@ -204,7 +239,7 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
       renderOverlays();
     });
 
-    // Cache data (rects/points/polygons) - but don't display them
+    // Cache data asynchronously (non-blocking)
     try {
       const fc = await addLayerToNiivue(nv, L, resolveUri, overlayCtx, transform);
       if (fc) {
@@ -216,6 +251,11 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
         // Don't render overlays here - we only want user-drawn ROIs
       }
     } catch (e) { console.warn('layer load failed', L.layer_id, e); }
+  });
+
+  // Process layers in background (non-blocking)
+  Promise.allSettled(layerPromises).then(() => {
+    console.log('All layers processed');
   });
 
   // Note: setStatus('ready') and showSpinner(false) are now called in img.onload for PNG images
