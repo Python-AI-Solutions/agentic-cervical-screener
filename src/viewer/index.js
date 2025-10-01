@@ -394,7 +394,7 @@ btnClearRois.addEventListener('click', () => {
     setStatus('No ROIs to clear');
     return;
   }
-  
+
   const count = userDrawnRois.length;
   userDrawnRois = [];
   roiIdx = -1;
@@ -591,7 +591,7 @@ function setupDrawingMode() {
   overlayCanvas.addEventListener('mousemove', handleMouseMove);
   overlayCanvas.addEventListener('mouseup', handleMouseUp);
   overlayCanvas.addEventListener('mouseleave', handleMouseUp);
-  
+
   // Mouse events for hover detection
   overlayCanvas.addEventListener('mousemove', handleMouseMoveHover);
   overlayCanvas.addEventListener('mouseleave', () => {
@@ -605,7 +605,7 @@ function setupDrawingMode() {
   overlayCanvas.addEventListener('touchstart', handleTouchStart, { passive: false });
   overlayCanvas.addEventListener('touchmove', handleTouchMove, { passive: false });
   overlayCanvas.addEventListener('touchend', handleTouchEnd, { passive: false });
-  
+
   // Touch events for hover detection on mobile
   overlayCanvas.addEventListener('touchmove', handleTouchMoveHover, { passive: false });
 }
@@ -668,7 +668,7 @@ function handleMouseMoveHover(e) {
     const y1 = roi.ymin * transform.scale + transform.ty;
     const x2 = roi.xmax * transform.scale + transform.tx;
     const y2 = roi.ymax * transform.scale + transform.ty;
-    
+
     // Check if mouse is within the ROI rectangle
     if (x >= x1 && x <= x2 && y >= y1 && y <= y2) {
       newHoveredIndex = i;
@@ -740,7 +740,7 @@ function handleTouchMoveHover(e) {
     const y1 = roi.ymin * transform.scale + transform.ty;
     const x2 = roi.xmax * transform.scale + transform.tx;
     const y2 = roi.ymax * transform.scale + transform.ty;
-    
+
     // Check if touch is within the ROI rectangle
     if (x >= x1 && x <= x2 && y >= y1 && y <= y2) {
       newHoveredIndex = i;
@@ -957,25 +957,25 @@ function drawUserRois() {
     const deleteButtonSize = 16;
     const deleteX = x2 - deleteButtonSize - 2;
     const deleteY = y1 + 2;
-    
+
     roi._deleteButton = {
       x: deleteX,
       y: deleteY,
       width: deleteButtonSize,
       height: deleteButtonSize
     };
-    
+
     // Draw delete button only if this ROI is being hovered
     if (hoveredRoiIndex === index) {
       // Draw delete button background
       overlayCtx.fillStyle = 'rgba(255, 0, 0, 0.9)';
       overlayCtx.fillRect(deleteX, deleteY, deleteButtonSize, deleteButtonSize);
-      
+
       // Draw delete button border
       overlayCtx.strokeStyle = '#FFFFFF';
       overlayCtx.lineWidth = 1;
       overlayCtx.strokeRect(deleteX, deleteY, deleteButtonSize, deleteButtonSize);
-      
+
       // Draw X symbol
       overlayCtx.strokeStyle = '#FFFFFF';
       overlayCtx.lineWidth = 1.5;
