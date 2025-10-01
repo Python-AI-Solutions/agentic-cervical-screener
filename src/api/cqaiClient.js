@@ -1,6 +1,6 @@
 const ENV = window.__ENV__ || {};
 const API_BASE = ENV.API_BASE || '';
-const useMock = !API_BASE;
+const useMock = API_BASE === null || API_BASE === undefined;
 
 export async function fetchCase(caseId = 'DEMO-001') {
   if (useMock) {

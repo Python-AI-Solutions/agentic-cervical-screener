@@ -1,5 +1,0 @@
-{"type":"FeatureCollection","features":[
-  {"type":"Feature","geometry":{"type":"Point","coordinates":[200,160]},"properties":{"class":"hsil_like","score":0.89}},
-  {"type":"Feature","geometry":{"type":"Point","coordinates":[380,280]},"properties":{"class":"lsil_like","score":0.74}},
-  {"type":"Feature","geometry":{"type":"Point","coordinates":[500,200]},"properties":{"class":"tz_evidence","score":0.68}}
-]}

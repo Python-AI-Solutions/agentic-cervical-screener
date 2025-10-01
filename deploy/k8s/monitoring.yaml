@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cervical-ai-metrics
+  namespace: default
+  labels:
+    app: cervical-ai-viewer
+    component: metrics
+spec:
+  selector:
+    app: cervical-ai-viewer
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: metrics
+---
+# ServiceMonitor and PodMonitor require Prometheus Operator CRDs
+# Uncomment these if you have Prometheus Operator installed:
+#
+# apiVersion: monitoring.coreos.com/v1
+# kind: ServiceMonitor
+# metadata:
+#   name: cervical-ai-monitor
+#   namespace: default
+#   labels:
+#     app: cervical-ai-viewer
+# spec:
+#   selector:
+#     matchLabels:
+#       app: cervical-ai-viewer
+#   endpoints:
+#     - port: metrics
+#       path: /metrics
+#       interval: 30s
+# ---
+# apiVersion: monitoring.coreos.com/v1
+# kind: PodMonitor
+# metadata:
+#   name: cervical-ai-pods
+#   namespace: default
+#   labels:
+#     app: cervical-ai-viewer
+# spec:
+#   selector:
+#     matchLabels:
+#       app: cervical-ai-viewer
+#   podMetricsEndpoints:
+#     - port: metrics
+#       path: /metrics
+#       interval: 30s

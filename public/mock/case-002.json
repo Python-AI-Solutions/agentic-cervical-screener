@@ -11,19 +11,6 @@
     "title": "Case 2 - Cervical Sample",
     "uri": "images/case2.png",
     "acquisition_date": "2025-08-26",
-    "layers": [
-      {
-        "layer_id": "detections-rects",
-        "kind": "detections",
-        "geometry": "rects",
-        "uri": "mock/detections-case2.json"
-      },
-      {
-        "layer_id": "lesion-points",
-        "kind": "lesion_token",
-        "geometry": "points",
-        "uri": "mock/detections-points-case2.json"
-      }
-    ]
+    "layers": []
   }]
 }

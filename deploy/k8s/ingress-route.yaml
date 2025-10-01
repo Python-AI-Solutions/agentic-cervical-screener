@@ -1,31 +1,107 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: cervical
+  name: cervical-ai-viewer
   namespace: default
+  labels:
+    app: cervical-ai-viewer
 spec:
   entryPoints:
     - web
+    - websecure
   routes:
-    # Backend API routes via /api (strip the prefix before it hits the service)
-    - match: (Host(`34-60-50-172.nip.io`) || Host(`34.60.50.172`)) && PathPrefix(`/api`)
-      kind: Rule
-      middlewares:
-        - name: strip-api
-      services:
-        - name: cervical-backend
-          port: 8000
-
-    # Backend static files - these must come BEFORE the frontend catch-all
-    - match: (Host(`34-60-50-172.nip.io`) || Host(`34.60.50.172`)) && (PathPrefix(`/images`) || PathPrefix(`/mock`) || PathPrefix(`/cases`) || PathPrefix(`/healthz`))
+    # Health check endpoint
+    - match: (Host(`cervical-ai.local`) || Host(`136-115-246-62.nip.io`) || Host(`136.115.246.62`)) && Path(`/healthz`)
       kind: Rule
       services:
-        - name: cervical-backend
-          port: 8000
-
-    # Frontend for everything else - this must be LAST (catch-all)
-    - match: (Host(`34-60-50-172.nip.io`) || Host(`34.60.50.172`))
-      kind: Rule
-      services:
-        - name: cervical-frontend
+        - name: cervical-ai-viewer
           port: 80
+      middlewares:
+        - name: health-check-headers
+
+    # API endpoints
+    - match: (Host(`cervical-ai.local`) || Host(`136-115-246-62.nip.io`) || Host(`136.115.246.62`)) && PathPrefix(`/v1/`)
+      kind: Rule
+      services:
+        - name: cervical-ai-viewer
+          port: 80
+      middlewares:
+        - name: api-headers
+
+    # Static assets (images, mock data, etc.)
+    - match: (Host(`cervical-ai.local`) || Host(`136-115-246-62.nip.io`) || Host(`136.115.246.62`)) && (PathPrefix(`/images`) || PathPrefix(`/mock`) || PathPrefix(`/niivue`) || PathPrefix(`/src`))
+      kind: Rule
+      services:
+        - name: cervical-ai-viewer
+          port: 80
+      middlewares:
+        - name: static-assets-headers
+
+    # Frontend application (catch-all)
+    - match: (Host(`cervical-ai.local`) || Host(`136-115-246-62.nip.io`) || Host(`136.115.246.62`))
+      kind: Rule
+      services:
+        - name: cervical-ai-viewer
+          port: 80
+      middlewares:
+        - name: frontend-headers
+
+  tls:
+    secretName: cervical-ai-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: health-check-headers
+  namespace: default
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: "https"
+    customResponseHeaders:
+      Cache-Control: "no-cache, no-store, must-revalidate"
+      Pragma: "no-cache"
+      Expires: "0"
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: api-headers
+  namespace: default
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: "https"
+    customResponseHeaders:
+      Access-Control-Allow-Origin: "*"
+      Access-Control-Allow-Methods: "GET, POST, PUT, DELETE, OPTIONS"
+      Access-Control-Allow-Headers: "Content-Type, Authorization"
+      Cache-Control: "no-cache, no-store, must-revalidate"
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: static-assets-headers
+  namespace: default
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: "https"
+    customResponseHeaders:
+      Cache-Control: "public, max-age=31536000"
+      Access-Control-Allow-Origin: "*"
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: frontend-headers
+  namespace: default
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: "https"
+    customResponseHeaders:
+      Cache-Control: "no-cache, no-store, must-revalidate"
+      X-Frame-Options: "DENY"
+      X-Content-Type-Options: "nosniff"
+      Referrer-Policy: "strict-origin-when-cross-origin"
