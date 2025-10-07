@@ -2,9 +2,9 @@ name: Build and Push to GCP Artifact Registry
 
 on:
   push:
-    branches: [ main, master, automatic-build-push ]
+    branches: [ main, automatic-build-push ]
     tags: [ 'v*' ]
-  workflow_dispatch: # Allow manual trigger
+  workflow_dispatch:
 
 env:
   GCP_PROJECT_ID: midyear-pattern-470017-b8
@@ -32,42 +32,39 @@ jobs:
       run: |
         gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: us-central1-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
     - name: Build and push Docker image
       run: |
-        # Generate image tag
-        if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-          TAG=${GITHUB_REF#refs/tags/}
-        elif [[ "${{ github.ref }}" == refs/heads/main ]] || [[ "${{ github.ref }}" == refs/heads/master ]]; then
-          TAG=latest
-        else
-          TAG=${GITHUB_SHA::8}
-        fi
+        echo "Building and pushing: ${{ steps.meta.outputs.tags }}"
 
-        IMAGE_URI="us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY/$IMAGE_NAME:$TAG"
-
-        echo "Building and pushing: $IMAGE_URI"
-
-        # Build and push
+        # Build and push with caching
         docker buildx build \
           --platform linux/amd64,linux/arm64 \
           --push \
-          --tag $IMAGE_URI \
+          --tag ${{ steps.meta.outputs.tags }} \
+          --cache-from type=registry,ref=us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY/$IMAGE_NAME:buildcache \
+          --cache-to type=registry,ref=us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY/$IMAGE_NAME:buildcache,mode=max \
           .
 
-        echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_OUTPUT
+        echo "IMAGE_URI=${{ steps.meta.outputs.tags }}" >> $GITHUB_OUTPUT
 
-    - name: Update deployment with new image
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    - name: Create deployment tag
+      if: github.ref == 'refs/heads/main'
       run: |
-        # Update the deployment file with the new image
-        NEW_IMAGE="us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY/$IMAGE_NAME:latest"
-
-        # Update deploy.yaml
-        sed -i "s|image: us-central1-docker.pkg.dev/midyear-pattern-470017-b8/docker-builds/agentic-cervical-screener:.*|image: $NEW_IMAGE|g" deploy/k8s/deploy.yaml
-
-        # Commit the change
+        # Create a tag to mark the deployment
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add deploy/k8s/deploy.yaml
-        git commit -m "Update image to latest" || echo "No changes to commit"
-        git push
+        git tag -a "deploy-$(date +%Y%m%d-%H%M%S)" -m "Deploy image ${{ steps.meta.outputs.tags }}"
+        git push origin "deploy-$(date +%Y%m%d-%H%M%S)"
