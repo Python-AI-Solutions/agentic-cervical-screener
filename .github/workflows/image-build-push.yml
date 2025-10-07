@@ -2,7 +2,7 @@ name: Build and Push to GCP Artifact Registry
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, automatic-build-push ]
     tags: [ 'v*' ]
   workflow_dispatch: # Allow manual trigger
 
