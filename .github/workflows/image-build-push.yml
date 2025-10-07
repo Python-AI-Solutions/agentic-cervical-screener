@@ -32,33 +32,31 @@ jobs:
       run: |
         gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: us-central1-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY }}/${{ env.IMAGE_NAME }}
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
-
     - name: Build and push Docker image
       run: |
-        echo "Building and pushing: ${{ steps.meta.outputs.tags }}"
+        # Generate image tag
+        if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          TAG=${GITHUB_REF#refs/tags/}
+        elif [[ "${{ github.ref }}" == refs/heads/main ]]; then
+          TAG=latest
+        else
+          TAG=${GITHUB_SHA::8}
+        fi
+
+        IMAGE_URI="us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY/$IMAGE_NAME:$TAG"
+
+        echo "Building and pushing: $IMAGE_URI"
 
         # Build and push with caching
         docker buildx build \
           --platform linux/amd64,linux/arm64 \
           --push \
-          --tag ${{ steps.meta.outputs.tags }} \
+          --tag $IMAGE_URI \
           --cache-from type=registry,ref=us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY/$IMAGE_NAME:buildcache \
           --cache-to type=registry,ref=us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY/$IMAGE_NAME:buildcache,mode=max \
           .
 
-        echo "IMAGE_URI=${{ steps.meta.outputs.tags }}" >> $GITHUB_OUTPUT
+        echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_OUTPUT
 
     - name: Create deployment tag
       if: github.ref == 'refs/heads/main'
