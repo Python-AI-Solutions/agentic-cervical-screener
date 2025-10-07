@@ -11,7 +11,7 @@ spec:
     - websecure
   routes:
     # Health check endpoint
-    - match: (Host(`cervical-ai.local`) || Host(`104-198-164-116.nip.io`) || Host(`104.198.164.116`)) && Path(`/healthz`)
+    - match: Host(`cervical-screening.pythonaisolutions.com`) && Path(`/healthz`)
       kind: Rule
       services:
         - name: cervical-ai-viewer
@@ -20,7 +20,7 @@ spec:
         - name: health-check-headers
 
     # API endpoints
-    - match: (Host(`cervical-ai.local`) || Host(`104-198-164-116.nip.io`) || Host(`104.198.164.116`)) && PathPrefix(`/v1/`)
+    - match: Host(`cervical-screening.pythonaisolutions.com`) && PathPrefix(`/v1/`)
       kind: Rule
       services:
         - name: cervical-ai-viewer
@@ -29,7 +29,7 @@ spec:
         - name: api-headers
 
     # Static assets (images, mock data, etc.)
-    - match: (Host(`cervical-ai.local`) || Host(`104-198-164-116.nip.io`) || Host(`104.198.164.116`)) && (PathPrefix(`/images`) || PathPrefix(`/mock`) || PathPrefix(`/niivue`) || PathPrefix(`/src`))
+    - match: Host(`cervical-screening.pythonaisolutions.com`) && (PathPrefix(`/images`) || PathPrefix(`/mock`) || PathPrefix(`/niivue`) || PathPrefix(`/src`))
       kind: Rule
       services:
         - name: cervical-ai-viewer
@@ -38,7 +38,7 @@ spec:
         - name: static-assets-headers
 
     # Frontend application (catch-all)
-    - match: (Host(`cervical-ai.local`) || Host(`104-198-164-116.nip.io`) || Host(`104.198.164.116`))
+    - match: Host(`cervical-screening.pythonaisolutions.com`)
       kind: Rule
       services:
         - name: cervical-ai-viewer
@@ -47,7 +47,7 @@ spec:
         - name: frontend-headers
 
   tls:
-    secretName: cervical-ai-tls
+    certResolver: letsencrypt
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
