@@ -1,5 +1,7 @@
 name: Build and Push to GCP Artifact Registry
 
+permissions:
+  contents: write
 on:
   push:
     branches: [ main, automatic-build-push ]
