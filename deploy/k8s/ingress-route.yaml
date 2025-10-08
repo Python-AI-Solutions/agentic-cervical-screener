@@ -10,41 +10,19 @@ spec:
     - web
     - websecure
   routes:
-    # Health check endpoint
-    - match: Host(`cervical-screening.pythonaisolutions.com`) && Path(`/healthz`)
-      kind: Rule
-      services:
-        - name: cervical-ai-viewer
-          port: 80
-      middlewares:
-        - name: health-check-headers
-
-    # API endpoints
-    - match: Host(`cervical-screening.pythonaisolutions.com`) && PathPrefix(`/v1/`)
-      kind: Rule
-      services:
-        - name: cervical-ai-viewer
-          port: 80
-      middlewares:
-        - name: api-headers
-
-    # Static assets (images, mock data, etc.)
-    - match: Host(`cervical-screening.pythonaisolutions.com`) && (PathPrefix(`/images`) || PathPrefix(`/mock`) || PathPrefix(`/niivue`) || PathPrefix(`/src`))
-      kind: Rule
-      services:
-        - name: cervical-ai-viewer
-          port: 80
-      middlewares:
-        - name: static-assets-headers
-
-    # Frontend application (catch-all)
+    # Frontend application (catch-all for domain)
     - match: Host(`cervical-screening.pythonaisolutions.com`)
       kind: Rule
       services:
         - name: cervical-ai-viewer
           port: 80
-      middlewares:
-        - name: frontend-headers
+
+    # Catch-all route for IP access
+    - match: PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: cervical-ai-viewer
+          port: 80
 
   tls:
     certResolver: letsencrypt
