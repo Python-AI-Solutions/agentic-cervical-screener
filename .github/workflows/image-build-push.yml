@@ -1,8 +1,10 @@
 name: Build and Push to GCP Artifact Registry
 
+permissions:
+  contents: write
 on:
   push:
-    branches: [ main, automatic-build-push ]
+    branches: [ main, update-image ]
     tags: [ 'v*' ]
   workflow_dispatch:
 
