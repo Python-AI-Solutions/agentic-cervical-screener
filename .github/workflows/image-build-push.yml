@@ -4,7 +4,7 @@ permissions:
   contents: write
 on:
   push:
-    branches: [ main, update-image ]
+    branches: [ main, semver-tag-ranges ]
     tags: [ 'v*' ]
   workflow_dispatch:
 
@@ -63,8 +63,9 @@ jobs:
     - name: Create deployment tag
       if: github.ref == 'refs/heads/main'
       run: |
-        # Create a tag to mark the deployment
+        # Create a semver-compatible deployment tag
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git tag -a "deploy-$(date +%Y%m%d-%H%M%S)" -m "Deploy image ${{ steps.meta.outputs.tags }}"
-        git push origin "deploy-$(date +%Y%m%d-%H%M%S)"
+        DEPLOY_TAG="v$(date +%Y.%m.%d).$(date +%H%M%S)"
+        git tag -a "$DEPLOY_TAG" -m "Deploy image ${{ steps.build-and-push.outputs.IMAGE_URI }}"
+        git push origin "$DEPLOY_TAG"
