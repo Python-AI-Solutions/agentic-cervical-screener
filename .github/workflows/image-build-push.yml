@@ -35,6 +35,7 @@ jobs:
         gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 
     - name: Build and push Docker image
+      id: build-and-push
       run: |
         # Generate image tag
         if [[ "${{ github.ref }}" == refs/tags/* ]]; then
@@ -63,9 +64,8 @@ jobs:
     - name: Create deployment tag
       if: github.ref == 'refs/heads/main'
       run: |
-        # Create a semver-compatible deployment tag
+        # Create a tag to mark the deployment
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        DEPLOY_TAG="v$(date +%Y.%m.%d).$(date +%H%M%S)"
-        git tag -a "$DEPLOY_TAG" -m "Deploy image ${{ steps.build-and-push.outputs.IMAGE_URI }}"
-        git push origin "$DEPLOY_TAG"
+        git tag -fa latest -m "Deploy image ${{ steps.build-and-push.outputs.IMAGE_URI }}"
+        git push origin -f refs/tags/latest
