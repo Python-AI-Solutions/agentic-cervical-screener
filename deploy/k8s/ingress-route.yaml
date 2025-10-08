@@ -10,44 +10,22 @@ spec:
     - web
     - websecure
   routes:
-    # Health check endpoint
-    - match: (Host(`cervical-ai.local`) || Host(`136-115-246-62.nip.io`) || Host(`136.115.246.62`)) && Path(`/healthz`)
+    # Frontend application (catch-all for domain)
+    - match: Host(`cervical-screening.pythonaisolutions.com`)
       kind: Rule
       services:
         - name: cervical-ai-viewer
           port: 80
-      middlewares:
-        - name: health-check-headers
 
-    # API endpoints
-    - match: (Host(`cervical-ai.local`) || Host(`136-115-246-62.nip.io`) || Host(`136.115.246.62`)) && PathPrefix(`/v1/`)
+    # Catch-all route for IP access
+    - match: PathPrefix(`/`)
       kind: Rule
       services:
         - name: cervical-ai-viewer
           port: 80
-      middlewares:
-        - name: api-headers
-
-    # Static assets (images, mock data, etc.)
-    - match: (Host(`cervical-ai.local`) || Host(`136-115-246-62.nip.io`) || Host(`136.115.246.62`)) && (PathPrefix(`/images`) || PathPrefix(`/mock`) || PathPrefix(`/niivue`) || PathPrefix(`/src`))
-      kind: Rule
-      services:
-        - name: cervical-ai-viewer
-          port: 80
-      middlewares:
-        - name: static-assets-headers
-
-    # Frontend application (catch-all)
-    - match: (Host(`cervical-ai.local`) || Host(`136-115-246-62.nip.io`) || Host(`136.115.246.62`))
-      kind: Rule
-      services:
-        - name: cervical-ai-viewer
-          port: 80
-      middlewares:
-        - name: frontend-headers
 
   tls:
-    secretName: cervical-ai-tls
+    certResolver: letsencrypt
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware

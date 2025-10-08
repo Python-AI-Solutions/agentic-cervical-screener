@@ -77,7 +77,7 @@ spec:
     - port: 80
       targetPort: 8000
       name: http
-  type: LoadBalancer
+  type: ClusterIP
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
