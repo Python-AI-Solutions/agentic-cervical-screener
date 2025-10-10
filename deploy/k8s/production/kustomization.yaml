@@ -1,0 +1,68 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: production
+
+resources:
+  - ../base
+  - namespace.yaml
+
+# Common labels for production
+commonLabels:
+  environment: production
+
+# Patches for production-specific configurations
+patches:
+  # Update ConfigMap for production environment
+  - patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: cervical-ai-config
+      data:
+        ENVIRONMENT: "production"
+        LOG_LEVEL: "INFO"
+    target:
+      kind: ConfigMap
+      name: cervical-ai-config
+
+  # Update Deployment for production (more replicas for HA)
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: cervical-ai-viewer
+      spec:
+        replicas: 2
+        template:
+          spec:
+            containers:
+              - name: cervical-app
+                resources:
+                  requests:
+                    memory: "1Gi"
+                    cpu: "500m"
+                  limits:
+                    memory: "2Gi"
+                    cpu: "1000m"
+    target:
+      kind: Deployment
+      name: cervical-ai-viewer
+
+  # Update PodDisruptionBudget for production HA
+  - patch: |-
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: cervical-ai-viewer-pdb
+      spec:
+        minAvailable: 1
+    target:
+      kind: PodDisruptionBudget
+      name: cervical-ai-viewer-pdb
+
+# Images can be updated here
+# images:
+#   - name: us-central1-docker.pkg.dev/midyear-pattern-470017-b8/docker-builds/agentic-cervical-screener
+#     newTag: v1.0.0
+
