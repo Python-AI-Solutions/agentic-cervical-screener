@@ -13,4 +13,3 @@ resources:
 commonLabels:
   app: cervical-ai-viewer
   managed-by: kustomize
-

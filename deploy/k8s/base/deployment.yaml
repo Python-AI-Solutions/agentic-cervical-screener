@@ -64,4 +64,3 @@ spec:
       volumes:
         - name: model-storage
           emptyDir: {}
-

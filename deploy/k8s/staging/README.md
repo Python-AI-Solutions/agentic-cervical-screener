@@ -59,4 +59,3 @@ If you need to rollback:
 ```bash
 kubectl rollout undo deployment/cervical-ai-viewer -n staging
 ```
-

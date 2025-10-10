@@ -65,4 +65,3 @@ patches:
 # images:
 #   - name: us-central1-docker.pkg.dev/midyear-pattern-470017-b8/docker-builds/agentic-cervical-screener
 #     newTag: v1.0.0
-

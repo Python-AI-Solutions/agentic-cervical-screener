@@ -73,4 +73,3 @@ kubectl get endpoints cervical-ai-viewer -n production
 # Check ingress
 kubectl get ingressroute cervical-ai-viewer -n production -o yaml
 ```
-
