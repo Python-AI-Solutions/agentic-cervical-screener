@@ -180,6 +180,8 @@ format = "ruff format ."
 lint = "ruff check src/ tests/"
 check-all = "pre-commit run --all-files"
 pre-commit-install = "pre-commit install"
+download-dataset = "python scripts/download_figshare_dataset.py"
+extract-dataset = "python scripts/extract_dataset.py"
 
 [tool.pixi.dependencies]
 # Core runtime dependencies
@@ -209,6 +211,7 @@ glib = "*"
 libjpeg-turbo = "*"
 libpng = "*"
 libtiff = "*"
+p7zip = "*"
 
 # Test dependencies
 pytest = ">=7.0.0"
