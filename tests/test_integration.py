@@ -4,64 +4,115 @@ These tests start the actual server and test real browser interactions.
 """
 
 import os
+import socket
 import subprocess
+import threading
 import time
 
 import pytest
 from playwright.sync_api import expect, sync_playwright
 
+# Global lock to ensure resource-intensive tests run sequentially
+_resource_intensive_lock = threading.Lock()
 
-@pytest.fixture(scope="session")
-def server_process():
-    """Start the FastAPI server for integration testing"""
-    # Change to the root directory
+
+class ServerProcess:
+    """Wrapper for subprocess.Popen with port information"""
+
+    def __init__(self, process, port):
+        self.process = process
+        self.port = port
+
+    def __getattr__(self, name):
+        # Delegate all other attributes to the underlying process
+        return getattr(self.process, name)
+
+
+def get_free_port():
+    """Get a free port dynamically"""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("", 0))
+        s.listen(1)
+        port = s.getsockname()[1]
+    return port
+
+
+def start_test_server(port=None):
+    """Start a test server with proper module resolution"""
+    if port is None:
+        port = get_free_port()
+
+    # Get the project root directory
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    # Start the server process
-    env = os.environ.copy()
-    env["PYTHONPATH"] = root_dir
-
+    # Start server using python -m to avoid PYTHONPATH issues
     process = subprocess.Popen(
-        [
-            "python",
-            "-m",
-            "uvicorn",
-            "src.main:app",
-            "--host",
-            "0.0.0.0",
-            "--port",
-            "8001",
-        ],
+        ["python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", str(port)],
         cwd=root_dir,
-        env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
 
-    # Wait for server to start
-    time.sleep(3)
-
-    # Verify server is running
+    # Wait for server to start and verify it's running
     import requests
 
-    for _attempt in range(10):
+    for _attempt in range(15):  # Increased attempts for reliability
         try:
-            response = requests.get("http://localhost:8001/healthz", timeout=2)
+            response = requests.get(f"http://localhost:{port}/healthz", timeout=2)
             if response.status_code == 200:
-                break
-        except requests.exceptions.RequestException:
-            time.sleep(1)
-    else:
-        pytest.fail("Server failed to start")
+                return ServerProcess(process, port)
+        except requests.exceptions.RequestException as err:
+            if process.poll() is not None:
+                # Process died
+                stdout, stderr = process.communicate()
+                raise RuntimeError(f"Server failed to start: {stderr.decode()}") from err
+            time.sleep(0.5)
 
-    yield process
+    # If we get here, server didn't start
+    process.terminate()
+    process.wait()
+    raise RuntimeError(f"Server on port {port} failed to start within timeout")
+
+
+@pytest.fixture(scope="session")
+def server_process():
+    """Start the FastAPI server for integration testing"""
+    server = start_test_server(port=8001)  # Use consistent port for session server
+
+    yield server
 
     # Cleanup
-    process.terminate()
+    server.terminate()
     try:
-        process.wait(timeout=5)
+        server.wait(timeout=5)
     except subprocess.TimeoutExpired:
-        process.kill()
+        server.kill()
+
+
+@pytest.fixture(scope="function")
+def fresh_server_process():
+    """
+    Start a fresh FastAPI server for resource-intensive tests.
+    Uses a lock to ensure only one resource-intensive test runs at a time.
+    """
+    # Acquire lock to ensure sequential execution of resource-intensive tests
+    with _resource_intensive_lock:
+        # Start server with dynamic port allocation
+        server = start_test_server()
+
+        try:
+            yield server
+        finally:
+            # Cleanup - ensure server is fully stopped before releasing lock
+            server.terminate()
+            try:
+                server.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                server.kill()
+                server.wait()  # Ensure it's really dead
+
+            # Small delay to ensure port is fully released
+            time.sleep(0.5)
 
 
 @pytest.fixture(scope="session")
@@ -87,7 +138,7 @@ class TestAPIIntegration:
 
     def test_health_endpoint_integration(self, server_process, page):
         """Test health endpoint through browser"""
-        page.goto("http://localhost:8001/healthz")
+        page.goto(f"http://localhost:{server_process.port}/healthz")
 
         # Should get JSON response
         content = page.content()
@@ -96,7 +147,7 @@ class TestAPIIntegration:
 
     def test_api_docs_accessible(self, server_process, page):
         """Test that API documentation is accessible"""
-        page.goto("http://localhost:8001/docs")
+        page.goto(f"http://localhost:{server_process.port}/docs")
 
         # Should load Swagger UI
         expect(page.locator("body")).to_contain_text("Cervical AI Classifier")
@@ -107,7 +158,7 @@ class TestAPIIntegration:
 
     def test_model_info_endpoint_integration(self, server_process, page):
         """Test model info endpoint returns valid JSON"""
-        page.goto("http://localhost:8001/model-info")
+        page.goto(f"http://localhost:{server_process.port}/model-info")
 
         content = page.content()
         # Should be valid JSON response
@@ -129,7 +180,7 @@ class TestClassifyIntegration:
                 "-s",
                 "-X",
                 "POST",
-                "http://localhost:8001/v1/classify",
+                f"http://localhost:{server_process.port}/v1/classify",
                 "-H",
                 "Content-Type: application/json",
                 "-d",
@@ -165,7 +216,7 @@ class TestClassifyIntegration:
                     "-s",
                     "-X",
                     "POST",
-                    "http://localhost:8001/v1/classify",
+                    f"http://localhost:{server_process.port}/v1/classify",
                     "-H",
                     "Content-Type: application/json",
                     "-d",
@@ -206,7 +257,7 @@ class TestFileUploadIntegration:
                     "-s",
                     "-X",
                     "POST",
-                    "http://localhost:8001/v1/classify-upload",
+                    f"http://localhost:{server_process.port}/v1/classify-upload",
                     "-F",
                     f"file=@{tmp_file.name}",
                 ],
@@ -244,7 +295,7 @@ class TestCaseDataIntegration:
 
         for case_id in case_ids:
             result = subprocess.run(
-                ["curl", "-s", f"http://localhost:8001/cases/{case_id}"],
+                ["curl", "-s", f"http://localhost:{server_process.port}/cases/{case_id}"],
                 capture_output=True,
                 text=True,
             )
@@ -259,7 +310,7 @@ class TestCaseDataIntegration:
 class TestSystemResilience:
     """Test system behavior under stress and edge conditions"""
 
-    def test_concurrent_requests_integration(self, server_process):
+    def test_concurrent_requests_integration(self, fresh_server_process):
         """Test multiple concurrent requests to real server"""
         import concurrent.futures
         import json
@@ -272,7 +323,7 @@ class TestSystemResilience:
                     "-s",
                     "-X",
                     "POST",
-                    "http://localhost:8001/v1/classify",
+                    f"http://localhost:{fresh_server_process.port}/v1/classify",
                     "-H",
                     "Content-Type: application/json",
                     "-d",
@@ -299,7 +350,7 @@ class TestSystemResilience:
             response_data = json.loads(stdout)
             assert "slide_id" in response_data
 
-    def test_malformed_request_handling(self, server_process):
+    def test_malformed_request_handling(self, fresh_server_process):
         """Test server handles malformed requests gracefully"""
         import subprocess
 
@@ -316,7 +367,7 @@ class TestSystemResilience:
                     "-s",
                     "-X",
                     "POST",
-                    "http://localhost:8001/v1/classify",
+                    f"http://localhost:{fresh_server_process.port}/v1/classify",
                     "-H",
                     "Content-Type: application/json",
                     "-d",
@@ -336,6 +387,7 @@ class TestSystemResilience:
 class TestPerformanceBaseline:
     """Establish performance baselines for the API"""
 
+    @pytest.mark.timeout(30)
     def test_response_time_baseline(self, server_process):
         """Measure baseline response times for key endpoints"""
         import statistics
@@ -343,9 +395,13 @@ class TestPerformanceBaseline:
         import time
 
         endpoints = [
-            ("http://localhost:8001/healthz", "GET", None),
-            ("http://localhost:8001/model-info", "GET", None),
-            ("http://localhost:8001/v1/classify", "POST", '{"slide_id": "SLIDE-001"}'),
+            (f"http://localhost:{server_process.port}/healthz", "GET", None),
+            (f"http://localhost:{server_process.port}/model-info", "GET", None),
+            (
+                f"http://localhost:{server_process.port}/v1/classify",
+                "POST",
+                '{"slide_id": "SLIDE-001"}',
+            ),
         ]
 
         for url, method, data in endpoints:
@@ -366,7 +422,7 @@ class TestPerformanceBaseline:
                             "-H",
                             "Content-Type: application/json",
                             "-d",
-                            data,
+                            data or "{}",  # Ensure data is never None
                             url,
                         ],
                         capture_output=True,
