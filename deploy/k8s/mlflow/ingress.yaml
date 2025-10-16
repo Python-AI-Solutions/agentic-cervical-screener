@@ -18,10 +18,19 @@ spec:
     - host: mlflow.cervical-screening.pythonaisolutions.com
       http:
         paths:
+          # MLflow UI/API (protected by ForwardAuth)
           - path: /
             pathType: Prefix
             backend:
               service:
                 name: mlflow
+                port:
+                  number: 80
+          # oauth2-proxy endpoints (login, callback) must be reachable publicly
+          - path: /oauth2
+            pathType: Prefix
+            backend:
+              service:
+                name: oauth2-proxy
                 port:
                   number: 80
