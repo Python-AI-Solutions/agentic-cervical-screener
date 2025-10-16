@@ -21,16 +21,26 @@ spec:
         args:
         - bash
         - -lc
-        - "mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:////mlflow/mlflow.db --default-artifact-root gs://YOUR_BUCKET/YOUR_PREFIX"
+        - "mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:////mlflow/mlflow.db --default-artifact-root gs://YOUR_BUCKET/YOUR_PREFIX --serve-artifacts --allowed-hosts mlflow.cervical-screening.pythonaisolutions.com"
         volumeMounts:
         - name: mlflow-data
           mountPath: /mlflow
         readinessProbe:
-          httpGet: { path: /, port: 5000 }
+          httpGet: 
+            path: /
+            port: 5000
+            httpHeaders:
+            - name: Host
+              value: mlflow.cervical-screening.pythonaisolutions.com
           initialDelaySeconds: 5
           periodSeconds: 10
         livenessProbe:
-          httpGet: { path: /, port: 5000 }
+          httpGet:
+            path: /
+            port: 5000
+            httpHeaders:
+            - name: Host
+              value: mlflow.cervical-screening.pythonaisolutions.com
           initialDelaySeconds: 10
           periodSeconds: 20
         resources:
