@@ -14,7 +14,7 @@ spec:
       services:
         - name: oauth2-proxy
           port: 80
-    # MLflow UI (protected by forward auth)
+    # MLflow UI (routed through oauth2-proxy)
     - match: Host(`mlflow.cervical-screening.pythonaisolutions.com`) && PathPrefix(`/`)
       kind: Rule
       services:
