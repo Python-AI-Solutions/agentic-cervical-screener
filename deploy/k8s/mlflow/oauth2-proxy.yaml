@@ -24,7 +24,11 @@ spec:
         - --cookie-refresh=1h
         - --set-authorization-header=true
         - --pass-access-token=true
+        - --pass-user-headers=true
+        - --set-xauthrequest=true
         - --skip-provider-button=true
+        - --skip-jwt-bearer-tokens=true
+        - --extra-jwt-issuers=https://accounts.google.com=1098946209440-m4jt1ev89qd7db8ef88gf4b4cgo99i0v.apps.googleusercontent.com
         - --email-domain=pythonaisolutions.com
         env:
         - name: OAUTH2_PROXY_CLIENT_ID
