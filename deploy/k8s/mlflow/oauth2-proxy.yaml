@@ -25,7 +25,7 @@ spec:
         - --set-authorization-header=true
         - --pass-access-token=true
         - --skip-provider-button=true
-        - --email-domain=pythonaisolutions.com                            
+        - --email-domain=pythonaisolutions.com
         env:
         - name: OAUTH2_PROXY_CLIENT_ID
           valueFrom: { secretKeyRef: { name: oauth2-proxy-secret, key: client_id } }
