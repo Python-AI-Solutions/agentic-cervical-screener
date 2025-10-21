@@ -1,0 +1,24 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: mlflow-ingress-route
+  namespace: mlflow
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    # OAuth2 proxy endpoints (no auth required)
+    - match: Host(`mlflow.cervical-screening.pythonaisolutions.com`) && PathPrefix(`/oauth2`)
+      kind: Rule
+      services:
+        - name: oauth2-proxy
+          port: 80
+    # MLflow UI (routed through oauth2-proxy)
+    - match: Host(`mlflow.cervical-screening.pythonaisolutions.com`) && PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: oauth2-proxy
+          port: 80
+  tls:
+    secretName: mlflow-tls

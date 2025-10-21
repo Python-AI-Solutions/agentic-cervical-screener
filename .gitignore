@@ -5,3 +5,9 @@ __pycache__/
 .pixi/
 pixi.lock
 bandit-report.json
+
+# MLflow authentication
+.mlflow_token
+token.json
+oauth2-credentials.json
+oauth-secret.yaml

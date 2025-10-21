@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow
+  namespace: mlflow
+spec:
+  replicas: 1   # keep 1 while using SQLite
+  selector:
+    matchLabels: { app: mlflow }
+  template:
+    metadata:
+      labels: { app: mlflow }
+    spec:
+      serviceAccountName: mlflow-sa
+      containers:
+      - name: mlflow
+        image: ghcr.io/mlflow/mlflow:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
+        args:
+        - bash
+        - -lc
+        - "mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:////mlflow/mlflow.db --default-artifact-root gs://YOUR_BUCKET/YOUR_PREFIX --serve-artifacts --allowed-hosts mlflow.cervical-screening.pythonaisolutions.com"
+        volumeMounts:
+        - name: mlflow-data
+          mountPath: /mlflow
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5000
+            httpHeaders:
+            - name: Host
+              value: mlflow.cervical-screening.pythonaisolutions.com
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5000
+            httpHeaders:
+            - name: Host
+              value: mlflow.cervical-screening.pythonaisolutions.com
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        resources:
+          requests: { cpu: "100m", memory: "256Mi" }
+          limits:   { cpu: "500m", memory: "1Gi" }
+      volumes:
+      - name: mlflow-data
+        persistentVolumeClaim:
+          claimName: mlflow-data
