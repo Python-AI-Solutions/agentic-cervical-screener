@@ -27,8 +27,8 @@ spec:
         - --pass-user-headers=true
         - --set-xauthrequest=true
         - --skip-provider-button=true
-        - --skip-jwt-bearer-tokens=true
-        - --extra-jwt-issuers=https://accounts.google.com=1098946209440-m4jt1ev89qd7db8ef88gf4b4cgo99i0v.apps.googleusercontent.com
+        # - --skip-jwt-bearer-tokens=true
+        - --extra-jwt-issuers=https://accounts.google.com=$(DESKTOP_CLIENT_ID)
         - --email-domain=pythonaisolutions.com
         env:
         - name: OAUTH2_PROXY_CLIENT_ID
@@ -37,6 +37,8 @@ spec:
           valueFrom: { secretKeyRef: { name: oauth2-proxy-secret, key: client_secret } }
         - name: OAUTH2_PROXY_COOKIE_SECRET
           valueFrom: { secretKeyRef: { name: oauth2-proxy-secret, key: cookie_secret } }
+        - name: DESKTOP_CLIENT_ID
+          valueFrom: { secretKeyRef: { name: oauth2-proxy-secret, key: desktop_client_id } }
         ports:
         - containerPort: 4180
           name: http
