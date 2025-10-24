@@ -872,9 +872,6 @@ function drawUserRois() {
   if (userDrawnRois.length === 0) return;
 
   overlayCtx.save();
-  overlayCtx.strokeStyle = '#4ECDC4';
-  overlayCtx.lineWidth = 2;
-  overlayCtx.fillStyle = 'rgba(78, 205, 196, 0.1)';
   overlayCtx.font = 'bold 13px Arial';
 
   userDrawnRois.forEach((roi, index) => {
@@ -883,8 +880,27 @@ function drawUserRois() {
     const x2 = roi.xmax * transform.scale + transform.tx;
     const y2 = roi.ymax * transform.scale + transform.ty;
 
+    // Determine if this ROI is being hovered
+    const isHovered = hoveredRoiIndex === index;
+    
+    // Use bright, visible colors for manual ROIs
+    if (isHovered) {
+      // Bright yellow-orange for hover
+      overlayCtx.strokeStyle = '#FF8C00';
+      overlayCtx.lineWidth = 4;
+      overlayCtx.fillStyle = 'rgba(255, 140, 0, 0.25)';
+      // Add glow effect
+      overlayCtx.shadowColor = '#FF8C00';
+      overlayCtx.shadowBlur = 8;
+    } else {
+      // Bright cyan for normal state
+      overlayCtx.strokeStyle = '#00FFFF';
+      overlayCtx.lineWidth = 3;
+      overlayCtx.fillStyle = 'rgba(0, 255, 255, 0.15)';
+      overlayCtx.shadowBlur = 0;
+    }
+
     // Draw rectangle
-    overlayCtx.fillStyle = 'rgba(78, 205, 196, 0.1)';
     overlayCtx.fillRect(x1, y1, x2 - x1, y2 - y1);
     overlayCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
 
@@ -1005,9 +1021,9 @@ function downloadImageWithOverlays() {
       // Draw user-drawn ROIs
       if (showUserDrawnRois && userDrawnRois.length > 0) {
         tempCtx.save();
-        tempCtx.strokeStyle = '#4ECDC4';
-        tempCtx.lineWidth = 2;
-        tempCtx.fillStyle = 'rgba(78, 205, 196, 0.1)';
+        tempCtx.strokeStyle = '#00FFFF';
+        tempCtx.lineWidth = 3;
+        tempCtx.fillStyle = 'rgba(0, 255, 255, 0.15)';
         tempCtx.font = 'bold 16px Arial';
 
         userDrawnRois.forEach((roi, index) => {
@@ -1017,7 +1033,6 @@ function downloadImageWithOverlays() {
           const y2 = roi.ymax * scaleY;
 
           // Draw rectangle
-          tempCtx.fillStyle = 'rgba(78, 205, 196, 0.1)';
           tempCtx.fillRect(x1, y1, x2 - x1, y2 - y1);
           tempCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
 
@@ -1044,7 +1059,7 @@ function downloadImageWithOverlays() {
       if (showAIDetections && lastBoxes.length > 0) {
         tempCtx.save();
         tempCtx.strokeStyle = '#FF6B6B';
-        tempCtx.lineWidth = 2;
+        tempCtx.lineWidth = 3;
         tempCtx.fillStyle = 'rgba(255, 107, 107, 0.1)';
         tempCtx.font = 'bold 16px Arial';
 
