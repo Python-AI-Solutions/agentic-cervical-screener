@@ -7,8 +7,6 @@ const statusEl     = document.getElementById('status');
 const spinnerEl    = document.getElementById('spinner');
 const layersEl     = document.getElementById('layers');
 const btnClassify  = document.getElementById('btnClassify');
-const btnPrevRoi   = document.getElementById('btnPrevRoi');
-const btnNextRoi   = document.getElementById('btnNextRoi');
 const btnToggleRoiMode = document.getElementById('btnToggleRoiMode');
 const btnDownload  = document.getElementById('btnDownload');
 const btnClearRois = document.getElementById('btnClearRois');
@@ -20,7 +18,7 @@ const overlayCtx   = overlayCanvas.getContext('2d');
 overlayCanvas.style.zIndex = '10';
 
 const transform = { scale:1, tx:0, ty:0 };
-let nv=null, rois=[], roiIdx=-1, currentSlideId=null, currentSlideUri=null, lastLoadedCase=null;
+let nv=null, rois=[], currentSlideId=null, currentSlideUri=null, lastLoadedCase=null;
 let layerCache = new Map();          // layer_id -> FeatureCollection (for rects/points)
 let visibleLayers = new Set();       // layer_ids currently shown
 let lastBoxes = [];                  // boxes from last classify
@@ -138,7 +136,7 @@ function displayImageOnCanvas(img) {
 window.loadCaseFromUrl = async function loadCaseFromUrl(url){
   setStatus('loading…'); showSpinner(true);
   layersEl.innerHTML=''; overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
-  rois=[]; roiIdx=-1; layerCache.clear(); visibleLayers.clear(); lastBoxes = [];
+  rois=[]; layerCache.clear(); visibleLayers.clear(); lastBoxes = [];
   userDrawnRois = []; // Clear user-drawn ROIs
   currentImageFile = null; // Clear current image file
   showAIDetections = true; // Reset AI detections visibility
@@ -375,7 +373,6 @@ btnClassify.addEventListener('click', async ()=>{
 
     // Automatically switch to AI detection mode after classification
     roiMode = 'ai_detections';
-    roiIdx = -1; // Reset ROI index
 
     // Update button text and style to reflect AI mode
     btnToggleRoiMode.textContent = 'AI Detections';
@@ -391,24 +388,9 @@ btnClassify.addEventListener('click', async ()=>{
   finally { showSpinner(false); btnClassify.disabled = false; }
 });
 
-btnPrevRoi.addEventListener('click', ()=>{
-  const currentRois = getCurrentRois();
-  if(!currentRois.length) return;
-  roiIdx=(roiIdx-1+currentRois.length)%currentRois.length;
-  highlight(currentRois[roiIdx]);
-});
-
-btnNextRoi.addEventListener('click', ()=>{
-  const currentRois = getCurrentRois();
-  if(!currentRois.length) return;
-  roiIdx=(roiIdx+1)%currentRois.length;
-  highlight(currentRois[roiIdx]);
-});
-
 btnToggleRoiMode.addEventListener('click', ()=>{
   // Toggle between ground truth and AI detections
   roiMode = roiMode === 'ground_truth' ? 'ai_detections' : 'ground_truth';
-  roiIdx = -1; // Reset ROI index
 
   // Update button text and style
   if (roiMode === 'ai_detections') {
@@ -438,7 +420,6 @@ btnClearRois.addEventListener('click', () => {
 
   const count = userDrawnRois.length;
   userDrawnRois = [];
-  roiIdx = -1;
   renderOverlays();
   setStatus(`Cleared ${count} ROIs`);
 });
@@ -459,34 +440,6 @@ function getCurrentRois() {
   return userDrawnRois.length > 0 ? userDrawnRois : rois;
 }
 
-function highlight(roi){
-  // Redraw all overlays first to clear previous highlights
-  renderOverlays();
-
-  const currentRois = getCurrentRois();
-  const isAI = roiMode === 'ai_detections';
-
-  // Then draw the highlight on top
-  overlayCtx.save();
-  overlayCtx.strokeStyle = isAI ? '#FFD700' : '#22C55E'; // Gold for AI, Green for ground truth
-  overlayCtx.lineWidth=4*transform.scale;
-  overlayCtx.setLineDash([8, 4]); // Dashed line to make it more visible
-
-  const x1=roi.xmin*transform.scale+transform.tx, y1=roi.ymin*transform.scale+transform.ty;
-  const x2=roi.xmax*transform.scale+transform.tx, y2=roi.ymax*transform.scale+transform.ty;
-  overlayCtx.strokeRect(x1,y1,x2-x1,y2-y1);
-
-  overlayCtx.restore();
-
-  // Show different status for AI vs ground truth
-  if (isAI && roi.label && roi.score) {
-    setStatus(`AI Detection ${(roiIdx+1)}/${currentRois.length}: ${roi.label} (${Math.round(roi.score*100)}%)`);
-  } else if (roi.label) {
-    setStatus(`ROI ${(roiIdx+1)}/${currentRois.length}: ${roi.label}`);
-  } else {
-    setStatus(`ROI ${(roiIdx+1)}/${currentRois.length} - Ground Truth`);
-  }
-}
 
 // Drag and Drop functionality
 function setupDragAndDrop() {
@@ -556,7 +509,6 @@ function handleDroppedFiles(files) {
         visibleLayers.clear();
         lastBoxes = [];
         rois = [];
-        roiIdx = -1;
         userDrawnRois = []; // Clear user-drawn ROIs
         currentImageFile = null; // Clear current image file
 
