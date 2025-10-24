@@ -4,7 +4,7 @@ metadata:
   name: mlflow
   namespace: mlflow
 spec:
-  replicas: 1   # keep 1 while using SQLite
+  replicas: 2   # can scale with PostgreSQL
   selector:
     matchLabels: { app: mlflow }
   template:
@@ -18,10 +18,26 @@ spec:
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5000
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_DB
         args:
         - bash
         - -lc
-        - "mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:////mlflow/mlflow.db --default-artifact-root gs://YOUR_BUCKET/YOUR_PREFIX --serve-artifacts --allowed-hosts mlflow.cervical-screening.pythonaisolutions.com"
+        - "pip install psycopg2-binary && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB) --default-artifact-root gs://YOUR_BUCKET/YOUR_PREFIX --serve-artifacts --allowed-hosts mlflow.cervical-screening.pythonaisolutions.com"
         volumeMounts:
         - name: mlflow-data
           mountPath: /mlflow
@@ -32,7 +48,7 @@ spec:
             httpHeaders:
             - name: Host
               value: mlflow.cervical-screening.pythonaisolutions.com
-          initialDelaySeconds: 5
+          initialDelaySeconds: 15
           periodSeconds: 10
         livenessProbe:
           httpGet:
@@ -41,7 +57,7 @@ spec:
             httpHeaders:
             - name: Host
               value: mlflow.cervical-screening.pythonaisolutions.com
-          initialDelaySeconds: 10
+          initialDelaySeconds: 30
           periodSeconds: 20
         resources:
           requests: { cpu: "100m", memory: "256Mi" }
