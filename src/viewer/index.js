@@ -7,7 +7,6 @@ const statusEl     = document.getElementById('status');
 const spinnerEl    = document.getElementById('spinner');
 const layersEl     = document.getElementById('layers');
 const btnClassify  = document.getElementById('btnClassify');
-const btnToggleRoiMode = document.getElementById('btnToggleRoiMode');
 const btnDownload  = document.getElementById('btnDownload');
 const btnClearRois = document.getElementById('btnClearRois');
 
@@ -22,7 +21,7 @@ let nv=null, rois=[], currentSlideId=null, currentSlideUri=null, lastLoadedCase=
 let layerCache = new Map();          // layer_id -> FeatureCollection (for rects/points)
 let visibleLayers = new Set();       // layer_ids currently shown
 let lastBoxes = [];                  // boxes from last classify
-let roiMode = 'ground_truth';        // 'ground_truth' or 'ai_detections'
+// Removed roiMode - drawing is now always available
 let showAIDetections = true;         // Whether to show AI classification boxes
 let caseCache = new Map();           // Cache for case data to avoid re-fetching
 
@@ -265,7 +264,7 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
 }
 
 function renderOverlays(){
-  console.log('🎨 renderOverlays called:', { showUserDrawnRois, showAIDetections, roiMode, lastBoxesLength: lastBoxes.length });
+  console.log('🎨 renderOverlays called:', { showUserDrawnRois, showAIDetections, lastBoxesLength: lastBoxes.length });
   overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
 
   // Only show user-drawn ROIs (no hardcoded detections)
@@ -371,13 +370,10 @@ btnClassify.addEventListener('click', async ()=>{
     // Add AI detections toggle if it doesn't exist
     addAIDetectionsToggle();
 
-    // Automatically switch to AI detection mode after classification
-    roiMode = 'ai_detections';
+    // Keep AI detections visible after classification
 
-    // Update button text and style to reflect AI mode
-    btnToggleRoiMode.textContent = 'AI Detections';
-    btnToggleRoiMode.style.background = '#DC2626'; // Red for AI
-    overlayCanvas.style.cursor = 'default';
+    // Keep cursor as crosshair for drawing
+    overlayCanvas.style.cursor = 'crosshair';
 
     renderOverlays();
     setStatus(`classified - ${lastBoxes.length} detections found - switched to AI mode`);
@@ -388,25 +384,6 @@ btnClassify.addEventListener('click', async ()=>{
   finally { showSpinner(false); btnClassify.disabled = false; }
 });
 
-btnToggleRoiMode.addEventListener('click', ()=>{
-  // Toggle between ground truth and AI detections
-  roiMode = roiMode === 'ground_truth' ? 'ai_detections' : 'ground_truth';
-
-  // Update button text and style
-  if (roiMode === 'ai_detections') {
-    btnToggleRoiMode.textContent = 'AI Detections';
-    btnToggleRoiMode.style.background = '#DC2626'; // Red for AI
-    overlayCanvas.style.cursor = 'default';
-  } else {
-    btnToggleRoiMode.textContent = 'Ground Truth';
-    btnToggleRoiMode.style.background = '#374151'; // Gray for ground truth
-    overlayCanvas.style.cursor = 'crosshair';
-  }
-
-  // Clear any existing highlights
-  renderOverlays();
-  setStatus(`Switched to ${roiMode === 'ai_detections' ? 'AI Detections' : 'Ground Truth'} navigation`);
-});
 
 btnDownload.addEventListener('click', () => {
   downloadImageWithOverlays();
@@ -425,18 +402,7 @@ btnClearRois.addEventListener('click', () => {
 });
 
 function getCurrentRois() {
-  if (roiMode === 'ai_detections' && lastBoxes.length > 0) {
-    // Convert AI detection boxes to ROI format
-    return lastBoxes.map(box => ({
-      xmin: box.x,
-      ymin: box.y,
-      xmax: box.x + box.w,
-      ymax: box.y + box.h,
-      label: box.label,
-      score: box.score
-    }));
-  }
-  // In ground truth mode, use user-drawn ROIs if available, otherwise use loaded ROIs
+  // Return user-drawn ROIs if available, otherwise use loaded ground truth ROIs
   return userDrawnRois.length > 0 ? userDrawnRois : rois;
 }
 
@@ -541,8 +507,7 @@ function handleDroppedFiles(files) {
         console.log('Set currentImageFile:', currentImageFile);
 
         // Set ROI mode to AI detections for custom images
-        roiMode = 'ai_detections';
-        console.log('Set roiMode to ai_detections for custom image');
+        console.log('Custom image loaded');
 
         // Update UI
         setStatus(`${file.name} loaded - ${img.width}×${img.height}px`);
@@ -604,11 +569,7 @@ function setupDrawingMode() {
 }
 
 function handleMouseDown(e) {
-  console.log('Mouse down event', { roiMode, isDrawing });
-  if (roiMode !== 'ground_truth') {
-    console.log('Not in ground truth mode, ignoring');
-    return;
-  }
+  console.log('Mouse down event', { isDrawing });
 
   const rect = overlayCanvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -636,7 +597,7 @@ function handleMouseDown(e) {
 }
 
 function handleMouseMove(e) {
-  if (!isDrawing || roiMode !== 'ground_truth') return;
+  if (!isDrawing) return;
 
   const rect = overlayCanvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -646,7 +607,6 @@ function handleMouseMove(e) {
 }
 
 function handleMouseMoveHover(e) {
-  if (roiMode !== 'ground_truth') return;
 
   const rect = overlayCanvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -677,7 +637,7 @@ function handleMouseMoveHover(e) {
 }
 
 function handleMouseUp(e) {
-  if (!isDrawing || roiMode !== 'ground_truth') return;
+  if (!isDrawing) return;
 
   const rect = overlayCanvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -688,7 +648,6 @@ function handleMouseUp(e) {
 
 function handleTouchStart(e) {
   e.preventDefault();
-  if (roiMode !== 'ground_truth') return;
 
   const rect = overlayCanvas.getBoundingClientRect();
   const touch = e.touches[0];
@@ -717,7 +676,6 @@ function handleTouchStart(e) {
 
 function handleTouchMoveHover(e) {
   e.preventDefault();
-  if (roiMode !== 'ground_truth') return;
 
   const rect = overlayCanvas.getBoundingClientRect();
   const touch = e.touches[0];
@@ -750,7 +708,7 @@ function handleTouchMoveHover(e) {
 
 function handleTouchMove(e) {
   e.preventDefault();
-  if (!isDrawing || roiMode !== 'ground_truth') return;
+  if (!isDrawing) return;
 
   const rect = overlayCanvas.getBoundingClientRect();
   const touch = e.touches[0];
@@ -762,7 +720,7 @@ function handleTouchMove(e) {
 
 function handleTouchEnd(e) {
   e.preventDefault();
-  if (!isDrawing || roiMode !== 'ground_truth') return;
+  if (!isDrawing) return;
 
   const rect = overlayCanvas.getBoundingClientRect();
   const touch = e.changedTouches[0];
