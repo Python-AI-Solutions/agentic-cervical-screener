@@ -454,6 +454,39 @@
       color: var(--text-primary);
     }
 
+    /* Mobile Layers Section in Menu */
+    .mobile-layers-section {
+      grid-column: 1 / -1;
+      margin-top: var(--spacing-md);
+      padding-top: var(--spacing-md);
+      border-top: 1px solid var(--border-color);
+    }
+
+    .mobile-layers-section h4 {
+      margin: 0 0 var(--spacing-sm) 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-align: center;
+    }
+
+    /* Hide mobile layers section on desktop */
+    @media (min-width: 1025px) {
+      .mobile-layers-section {
+        display: none;
+      }
+    }
+
+    /* Style mobile layers to look good in the mobile menu */
+    @media (max-width: 1024px) {
+      .mobile-layers-section .layer {
+        margin-bottom: var(--spacing-xs);
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-sm);
+      }
+    }
+
     /* Responsive adjustments for sidebar elements */
     @media (max-width: 1024px) {
       .mobile-close-btn {
@@ -1009,6 +1042,10 @@
         <button id="btnClearRois">Clear ROIs</button>
         <button id="btnDownload">Download</button>
         <button id="btnSidebar" class="sidebar-btn">Load Image</button>
+        <div class="mobile-layers-section">
+          <h4>Layers</h4>
+          <div id="mobileLayers"></div>
+        </div>
       </div>
     </div>
     <div class="header-status">

@@ -6,6 +6,7 @@ import { collectRois } from './roiNav.js';
 const statusEl     = document.getElementById('status');
 const spinnerEl    = document.getElementById('spinner');
 const layersEl     = document.getElementById('layers');
+const mobileLayersEl = document.getElementById('mobileLayers');
 const btnClassify  = document.getElementById('btnClassify');
 const btnDownload  = document.getElementById('btnDownload');
 const btnClearRois = document.getElementById('btnClearRois');
@@ -134,7 +135,9 @@ function displayImageOnCanvas(img) {
 // Make loadCaseFromUrl available globally for quick case buttons
 window.loadCaseFromUrl = async function loadCaseFromUrl(url){
   setStatus('loading…'); showSpinner(true);
-  layersEl.innerHTML=''; overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
+  if (layersEl) layersEl.innerHTML='';
+  if (mobileLayersEl) mobileLayersEl.innerHTML='';
+  overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
   rois=[]; layerCache.clear(); visibleLayers.clear(); lastBoxes = [];
   userDrawnRois = []; // Clear user-drawn ROIs
   currentImageFile = null; // Clear current image file
@@ -219,23 +222,10 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
 
   // Build layer controls + prefetch & cache asynchronously
   const layerPromises = (slide.layers||[]).map(async (L) => {
-    // UI - create immediately for better UX
-    const el=document.createElement('div'); el.className='layer';
-    el.innerHTML = `
-      <span>${L.layer_id} <span class="muted">(${L.geometry})</span></span>
-      <label class="toggle-switch">
-        <input type="checkbox" data-layer="${L.layer_id}" checked/>
-        <span class="toggle-slider"></span>
-      </label>`;
-    layersEl.appendChild(el);
+    // UI - create immediately for better UX (add to both desktop and mobile)
     visibleLayers.add(L.layer_id);
+    addLayerToggle(L.layer_id, L.geometry, true);
 
-    // Listen for changes
-    const cb = el.querySelector('input[type="checkbox"]');
-    cb.addEventListener('change', () => {
-      cb.checked ? visibleLayers.add(L.layer_id) : visibleLayers.delete(L.layer_id);
-      renderOverlays();
-    });
 
     // Cache data asynchronously (non-blocking)
     try {
@@ -282,52 +272,64 @@ function renderOverlays(){
   }
 }
 
-function addAIDetectionsToggle() {
-  // Check if AI detections toggle already exists
-  if (document.querySelector('[data-layer="ai-detections"]')) return;
+function addLayerToggle(layerId, geometry, checked = true) {
+  // Check if layer toggle already exists
+  if (document.querySelector(`[data-layer="${layerId}"]`)) return;
 
-  // Create AI detections toggle
-  const el = document.createElement('div');
-  el.className = 'layer';
-  el.innerHTML = `
-    <span>ai-detections <span class="muted">(rects)</span></span>
-    <label class="toggle-switch">
-      <input type="checkbox" data-layer="ai-detections" checked/>
-      <span class="toggle-slider"></span>
-    </label>`;
+  // Create layer toggle for desktop
+  if (layersEl) {
+    const el = document.createElement('div');
+    el.className = 'layer';
+    el.innerHTML = `
+      <span>${layerId} <span class="muted">(${geometry})</span></span>
+      <label class="toggle-switch">
+        <input type="checkbox" data-layer="${layerId}" ${checked ? 'checked' : ''}/>
+        <span class="toggle-slider"></span>
+      </label>`;
+    layersEl.appendChild(el);
+  }
 
-  layersEl.appendChild(el);
+  // Create layer toggle for mobile
+  if (mobileLayersEl) {
+    const mobileEl = document.createElement('div');
+    mobileEl.className = 'layer';
+    mobileEl.innerHTML = `
+      <span>${layerId} <span class="muted">(${geometry})</span></span>
+      <label class="toggle-switch">
+        <input type="checkbox" data-layer="${layerId}" ${checked ? 'checked' : ''}/>
+        <span class="toggle-slider"></span>
+      </label>`;
+    mobileLayersEl.appendChild(mobileEl);
+  }
 
-  // Add event listener
-  const cb = el.querySelector('input[type="checkbox"]');
-  cb.addEventListener('change', () => {
-    showAIDetections = cb.checked;
-    renderOverlays();
+  // Add event listeners to both
+  const checkboxes = document.querySelectorAll(`[data-layer="${layerId}"]`);
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      // Sync all checkboxes with the same data-layer
+      checkboxes.forEach(checkbox => checkbox.checked = cb.checked);
+      
+      // Handle specific layer behaviors
+      if (layerId === 'ai-detections') {
+        showAIDetections = cb.checked;
+      } else if (layerId === 'user-drawn-rois') {
+        showUserDrawnRois = cb.checked;
+      } else {
+        // Handle regular layers
+        cb.checked ? visibleLayers.add(layerId) : visibleLayers.delete(layerId);
+      }
+      
+      renderOverlays();
+    });
   });
 }
 
+function addAIDetectionsToggle() {
+  addLayerToggle('ai-detections', 'rects', true);
+}
+
 function addUserDrawnRoisToggle() {
-  // Check if user-drawn ROIs toggle already exists
-  if (document.querySelector('[data-layer="user-drawn-rois"]')) return;
-
-  // Create user-drawn ROIs toggle
-  const el = document.createElement('div');
-  el.className = 'layer';
-  el.innerHTML = `
-    <span>user-drawn-rois <span class="muted">(rects)</span></span>
-    <label class="toggle-switch">
-      <input type="checkbox" data-layer="user-drawn-rois" checked/>
-      <span class="toggle-slider"></span>
-    </label>`;
-
-  layersEl.appendChild(el);
-
-  // Add event listener
-  const cb = el.querySelector('input[type="checkbox"]');
-  cb.addEventListener('change', () => {
-    showUserDrawnRois = cb.checked;
-    renderOverlays();
-  });
+  addLayerToggle('user-drawn-rois', 'rects', true);
 }
 
 
@@ -469,7 +471,8 @@ function handleDroppedFiles(files) {
       const img = new Image();
       img.onload = function() {
         // Clear existing content
-        layersEl.innerHTML = '';
+        if (layersEl) layersEl.innerHTML = '';
+        if (mobileLayersEl) mobileLayersEl.innerHTML = '';
         overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
         layerCache.clear();
         visibleLayers.clear();
