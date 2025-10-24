@@ -1,0 +1,79 @@
+# Traefik Helm Values - Persistent ACME Certificate Storage
+# 
+# Usage:
+#   helm repo add traefik https://traefik.github.io/charts
+#   helm repo update
+#   
+#   # Find your Traefik namespace first:
+#   kubectl get deployments -A | grep traefik
+#   
+#   # Then deploy (replace 'traefik' with your actual namespace):
+#   helm upgrade --install traefik traefik/traefik \
+#     --namespace traefik \
+#     --values traefik-values.yaml
+
+# Persistent storage for ACME certificates
+persistence:
+  enabled: true
+  name: acme-storage
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  path: /data
+  # storageClass: ""  # Uncomment to specify storage class
+
+# Additional arguments for Traefik (ACME Configuration)
+additionalArguments:
+  - "--certificatesresolvers.letsencrypt.acme.email=johnlee@pythonaisolutions.com" 
+  - "--certificatesresolvers.letsencrypt.acme.storage=/data/acme.json"
+  - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+  
+  # Staging CA (for testing - safe, no rate limits)
+  # - "--certificatesresolvers.letsencrypt.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+  
+  # Production CA - trusted by browsers
+  - "--certificatesresolvers.letsencrypt.acme.caserver=https://acme-v02.api.letsencrypt.org/directory"
+
+# Ports configuration
+ports:
+  web:
+    port: 8000
+    exposedPort: 80
+  websecure:
+    port: 8443
+    exposedPort: 443
+    http3:
+      enabled: false
+    tls:
+      enabled: true
+
+# Service configuration
+service:
+  enabled: true
+  type: LoadBalancer
+
+# Deployment strategy (important for RWO volumes)
+deployment:
+  replicas: 1
+  # Use Recreate strategy to avoid volume attachment issues
+  kind: Deployment
+  # The following ensures smooth updates with RWO volumes
+  strategy:
+    type: Recreate
+  # Init container to fix permissions on acme.json
+  initContainers:
+    - name: volume-permissions
+      image: busybox:latest
+      command: ["sh", "-c", "if [ ! -f /data/acme.json ] || [ ! -s /data/acme.json ]; then echo '{}' > /data/acme.json; fi && chmod 600 /data/acme.json && chown 65532:65532 /data/acme.json"]
+      volumeMounts:
+        - name: acme-storage
+          mountPath: /data
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+
+# Logs
+logs:
+  general:
+    level: INFO
+  access:
+    enabled: true

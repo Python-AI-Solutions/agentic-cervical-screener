@@ -1,16 +1,40 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: cervical-ai-viewer
+  name: cervical-ai-viewer-http
   namespace: default
   labels:
     app: cervical-ai-viewer
 spec:
   entryPoints:
-    - web
-    - websecure
+    - web  # HTTP only - for ACME challenge
   routes:
-    # Frontend application (catch-all for domain)
+    # Frontend application
+    - match: Host(`cervical-screening.pythonaisolutions.com`)
+      kind: Rule
+      services:
+        - name: cervical-ai-viewer
+          port: 80
+
+    # Catch-all route for IP access
+    - match: PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: cervical-ai-viewer
+          port: 80
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: cervical-ai-viewer-https
+  namespace: default
+  labels:
+    app: cervical-ai-viewer
+spec:
+  entryPoints:
+    - websecure  # HTTPS only - with TLS
+  routes:
+    # Frontend application
     - match: Host(`cervical-screening.pythonaisolutions.com`)
       kind: Rule
       services:
@@ -25,7 +49,7 @@ spec:
           port: 80
 
   tls:
-    certResolver: letsencrypt
+    certResolver: letsencrypt  # Only applies to websecure entrypoint
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
