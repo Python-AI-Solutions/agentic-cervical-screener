@@ -16,6 +16,33 @@ const overlayCanvas= document.getElementById('overlayCanvas');
 const overlayCtx   = overlayCanvas.getContext('2d');
 
 overlayCanvas.style.zIndex = '10';
+if (glCanvas) {
+  glCanvas.style.minWidth = '0';
+  glCanvas.style.minHeight = '0';
+}
+if (overlayCanvas) {
+  overlayCanvas.style.minWidth = '0';
+  overlayCanvas.style.minHeight = '0';
+}
+
+/**
+ * Returns the size of the Niivue viewer container independent of any inline
+ * sizing we might apply to the canvases themselves. This lets us respond to
+ * responsive layout changes (desktop ↔︎ mobile) where CSS alters the container
+ * dimensions but previously cached inline canvas sizes would otherwise win.
+ */
+function getCanvasContainerSize() {
+  if (!glCanvas) return { width: 0, height: 0 };
+  const container = glCanvas.parentElement || glCanvas;
+  const rect = container.getBoundingClientRect();
+  if (rect.width && rect.height) {
+    return { width: rect.width, height: rect.height };
+  }
+  return {
+    width: glCanvas.clientWidth || 0,
+    height: glCanvas.clientHeight || 0,
+  };
+}
 
 const transform = { scale:1, tx:0, ty:0 };
 let nv=null, rois=[], currentSlideId=null, currentSlideUri=null, lastLoadedCase=null;
@@ -34,6 +61,8 @@ let userDrawnRois = [];              // User-drawn rectangles
 let showUserDrawnRois = true;        // Toggle for user-drawn rectangles visibility
 let currentImageFile = null;         // Store the current image file for classification
 let hoveredRoiIndex = -1;            // Index of currently hovered ROI (-1 if none)
+let currentImageDimensions = { width: 1024, height: 1024 }; // Store actual image dimensions
+let currentImageObject = null;       // Store the current image object for redrawing on resize
 
 // Available labels for cervical cytology
 const CERVICAL_LABELS = [
@@ -51,56 +80,161 @@ function showSpinner(v){
     spinnerEl.hidden = !v;
   }
 }
-function fitOverlayToImage(w,h){
-  const boxW=glCanvas.clientWidth, boxH=glCanvas.clientHeight;
-  const scale=Math.min(boxW/w, boxH/h), tx=(boxW-w*scale)/2, ty=(boxH-h*scale)/2;
-  glCanvas.width=boxW; glCanvas.height=boxH; overlayCanvas.width=boxW; overlayCanvas.height=boxH;
-  overlayCanvas.style.width=boxW+'px'; overlayCanvas.style.height=boxH+'px';
-  transform.scale=scale; transform.tx=tx; transform.ty=ty;
+// Update canvas size to match container - NiiVue style responsive handling
+function updateCanvasSize() {
+  if (!glCanvas || !overlayCanvas) return false;
 
-  console.log('🔧 fitOverlayToImage called:', {
-    imageSize: { w, h },
-    canvasSize: { boxW, boxH },
+  const prevGlWidthStyle = glCanvas.style.width;
+  const prevGlHeightStyle = glCanvas.style.height;
+  const prevOverlayWidthStyle = overlayCanvas.style.width;
+  const prevOverlayHeightStyle = overlayCanvas.style.height;
+  const imageCanvas = document.getElementById('imageCanvas');
+  const prevImageWidthStyle = imageCanvas?.style.width ?? '';
+  const prevImageHeightStyle = imageCanvas?.style.height ?? '';
+
+  // Let CSS dictate the new layout before we measure so responsive changes are applied.
+  glCanvas.style.width = '';
+  glCanvas.style.height = '';
+  overlayCanvas.style.width = '';
+  overlayCanvas.style.height = '';
+  if (imageCanvas) {
+    imageCanvas.style.width = '';
+    imageCanvas.style.height = '';
+  }
+
+  // Measure the responsive container instead of the canvas itself so we react
+  // to layout changes (e.g. switching between desktop and mobile breakpoints).
+  const { width, height } = getCanvasContainerSize();
+  
+  // Defensive check: if canvas hasn't been laid out yet, skip sizing
+  if (width === 0 || height === 0) {
+    // Restore previous inline styles so we don't leave canvases unset
+    glCanvas.style.width = prevGlWidthStyle;
+    glCanvas.style.height = prevGlHeightStyle;
+    overlayCanvas.style.width = prevOverlayWidthStyle;
+    overlayCanvas.style.height = prevOverlayHeightStyle;
+    if (imageCanvas) {
+      imageCanvas.style.width = prevImageWidthStyle;
+      imageCanvas.style.height = prevImageHeightStyle;
+    }
+    console.warn('⚠️ Canvas not laid out yet (dimensions: ' + width + 'x' + height + '), skipping size update');
+    return false;
+  }
+  
+  // Account for device pixel ratio for crisp rendering
+  const dpr = window.devicePixelRatio || 1;
+  const roundedWidth = Math.round(width);
+  const roundedHeight = Math.round(height);
+  const actualWidth = Math.round(roundedWidth * dpr);
+  const actualHeight = Math.round(roundedHeight * dpr);
+  
+  let sizeChanged = false;
+
+  // Only update heavy pixel buffers if something actually changed
+  if (glCanvas.width !== actualWidth || glCanvas.height !== actualHeight) {
+    // Set canvas resolution (actual pixels)
+    glCanvas.width = actualWidth;
+    glCanvas.height = actualHeight;
+    overlayCanvas.width = actualWidth;
+    overlayCanvas.height = actualHeight;
+    if (imageCanvas) {
+      imageCanvas.width = actualWidth;
+      imageCanvas.height = actualHeight;
+    }
+    
+    // Scale overlay context for high DPI
+    const overlayCtx = overlayCanvas.getContext('2d');
+    if (overlayCtx) {
+      overlayCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset first
+      overlayCtx.scale(dpr, dpr);
+    }
+    
+    console.log('✅ Canvas size updated:', {
+      displaySize: { width, height },
+      actualPixels: { width: actualWidth, height: actualHeight },
+      dpr,
+      timestamp: new Date().toLocaleTimeString()
+    });
+    sizeChanged = true;
+  }
+
+  const styleWidthPx = `${roundedWidth}px`;
+  const styleHeightPx = `${roundedHeight}px`;
+  glCanvas.style.width = styleWidthPx;
+  glCanvas.style.height = styleHeightPx;
+  overlayCanvas.style.width = styleWidthPx;
+  overlayCanvas.style.height = styleHeightPx;
+  if (imageCanvas) {
+    imageCanvas.style.width = styleWidthPx;
+    imageCanvas.style.height = styleHeightPx;
+  }
+  
+  return sizeChanged;
+}
+
+function fitOverlayToImage(imageWidth, imageHeight) {
+  // First ensure canvases are properly sized
+  updateCanvasSize();
+  
+  // Get container dimensions
+  const { width: containerWidthRaw, height: containerHeightRaw } = getCanvasContainerSize();
+  const containerWidth = Math.round(containerWidthRaw);
+  const containerHeight = Math.round(containerHeightRaw);
+
+  if (containerWidth === 0 || containerHeight === 0) {
+    console.warn('⚠️ fitOverlayToImage skipped - container has zero size', { containerWidthRaw, containerHeightRaw });
+    return;
+  }
+  
+  // Calculate scale to fit image in container
+  const scale = Math.min(containerWidth / imageWidth, containerHeight / imageHeight);
+  
+  // Center the image
+  const scaledWidth = imageWidth * scale;
+  const scaledHeight = imageHeight * scale;
+  const tx = (containerWidth - scaledWidth) / 2;
+  const ty = (containerHeight - scaledHeight) / 2;
+  
+  transform.scale = scale;
+  transform.tx = tx;
+  transform.ty = ty;
+
+  console.log('✅ Image fit calculated:', {
+    imageSize: { width: imageWidth, height: imageHeight },
+    containerSize: { width: containerWidth, height: containerHeight },
     transform: { scale, tx, ty }
   });
 }
 
-// Responsive canvas resizing
 function handleCanvasResize() {
-  if (glCanvas && overlayCanvas) {
-    const rect = glCanvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
+  const sizeChanged = updateCanvasSize();
 
-    // Set canvas size to match display size
-    glCanvas.width = rect.width * dpr;
-    glCanvas.height = rect.height * dpr;
-    overlayCanvas.width = rect.width * dpr;
-    overlayCanvas.height = rect.height * dpr;
+  if (currentImageObject) {
+    redrawCurrentImage({
+      reason: sizeChanged ? 'resize:size-change' : 'resize:style-only'
+    });
+    return;
+  }
 
-    // Scale canvas back down using CSS
-    glCanvas.style.width = rect.width + 'px';
-    glCanvas.style.height = rect.height + 'px';
-    overlayCanvas.style.width = rect.width + 'px';
-    overlayCanvas.style.height = rect.height + 'px';
-
-    // Scale the drawing context so everything draws at the correct size
-    const ctx = glCanvas.getContext('2d');
-    const overlayCtx = overlayCanvas.getContext('2d');
-    if (ctx) ctx.scale(dpr, dpr);
-    if (overlayCtx) overlayCtx.scale(dpr, dpr);
-
-    // Re-render overlays if they exist
-    if (lastBoxes.length > 0 || layerCache.size > 0) {
-      renderOverlays();
-    }
+  if (sizeChanged && (lastBoxes.length > 0 || layerCache.size > 0 || userDrawnRois.length > 0)) {
+    renderOverlays();
   }
 }
 
-// Debounced resize handler
+// Debounced resize handler with layout settling
 let resizeTimeout;
 function debouncedResize() {
   clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(handleCanvasResize, 100);
+  resizeTimeout = setTimeout(() => {
+    // Use requestAnimationFrame to ensure CSS layout has been recalculated
+    requestAnimationFrame(() => {
+      handleCanvasResize();
+      // Also trigger NiiVue resize if available
+      if (nv && typeof nv.resize === 'function') {
+        nv.resize();
+      }
+    });
+  }, 100);
 }
 
 function displayImageOnCanvas(img) {
@@ -117,19 +251,86 @@ function displayImageOnCanvas(img) {
     imageCanvas.style.position = 'absolute';
     imageCanvas.style.top = '0';
     imageCanvas.style.left = '0';
-    imageCanvas.style.width = '100%';
-    imageCanvas.style.height = '100%';
     imageCanvas.style.zIndex = '5';
+    imageCanvas.style.minWidth = '0';
+    imageCanvas.style.minHeight = '0';
     glCanvas.parentNode.insertBefore(imageCanvas, overlayCanvas);
   }
-  const boxW = glCanvas.clientWidth, boxH = glCanvas.clientHeight;
-  imageCanvas.width = boxW; imageCanvas.height = boxH;
+  
+  // Get current container dimensions
+  const { width: containerWidthRaw, height: containerHeightRaw } = getCanvasContainerSize();
+  const containerWidth = Math.round(containerWidthRaw);
+  const containerHeight = Math.round(containerHeightRaw);
+
+  if (containerWidth === 0 || containerHeight === 0) {
+    console.warn('⚠️ displayImageOnCanvas skipped - container has zero size', { containerWidthRaw, containerHeightRaw });
+    return;
+  }
+  
+  // Account for device pixel ratio
+  const dpr = window.devicePixelRatio || 1;
+  
+  // Set canvas resolution with DPR
+  imageCanvas.width = containerWidth * dpr;
+  imageCanvas.height = containerHeight * dpr;
+  
+  // Set CSS display size
+  imageCanvas.style.width = containerWidth + 'px';
+  imageCanvas.style.height = containerHeight + 'px';
+  
   const ctx = imageCanvas.getContext('2d');
-  ctx.clearRect(0,0,boxW,boxH);
-  const scale = Math.min(boxW/img.width, boxH/img.height);
-  const width = img.width * scale, height = img.height * scale;
-  const x = (boxW - width) / 2, y = (boxH - height) / 2;
-  ctx.drawImage(img, x, y, width, height);
+  if (!ctx) return;
+  
+  // Scale context for DPR
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+  
+  // Clear canvas
+  ctx.clearRect(0, 0, containerWidth, containerHeight);
+  
+  // Calculate scaling to fit image in container while maintaining aspect ratio
+  const scale = Math.min(containerWidth / img.width, containerHeight / img.height);
+  const scaledWidth = img.width * scale;
+  const scaledHeight = img.height * scale;
+  const x = (containerWidth - scaledWidth) / 2;
+  const y = (containerHeight - scaledHeight) / 2;
+  
+  // Draw the image centered and scaled
+  ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+  
+  console.log('✅ Image canvas rendered:', {
+    containerSize: { width: containerWidth, height: containerHeight },
+    imageSize: { width: img.width, height: img.height },
+    scale,
+    dpr
+  });
+}
+
+function redrawCurrentImage({ ensureSize = false, reason = 'resize' } = {}) {
+  if (!currentImageObject) {
+    return false;
+  }
+
+  if (ensureSize) {
+    updateCanvasSize();
+  }
+
+  displayImageOnCanvas(currentImageObject);
+
+  const { width, height } = currentImageDimensions || {};
+  if (width && height) {
+    fitOverlayToImage(width, height);
+  }
+
+  renderOverlays();
+
+  console.log('♻️ Image redraw complete:', {
+    reason,
+    containerSize: getCanvasContainerSize(),
+    imageSize: currentImageDimensions
+  });
+
+  return true;
 }
 
 // Make loadCaseFromUrl available globally for quick case buttons
@@ -141,6 +342,8 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
   rois=[]; layerCache.clear(); visibleLayers.clear(); lastBoxes = [];
   userDrawnRois = []; // Clear user-drawn ROIs
   currentImageFile = null; // Clear current image file
+  currentImageDimensions = { width: 1024, height: 1024 }; // Reset dimensions
+  currentImageObject = null; // Clear stored image object
   showAIDetections = true; // Reset AI detections visibility
 
   // Show drop zone when loading new case
@@ -151,7 +354,7 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
 
   const NvCtor = window.Niivue || (window.niivue && window.niivue.Niivue);
   if (!NvCtor) throw new Error('Niivue not loaded');
-  nv = new NvCtor({ isResizeCanvas:false }); await nv.attachTo('glCanvas');
+  nv = new NvCtor({ isResizeCanvas: true }); await nv.attachTo('glCanvas');
 
   let doc=null;
   if (url){
@@ -181,13 +384,18 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
     if (/\.(png|jpg|jpeg)$/i.test(imgUrl)) {
       return new Promise((resolve, reject) => {
         const img = new Image();
-        img.onload = () => {
-          displayImageOnCanvas(img);
-          fitOverlayToImage(img.width, img.height);
-          renderOverlays();
-          setStatus('ready');
-          showSpinner(false);
-          resolve(img);
+        img.onload = () => { 
+          try {
+            currentImageDimensions = { width: img.width, height: img.height };
+            currentImageObject = img; // Store for redrawing on resize
+            redrawCurrentImage({ ensureSize: true, reason: 'case-load' });
+            setStatus('ready');
+            showSpinner(false);
+            resolve(img);
+          } catch (e) {
+            console.error('Error rendering image:', e);
+            reject(e);
+          }
         };
         img.onerror = () => {
           console.error('Failed to load image:', imgUrl);
@@ -201,7 +409,11 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
       try {
         await nv.loadImages([{ url: imgUrl, name:'slide', colormap:'gray', opacity:1 }]);
         const img = new Image();
-        img.onload=()=>{ fitOverlayToImage(img.width, img.height); renderOverlays(); };
+        img.onload=()=>{ 
+          currentImageDimensions = { width: img.width, height: img.height };
+          currentImageObject = img; // Store for redrawing on resize
+          redrawCurrentImage({ ensureSize: true, reason: 'case-load-nonpng' });
+        };
         img.src=imgUrl;
         setStatus('ready'); showSpinner(false);
         return img;
@@ -480,28 +692,14 @@ function handleDroppedFiles(files) {
         rois = [];
         userDrawnRois = []; // Clear user-drawn ROIs
         currentImageFile = null; // Clear current image file
+        currentImageDimensions = { width: 1024, height: 1024 }; // Reset dimensions
+        currentImageObject = null; // Clear stored image object
 
         // Display the new image
-        displayImageOnCanvas(img);
-        fitOverlayToImage(img.width, img.height);
-
-        // Ensure overlay canvas is properly positioned and sized
-        overlayCanvas.style.position = 'absolute';
-        overlayCanvas.style.top = '0';
-        overlayCanvas.style.left = '0';
-        overlayCanvas.style.width = glCanvas.clientWidth + 'px';
-        overlayCanvas.style.height = glCanvas.clientHeight + 'px';
-        overlayCanvas.style.zIndex = '10';
-
-        // Force a re-render after a short delay to ensure everything is positioned correctly
-        setTimeout(() => {
-          console.log('🔧 Transform after fitOverlayToImage:', transform);
-          console.log('🔧 Canvas dimensions:', {
-            glCanvas: { width: glCanvas.clientWidth, height: glCanvas.clientHeight },
-            overlayCanvas: { width: overlayCanvas.width, height: overlayCanvas.height }
-          });
-          renderOverlays();
-        }, 100);
+        // Store actual image dimensions
+        currentImageDimensions = { width: img.width, height: img.height };
+        currentImageObject = img; // Store the image object
+        redrawCurrentImage({ ensureSize: true, reason: 'file-drop' });
 
         // Update current slide info
         currentSlideId = `DROPPED-${Date.now()}`;
@@ -972,9 +1170,25 @@ function setupResponsiveFeatures() {
   // Add resize listener for canvas
   window.addEventListener('resize', debouncedResize);
 
+  // Use ResizeObserver to detect when the viewer container changes size
+  // This catches layout changes from CSS media queries that window.resize might miss
+  const viewer = document.getElementById('viewer');
+  if (viewer && window.ResizeObserver) {
+    const resizeObserver = new ResizeObserver(() => {
+      debouncedResize();
+    });
+    resizeObserver.observe(viewer);
+  }
+
   // Add orientation change listener for mobile devices
   window.addEventListener('orientationchange', () => {
-    setTimeout(handleCanvasResize, 500); // Delay to allow orientation change to complete
+    setTimeout(() => {
+      debouncedResize();
+      // Also trigger NiiVue resize if available
+      if (nv && typeof nv.resize === 'function') {
+        nv.resize();
+      }
+    }, 500); // Delay to allow orientation change to complete
   });
 
   // Setup touch events for better mobile interaction
@@ -1137,8 +1351,16 @@ function downloadImageWithOverlays() {
 // Initialize responsive features
 setupResponsiveFeatures();
 
-// Ensure spinner is hidden on page load
-showSpinner(false);
-
-// initial load
-loadCaseFromUrl().catch(e=>{ console.error(e); setStatus('error'); showSpinner(false); });
+// Defer initial load until after page layout
+// This ensures the canvas has proper dimensions from the flex container
+setTimeout(() => {
+  // Update canvas size to ensure proper dimensions
+  updateCanvasSize();
+  
+  // Load initial case
+  loadCaseFromUrl().catch(e => { 
+    console.error('Failed to load initial case:', e); 
+    setStatus('error'); 
+    showSpinner(false); 
+  });
+}, 100);

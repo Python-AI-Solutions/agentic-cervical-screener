@@ -200,17 +200,21 @@
     }
 
     #glCanvas {
-      width: min(95vw, 1200px);
-      height: min(calc(95vh - var(--header-height)), 900px);
+      width: 100%;
+      height: 100%;
       background: #000;
-      max-width: 100%;
-      max-height: 100%;
+      display: block;
     }
 
     #overlayCanvas {
       position: absolute;
-      pointer-events: none;
+      top: 0;
+      left: 0;
+      pointer-events: auto;
       z-index: 10;
+      width: 100%;
+      height: 100%;
+      display: block;
     }
 
     /* Utility Classes */
@@ -480,10 +484,35 @@
     /* Style mobile layers to look good in the mobile menu */
     @media (max-width: 1024px) {
       .mobile-layers-section .layer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         margin-bottom: var(--spacing-xs);
         background: rgba(255, 255, 255, 0.05);
         border-radius: var(--border-radius);
-        padding: var(--spacing-sm);
+        padding: var(--spacing-sm) var(--spacing-md);
+        min-height: 44px; /* Ensure proper touch target */
+        gap: var(--spacing-sm);
+      }
+      
+      .mobile-layers-section .layer span {
+        flex: 1;
+        font-size: 0.875rem;
+        color: var(--text-primary);
+        min-width: 0;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+      }
+      
+      .mobile-layers-section .layer .muted {
+        font-size: 0.75rem;
+        opacity: 0.7;
+      }
+      
+      .mobile-layers-section .toggle-switch {
+        flex-shrink: 0;
+        margin-left: auto;
+        /* Use same toggle switch styles as desktop */
       }
     }
 
