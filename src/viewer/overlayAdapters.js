@@ -1,7 +1,7 @@
 // --- color rules -------------------------------------------------------------
 const CLASS_COLORS = {
   'HSIL-like': '#FF1493',  // Deep pink - highly visible for high-grade lesions
-  'LSIL-like': '#FF6347',  // Tomato red - visible for low-grade lesions  
+  'LSIL-like': '#FF6347',  // Tomato red - visible for low-grade lesions
   'Normal':    '#00FF7F',  // Spring green - bright for normal cells
   'Artifact':  '#FFD700',  // Gold - stands out for artifacts
   'ASC-US':    '#FF4500',  // Orange red

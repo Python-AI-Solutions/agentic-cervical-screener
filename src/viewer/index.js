@@ -105,7 +105,7 @@ function updateCanvasSize() {
   // Measure the responsive container instead of the canvas itself so we react
   // to layout changes (e.g. switching between desktop and mobile breakpoints).
   const { width, height } = getCanvasContainerSize();
-  
+
   // Defensive check: if canvas hasn't been laid out yet, skip sizing
   if (width === 0 || height === 0) {
     // Restore previous inline styles so we don't leave canvases unset
@@ -120,14 +120,14 @@ function updateCanvasSize() {
     console.warn('⚠️ Canvas not laid out yet (dimensions: ' + width + 'x' + height + '), skipping size update');
     return false;
   }
-  
+
   // Account for device pixel ratio for crisp rendering
   const dpr = window.devicePixelRatio || 1;
   const roundedWidth = Math.round(width);
   const roundedHeight = Math.round(height);
   const actualWidth = Math.round(roundedWidth * dpr);
   const actualHeight = Math.round(roundedHeight * dpr);
-  
+
   let sizeChanged = false;
 
   // Only update heavy pixel buffers if something actually changed
@@ -141,14 +141,14 @@ function updateCanvasSize() {
       imageCanvas.width = actualWidth;
       imageCanvas.height = actualHeight;
     }
-    
+
     // Scale overlay context for high DPI
     const overlayCtx = overlayCanvas.getContext('2d');
     if (overlayCtx) {
       overlayCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset first
       overlayCtx.scale(dpr, dpr);
     }
-    
+
     console.log('✅ Canvas size updated:', {
       displaySize: { width, height },
       actualPixels: { width: actualWidth, height: actualHeight },
@@ -168,14 +168,14 @@ function updateCanvasSize() {
     imageCanvas.style.width = styleWidthPx;
     imageCanvas.style.height = styleHeightPx;
   }
-  
+
   return sizeChanged;
 }
 
 function fitOverlayToImage(imageWidth, imageHeight) {
   // First ensure canvases are properly sized
   updateCanvasSize();
-  
+
   // Get container dimensions
   const { width: containerWidthRaw, height: containerHeightRaw } = getCanvasContainerSize();
   const containerWidth = Math.round(containerWidthRaw);
@@ -185,16 +185,16 @@ function fitOverlayToImage(imageWidth, imageHeight) {
     console.warn('⚠️ fitOverlayToImage skipped - container has zero size', { containerWidthRaw, containerHeightRaw });
     return;
   }
-  
+
   // Calculate scale to fit image in container
   const scale = Math.min(containerWidth / imageWidth, containerHeight / imageHeight);
-  
+
   // Center the image
   const scaledWidth = imageWidth * scale;
   const scaledHeight = imageHeight * scale;
   const tx = (containerWidth - scaledWidth) / 2;
   const ty = (containerHeight - scaledHeight) / 2;
-  
+
   transform.scale = scale;
   transform.tx = tx;
   transform.ty = ty;
@@ -256,7 +256,7 @@ function displayImageOnCanvas(img) {
     imageCanvas.style.minHeight = '0';
     glCanvas.parentNode.insertBefore(imageCanvas, overlayCanvas);
   }
-  
+
   // Get current container dimensions
   const { width: containerWidthRaw, height: containerHeightRaw } = getCanvasContainerSize();
   const containerWidth = Math.round(containerWidthRaw);
@@ -266,38 +266,38 @@ function displayImageOnCanvas(img) {
     console.warn('⚠️ displayImageOnCanvas skipped - container has zero size', { containerWidthRaw, containerHeightRaw });
     return;
   }
-  
+
   // Account for device pixel ratio
   const dpr = window.devicePixelRatio || 1;
-  
+
   // Set canvas resolution with DPR
   imageCanvas.width = containerWidth * dpr;
   imageCanvas.height = containerHeight * dpr;
-  
+
   // Set CSS display size
   imageCanvas.style.width = containerWidth + 'px';
   imageCanvas.style.height = containerHeight + 'px';
-  
+
   const ctx = imageCanvas.getContext('2d');
   if (!ctx) return;
-  
+
   // Scale context for DPR
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.scale(dpr, dpr);
-  
+
   // Clear canvas
   ctx.clearRect(0, 0, containerWidth, containerHeight);
-  
+
   // Calculate scaling to fit image in container while maintaining aspect ratio
   const scale = Math.min(containerWidth / img.width, containerHeight / img.height);
   const scaledWidth = img.width * scale;
   const scaledHeight = img.height * scale;
   const x = (containerWidth - scaledWidth) / 2;
   const y = (containerHeight - scaledHeight) / 2;
-  
+
   // Draw the image centered and scaled
   ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
-  
+
   console.log('✅ Image canvas rendered:', {
     containerSize: { width: containerWidth, height: containerHeight },
     imageSize: { width: img.width, height: img.height },
@@ -384,7 +384,7 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
     if (/\.(png|jpg|jpeg)$/i.test(imgUrl)) {
       return new Promise((resolve, reject) => {
         const img = new Image();
-        img.onload = () => { 
+        img.onload = () => {
           try {
             currentImageDimensions = { width: img.width, height: img.height };
             currentImageObject = img; // Store for redrawing on resize
@@ -409,7 +409,7 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
       try {
         await nv.loadImages([{ url: imgUrl, name:'slide', colormap:'gray', opacity:1 }]);
         const img = new Image();
-        img.onload=()=>{ 
+        img.onload=()=>{
           currentImageDimensions = { width: img.width, height: img.height };
           currentImageObject = img; // Store for redrawing on resize
           redrawCurrentImage({ ensureSize: true, reason: 'case-load-nonpng' });
@@ -520,7 +520,7 @@ function addLayerToggle(layerId, geometry, checked = true) {
     cb.addEventListener('change', () => {
       // Sync all checkboxes with the same data-layer
       checkboxes.forEach(checkbox => checkbox.checked = cb.checked);
-      
+
       // Handle specific layer behaviors
       if (layerId === 'ai-detections') {
         showAIDetections = cb.checked;
@@ -530,7 +530,7 @@ function addLayerToggle(layerId, geometry, checked = true) {
         // Handle regular layers
         cb.checked ? visibleLayers.add(layerId) : visibleLayers.delete(layerId);
       }
-      
+
       renderOverlays();
     });
   });
@@ -1083,7 +1083,7 @@ function drawUserRois() {
 
     // Determine if this ROI is being hovered
     const isHovered = hoveredRoiIndex === index;
-    
+
     // Use bright, visible colors for manual ROIs
     if (isHovered) {
       // Bright yellow-orange for hover
@@ -1356,11 +1356,11 @@ setupResponsiveFeatures();
 setTimeout(() => {
   // Update canvas size to ensure proper dimensions
   updateCanvasSize();
-  
+
   // Load initial case
-  loadCaseFromUrl().catch(e => { 
-    console.error('Failed to load initial case:', e); 
-    setStatus('error'); 
-    showSpinner(false); 
+  loadCaseFromUrl().catch(e => {
+    console.error('Failed to load initial case:', e);
+    setStatus('error');
+    showSpinner(false);
   });
 }, 100);
