@@ -1,9 +1,15 @@
 // --- color rules -------------------------------------------------------------
 const CLASS_COLORS = {
-  'HSIL-like': '#ef4444',  // red
-  'LSIL-like': '#f59e0b',  // amber
-  'Normal':    '#22c55e',  // green
-  'Artifact':  '#9ca3af',  // gray
+  'HSIL-like': '#FF1493',  // Deep pink - highly visible for high-grade lesions
+  'LSIL-like': '#FF6347',  // Tomato red - visible for low-grade lesions
+  'Normal':    '#00FF7F',  // Spring green - bright for normal cells
+  'Artifact':  '#FFD700',  // Gold - stands out for artifacts
+  'ASC-US':    '#FF4500',  // Orange red
+  'ASC-H':     '#DC143C',  // Crimson
+  'LSIL':      '#FF6347',  // Tomato (same as LSIL-like)
+  'HSIL':      '#FF1493',  // Deep pink (same as HSIL-like)
+  'SCC':       '#B22222',  // Fire brick - dark red for squamous cell carcinoma
+  'Negative for intraepithelial lesion': '#00FF7F',  // Spring green (same as Normal)
 };
 const LAYER_KIND_COLORS = {
   detections:   '#00E5FF',
@@ -13,7 +19,7 @@ const LAYER_KIND_COLORS = {
   tz_evidence:  '#8B5CF6',
   default:      '#00E5FF',
 };
-export function colorForLabel(label, fallback='#22C55E') {
+export function colorForLabel(label, fallback='#00FF7F') {
   return CLASS_COLORS[label] || fallback;
 }
 function colorForLayerKind(kind) {
@@ -94,10 +100,12 @@ export function drawLabeledBoxes(ctx, boxes, transform) {
       transform
     });
 
-    // box
+    // box with better visibility
     ctx.save();
     ctx.strokeStyle = color;
-    ctx.lineWidth   = Math.max(1, 2 * transform.scale);
+    ctx.lineWidth   = Math.max(2, 3 * transform.scale);
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 3;
     ctx.strokeRect(x1, y1, w, h);
 
     // label (with tiny background for readability)

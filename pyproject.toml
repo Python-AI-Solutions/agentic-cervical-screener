@@ -169,7 +169,7 @@ skips = ["B101", "B601"]
 
 [tool.pixi.project]
 channels = ["conda-forge", "pytorch"]
-platforms = ["osx-arm64", "linux-64", "linux-aarch64"]
+platforms = ["osx-arm64", "linux-64", "linux-aarch64", "osx-64"]
 
 [tool.pixi.tasks]
 dev = "uvicorn src.main:app --reload --host localhost --port 8000"

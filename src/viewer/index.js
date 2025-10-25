@@ -6,10 +6,8 @@ import { collectRois } from './roiNav.js';
 const statusEl     = document.getElementById('status');
 const spinnerEl    = document.getElementById('spinner');
 const layersEl     = document.getElementById('layers');
+const mobileLayersEl = document.getElementById('mobileLayers');
 const btnClassify  = document.getElementById('btnClassify');
-const btnPrevRoi   = document.getElementById('btnPrevRoi');
-const btnNextRoi   = document.getElementById('btnNextRoi');
-const btnToggleRoiMode = document.getElementById('btnToggleRoiMode');
 const btnDownload  = document.getElementById('btnDownload');
 const btnClearRois = document.getElementById('btnClearRois');
 
@@ -18,13 +16,40 @@ const overlayCanvas= document.getElementById('overlayCanvas');
 const overlayCtx   = overlayCanvas.getContext('2d');
 
 overlayCanvas.style.zIndex = '10';
+if (glCanvas) {
+  glCanvas.style.minWidth = '0';
+  glCanvas.style.minHeight = '0';
+}
+if (overlayCanvas) {
+  overlayCanvas.style.minWidth = '0';
+  overlayCanvas.style.minHeight = '0';
+}
+
+/**
+ * Returns the size of the Niivue viewer container independent of any inline
+ * sizing we might apply to the canvases themselves. This lets us respond to
+ * responsive layout changes (desktop ↔︎ mobile) where CSS alters the container
+ * dimensions but previously cached inline canvas sizes would otherwise win.
+ */
+function getCanvasContainerSize() {
+  if (!glCanvas) return { width: 0, height: 0 };
+  const container = glCanvas.parentElement || glCanvas;
+  const rect = container.getBoundingClientRect();
+  if (rect.width && rect.height) {
+    return { width: rect.width, height: rect.height };
+  }
+  return {
+    width: glCanvas.clientWidth || 0,
+    height: glCanvas.clientHeight || 0,
+  };
+}
 
 const transform = { scale:1, tx:0, ty:0 };
-let nv=null, rois=[], roiIdx=-1, currentSlideId=null, currentSlideUri=null, lastLoadedCase=null;
+let nv=null, rois=[], currentSlideId=null, currentSlideUri=null, lastLoadedCase=null;
 let layerCache = new Map();          // layer_id -> FeatureCollection (for rects/points)
 let visibleLayers = new Set();       // layer_ids currently shown
 let lastBoxes = [];                  // boxes from last classify
-let roiMode = 'ground_truth';        // 'ground_truth' or 'ai_detections'
+// Removed roiMode - drawing is now always available
 let showAIDetections = true;         // Whether to show AI classification boxes
 let caseCache = new Map();           // Cache for case data to avoid re-fetching
 
@@ -36,6 +61,8 @@ let userDrawnRois = [];              // User-drawn rectangles
 let showUserDrawnRois = true;        // Toggle for user-drawn rectangles visibility
 let currentImageFile = null;         // Store the current image file for classification
 let hoveredRoiIndex = -1;            // Index of currently hovered ROI (-1 if none)
+let currentImageDimensions = { width: 1024, height: 1024 }; // Store actual image dimensions
+let currentImageObject = null;       // Store the current image object for redrawing on resize
 
 // Available labels for cervical cytology
 const CERVICAL_LABELS = [
@@ -53,56 +80,161 @@ function showSpinner(v){
     spinnerEl.hidden = !v;
   }
 }
-function fitOverlayToImage(w,h){
-  const boxW=glCanvas.clientWidth, boxH=glCanvas.clientHeight;
-  const scale=Math.min(boxW/w, boxH/h), tx=(boxW-w*scale)/2, ty=(boxH-h*scale)/2;
-  glCanvas.width=boxW; glCanvas.height=boxH; overlayCanvas.width=boxW; overlayCanvas.height=boxH;
-  overlayCanvas.style.width=boxW+'px'; overlayCanvas.style.height=boxH+'px';
-  transform.scale=scale; transform.tx=tx; transform.ty=ty;
+// Update canvas size to match container - NiiVue style responsive handling
+function updateCanvasSize() {
+  if (!glCanvas || !overlayCanvas) return false;
 
-  console.log('🔧 fitOverlayToImage called:', {
-    imageSize: { w, h },
-    canvasSize: { boxW, boxH },
+  const prevGlWidthStyle = glCanvas.style.width;
+  const prevGlHeightStyle = glCanvas.style.height;
+  const prevOverlayWidthStyle = overlayCanvas.style.width;
+  const prevOverlayHeightStyle = overlayCanvas.style.height;
+  const imageCanvas = document.getElementById('imageCanvas');
+  const prevImageWidthStyle = imageCanvas?.style.width ?? '';
+  const prevImageHeightStyle = imageCanvas?.style.height ?? '';
+
+  // Let CSS dictate the new layout before we measure so responsive changes are applied.
+  glCanvas.style.width = '';
+  glCanvas.style.height = '';
+  overlayCanvas.style.width = '';
+  overlayCanvas.style.height = '';
+  if (imageCanvas) {
+    imageCanvas.style.width = '';
+    imageCanvas.style.height = '';
+  }
+
+  // Measure the responsive container instead of the canvas itself so we react
+  // to layout changes (e.g. switching between desktop and mobile breakpoints).
+  const { width, height } = getCanvasContainerSize();
+
+  // Defensive check: if canvas hasn't been laid out yet, skip sizing
+  if (width === 0 || height === 0) {
+    // Restore previous inline styles so we don't leave canvases unset
+    glCanvas.style.width = prevGlWidthStyle;
+    glCanvas.style.height = prevGlHeightStyle;
+    overlayCanvas.style.width = prevOverlayWidthStyle;
+    overlayCanvas.style.height = prevOverlayHeightStyle;
+    if (imageCanvas) {
+      imageCanvas.style.width = prevImageWidthStyle;
+      imageCanvas.style.height = prevImageHeightStyle;
+    }
+    console.warn('⚠️ Canvas not laid out yet (dimensions: ' + width + 'x' + height + '), skipping size update');
+    return false;
+  }
+
+  // Account for device pixel ratio for crisp rendering
+  const dpr = window.devicePixelRatio || 1;
+  const roundedWidth = Math.round(width);
+  const roundedHeight = Math.round(height);
+  const actualWidth = Math.round(roundedWidth * dpr);
+  const actualHeight = Math.round(roundedHeight * dpr);
+
+  let sizeChanged = false;
+
+  // Only update heavy pixel buffers if something actually changed
+  if (glCanvas.width !== actualWidth || glCanvas.height !== actualHeight) {
+    // Set canvas resolution (actual pixels)
+    glCanvas.width = actualWidth;
+    glCanvas.height = actualHeight;
+    overlayCanvas.width = actualWidth;
+    overlayCanvas.height = actualHeight;
+    if (imageCanvas) {
+      imageCanvas.width = actualWidth;
+      imageCanvas.height = actualHeight;
+    }
+
+    // Scale overlay context for high DPI
+    const overlayCtx = overlayCanvas.getContext('2d');
+    if (overlayCtx) {
+      overlayCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset first
+      overlayCtx.scale(dpr, dpr);
+    }
+
+    console.log('✅ Canvas size updated:', {
+      displaySize: { width, height },
+      actualPixels: { width: actualWidth, height: actualHeight },
+      dpr,
+      timestamp: new Date().toLocaleTimeString()
+    });
+    sizeChanged = true;
+  }
+
+  const styleWidthPx = `${roundedWidth}px`;
+  const styleHeightPx = `${roundedHeight}px`;
+  glCanvas.style.width = styleWidthPx;
+  glCanvas.style.height = styleHeightPx;
+  overlayCanvas.style.width = styleWidthPx;
+  overlayCanvas.style.height = styleHeightPx;
+  if (imageCanvas) {
+    imageCanvas.style.width = styleWidthPx;
+    imageCanvas.style.height = styleHeightPx;
+  }
+
+  return sizeChanged;
+}
+
+function fitOverlayToImage(imageWidth, imageHeight) {
+  // First ensure canvases are properly sized
+  updateCanvasSize();
+
+  // Get container dimensions
+  const { width: containerWidthRaw, height: containerHeightRaw } = getCanvasContainerSize();
+  const containerWidth = Math.round(containerWidthRaw);
+  const containerHeight = Math.round(containerHeightRaw);
+
+  if (containerWidth === 0 || containerHeight === 0) {
+    console.warn('⚠️ fitOverlayToImage skipped - container has zero size', { containerWidthRaw, containerHeightRaw });
+    return;
+  }
+
+  // Calculate scale to fit image in container
+  const scale = Math.min(containerWidth / imageWidth, containerHeight / imageHeight);
+
+  // Center the image
+  const scaledWidth = imageWidth * scale;
+  const scaledHeight = imageHeight * scale;
+  const tx = (containerWidth - scaledWidth) / 2;
+  const ty = (containerHeight - scaledHeight) / 2;
+
+  transform.scale = scale;
+  transform.tx = tx;
+  transform.ty = ty;
+
+  console.log('✅ Image fit calculated:', {
+    imageSize: { width: imageWidth, height: imageHeight },
+    containerSize: { width: containerWidth, height: containerHeight },
     transform: { scale, tx, ty }
   });
 }
 
-// Responsive canvas resizing
 function handleCanvasResize() {
-  if (glCanvas && overlayCanvas) {
-    const rect = glCanvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
+  const sizeChanged = updateCanvasSize();
 
-    // Set canvas size to match display size
-    glCanvas.width = rect.width * dpr;
-    glCanvas.height = rect.height * dpr;
-    overlayCanvas.width = rect.width * dpr;
-    overlayCanvas.height = rect.height * dpr;
+  if (currentImageObject) {
+    redrawCurrentImage({
+      reason: sizeChanged ? 'resize:size-change' : 'resize:style-only'
+    });
+    return;
+  }
 
-    // Scale canvas back down using CSS
-    glCanvas.style.width = rect.width + 'px';
-    glCanvas.style.height = rect.height + 'px';
-    overlayCanvas.style.width = rect.width + 'px';
-    overlayCanvas.style.height = rect.height + 'px';
-
-    // Scale the drawing context so everything draws at the correct size
-    const ctx = glCanvas.getContext('2d');
-    const overlayCtx = overlayCanvas.getContext('2d');
-    if (ctx) ctx.scale(dpr, dpr);
-    if (overlayCtx) overlayCtx.scale(dpr, dpr);
-
-    // Re-render overlays if they exist
-    if (lastBoxes.length > 0 || layerCache.size > 0) {
-      renderOverlays();
-    }
+  if (sizeChanged && (lastBoxes.length > 0 || layerCache.size > 0 || userDrawnRois.length > 0)) {
+    renderOverlays();
   }
 }
 
-// Debounced resize handler
+// Debounced resize handler with layout settling
 let resizeTimeout;
 function debouncedResize() {
   clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(handleCanvasResize, 100);
+  resizeTimeout = setTimeout(() => {
+    // Use requestAnimationFrame to ensure CSS layout has been recalculated
+    requestAnimationFrame(() => {
+      handleCanvasResize();
+      // Also trigger NiiVue resize if available
+      if (nv && typeof nv.resize === 'function') {
+        nv.resize();
+      }
+    });
+  }, 100);
 }
 
 function displayImageOnCanvas(img) {
@@ -119,28 +251,99 @@ function displayImageOnCanvas(img) {
     imageCanvas.style.position = 'absolute';
     imageCanvas.style.top = '0';
     imageCanvas.style.left = '0';
-    imageCanvas.style.width = '100%';
-    imageCanvas.style.height = '100%';
     imageCanvas.style.zIndex = '5';
+    imageCanvas.style.minWidth = '0';
+    imageCanvas.style.minHeight = '0';
     glCanvas.parentNode.insertBefore(imageCanvas, overlayCanvas);
   }
-  const boxW = glCanvas.clientWidth, boxH = glCanvas.clientHeight;
-  imageCanvas.width = boxW; imageCanvas.height = boxH;
+
+  // Get current container dimensions
+  const { width: containerWidthRaw, height: containerHeightRaw } = getCanvasContainerSize();
+  const containerWidth = Math.round(containerWidthRaw);
+  const containerHeight = Math.round(containerHeightRaw);
+
+  if (containerWidth === 0 || containerHeight === 0) {
+    console.warn('⚠️ displayImageOnCanvas skipped - container has zero size', { containerWidthRaw, containerHeightRaw });
+    return;
+  }
+
+  // Account for device pixel ratio
+  const dpr = window.devicePixelRatio || 1;
+
+  // Set canvas resolution with DPR
+  imageCanvas.width = containerWidth * dpr;
+  imageCanvas.height = containerHeight * dpr;
+
+  // Set CSS display size
+  imageCanvas.style.width = containerWidth + 'px';
+  imageCanvas.style.height = containerHeight + 'px';
+
   const ctx = imageCanvas.getContext('2d');
-  ctx.clearRect(0,0,boxW,boxH);
-  const scale = Math.min(boxW/img.width, boxH/img.height);
-  const width = img.width * scale, height = img.height * scale;
-  const x = (boxW - width) / 2, y = (boxH - height) / 2;
-  ctx.drawImage(img, x, y, width, height);
+  if (!ctx) return;
+
+  // Scale context for DPR
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+
+  // Clear canvas
+  ctx.clearRect(0, 0, containerWidth, containerHeight);
+
+  // Calculate scaling to fit image in container while maintaining aspect ratio
+  const scale = Math.min(containerWidth / img.width, containerHeight / img.height);
+  const scaledWidth = img.width * scale;
+  const scaledHeight = img.height * scale;
+  const x = (containerWidth - scaledWidth) / 2;
+  const y = (containerHeight - scaledHeight) / 2;
+
+  // Draw the image centered and scaled
+  ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+
+  console.log('✅ Image canvas rendered:', {
+    containerSize: { width: containerWidth, height: containerHeight },
+    imageSize: { width: img.width, height: img.height },
+    scale,
+    dpr
+  });
+}
+
+function redrawCurrentImage({ ensureSize = false, reason = 'resize' } = {}) {
+  if (!currentImageObject) {
+    return false;
+  }
+
+  if (ensureSize) {
+    updateCanvasSize();
+  }
+
+  displayImageOnCanvas(currentImageObject);
+
+  const { width, height } = currentImageDimensions || {};
+  if (width && height) {
+    fitOverlayToImage(width, height);
+  }
+
+  renderOverlays();
+
+  console.log('♻️ Image redraw complete:', {
+    reason,
+    containerSize: getCanvasContainerSize(),
+    imageSize: currentImageDimensions
+  });
+
+  return true;
 }
 
 // Make loadCaseFromUrl available globally for quick case buttons
 window.loadCaseFromUrl = async function loadCaseFromUrl(url){
   setStatus('loading…'); showSpinner(true);
-  layersEl.innerHTML=''; overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
-  rois=[]; roiIdx=-1; layerCache.clear(); visibleLayers.clear(); lastBoxes = [];
+  if (layersEl) layersEl.innerHTML='';
+  if (mobileLayersEl) mobileLayersEl.innerHTML='';
+  overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
+  rois=[]; layerCache.clear(); visibleLayers.clear(); lastBoxes = [];
   userDrawnRois = []; // Clear user-drawn ROIs
   currentImageFile = null; // Clear current image file
+  currentImageDimensions = { width: 1024, height: 1024 }; // Reset dimensions
+  currentImageObject = null; // Clear stored image object
   showAIDetections = true; // Reset AI detections visibility
 
   // Show drop zone when loading new case
@@ -151,7 +354,7 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
 
   const NvCtor = window.Niivue || (window.niivue && window.niivue.Niivue);
   if (!NvCtor) throw new Error('Niivue not loaded');
-  nv = new NvCtor({ isResizeCanvas:false }); await nv.attachTo('glCanvas');
+  nv = new NvCtor({ isResizeCanvas: true }); await nv.attachTo('glCanvas');
 
   let doc=null;
   if (url){
@@ -182,12 +385,17 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
       return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
-          displayImageOnCanvas(img);
-          fitOverlayToImage(img.width, img.height);
-          renderOverlays();
-          setStatus('ready');
-          showSpinner(false);
-          resolve(img);
+          try {
+            currentImageDimensions = { width: img.width, height: img.height };
+            currentImageObject = img; // Store for redrawing on resize
+            redrawCurrentImage({ ensureSize: true, reason: 'case-load' });
+            setStatus('ready');
+            showSpinner(false);
+            resolve(img);
+          } catch (e) {
+            console.error('Error rendering image:', e);
+            reject(e);
+          }
         };
         img.onerror = () => {
           console.error('Failed to load image:', imgUrl);
@@ -201,7 +409,11 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
       try {
         await nv.loadImages([{ url: imgUrl, name:'slide', colormap:'gray', opacity:1 }]);
         const img = new Image();
-        img.onload=()=>{ fitOverlayToImage(img.width, img.height); renderOverlays(); };
+        img.onload=()=>{
+          currentImageDimensions = { width: img.width, height: img.height };
+          currentImageObject = img; // Store for redrawing on resize
+          redrawCurrentImage({ ensureSize: true, reason: 'case-load-nonpng' });
+        };
         img.src=imgUrl;
         setStatus('ready'); showSpinner(false);
         return img;
@@ -222,23 +434,10 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
 
   // Build layer controls + prefetch & cache asynchronously
   const layerPromises = (slide.layers||[]).map(async (L) => {
-    // UI - create immediately for better UX
-    const el=document.createElement('div'); el.className='layer';
-    el.innerHTML = `
-      <span>${L.layer_id} <span class="muted">(${L.geometry})</span></span>
-      <label class="toggle-switch">
-        <input type="checkbox" data-layer="${L.layer_id}" checked/>
-        <span class="toggle-slider"></span>
-      </label>`;
-    layersEl.appendChild(el);
+    // UI - create immediately for better UX (add to both desktop and mobile)
     visibleLayers.add(L.layer_id);
+    addLayerToggle(L.layer_id, L.geometry, true);
 
-    // Listen for changes
-    const cb = el.querySelector('input[type="checkbox"]');
-    cb.addEventListener('change', () => {
-      cb.checked ? visibleLayers.add(L.layer_id) : visibleLayers.delete(L.layer_id);
-      renderOverlays();
-    });
 
     // Cache data asynchronously (non-blocking)
     try {
@@ -267,7 +466,7 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
 }
 
 function renderOverlays(){
-  console.log('🎨 renderOverlays called:', { showUserDrawnRois, showAIDetections, roiMode, lastBoxesLength: lastBoxes.length });
+  console.log('🎨 renderOverlays called:', { showUserDrawnRois, showAIDetections, lastBoxesLength: lastBoxes.length });
   overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
 
   // Only show user-drawn ROIs (no hardcoded detections)
@@ -285,52 +484,64 @@ function renderOverlays(){
   }
 }
 
-function addAIDetectionsToggle() {
-  // Check if AI detections toggle already exists
-  if (document.querySelector('[data-layer="ai-detections"]')) return;
+function addLayerToggle(layerId, geometry, checked = true) {
+  // Check if layer toggle already exists
+  if (document.querySelector(`[data-layer="${layerId}"]`)) return;
 
-  // Create AI detections toggle
-  const el = document.createElement('div');
-  el.className = 'layer';
-  el.innerHTML = `
-    <span>ai-detections <span class="muted">(rects)</span></span>
-    <label class="toggle-switch">
-      <input type="checkbox" data-layer="ai-detections" checked/>
-      <span class="toggle-slider"></span>
-    </label>`;
+  // Create layer toggle for desktop
+  if (layersEl) {
+    const el = document.createElement('div');
+    el.className = 'layer';
+    el.innerHTML = `
+      <span>${layerId} <span class="muted">(${geometry})</span></span>
+      <label class="toggle-switch">
+        <input type="checkbox" data-layer="${layerId}" ${checked ? 'checked' : ''}/>
+        <span class="toggle-slider"></span>
+      </label>`;
+    layersEl.appendChild(el);
+  }
 
-  layersEl.appendChild(el);
+  // Create layer toggle for mobile
+  if (mobileLayersEl) {
+    const mobileEl = document.createElement('div');
+    mobileEl.className = 'layer';
+    mobileEl.innerHTML = `
+      <span>${layerId} <span class="muted">(${geometry})</span></span>
+      <label class="toggle-switch">
+        <input type="checkbox" data-layer="${layerId}" ${checked ? 'checked' : ''}/>
+        <span class="toggle-slider"></span>
+      </label>`;
+    mobileLayersEl.appendChild(mobileEl);
+  }
 
-  // Add event listener
-  const cb = el.querySelector('input[type="checkbox"]');
-  cb.addEventListener('change', () => {
-    showAIDetections = cb.checked;
-    renderOverlays();
+  // Add event listeners to both
+  const checkboxes = document.querySelectorAll(`[data-layer="${layerId}"]`);
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      // Sync all checkboxes with the same data-layer
+      checkboxes.forEach(checkbox => checkbox.checked = cb.checked);
+
+      // Handle specific layer behaviors
+      if (layerId === 'ai-detections') {
+        showAIDetections = cb.checked;
+      } else if (layerId === 'user-drawn-rois') {
+        showUserDrawnRois = cb.checked;
+      } else {
+        // Handle regular layers
+        cb.checked ? visibleLayers.add(layerId) : visibleLayers.delete(layerId);
+      }
+
+      renderOverlays();
+    });
   });
 }
 
+function addAIDetectionsToggle() {
+  addLayerToggle('ai-detections', 'rects', true);
+}
+
 function addUserDrawnRoisToggle() {
-  // Check if user-drawn ROIs toggle already exists
-  if (document.querySelector('[data-layer="user-drawn-rois"]')) return;
-
-  // Create user-drawn ROIs toggle
-  const el = document.createElement('div');
-  el.className = 'layer';
-  el.innerHTML = `
-    <span>user-drawn-rois <span class="muted">(rects)</span></span>
-    <label class="toggle-switch">
-      <input type="checkbox" data-layer="user-drawn-rois" checked/>
-      <span class="toggle-slider"></span>
-    </label>`;
-
-  layersEl.appendChild(el);
-
-  // Add event listener
-  const cb = el.querySelector('input[type="checkbox"]');
-  cb.addEventListener('change', () => {
-    showUserDrawnRois = cb.checked;
-    renderOverlays();
-  });
+  addLayerToggle('user-drawn-rois', 'rects', true);
 }
 
 
@@ -373,14 +584,10 @@ btnClassify.addEventListener('click', async ()=>{
     // Add AI detections toggle if it doesn't exist
     addAIDetectionsToggle();
 
-    // Automatically switch to AI detection mode after classification
-    roiMode = 'ai_detections';
-    roiIdx = -1; // Reset ROI index
+    // Keep AI detections visible after classification
 
-    // Update button text and style to reflect AI mode
-    btnToggleRoiMode.textContent = 'AI Detections';
-    btnToggleRoiMode.style.background = '#DC2626'; // Red for AI
-    overlayCanvas.style.cursor = 'default';
+    // Keep cursor as crosshair for drawing
+    overlayCanvas.style.cursor = 'crosshair';
 
     renderOverlays();
     setStatus(`classified - ${lastBoxes.length} detections found - switched to AI mode`);
@@ -391,40 +598,6 @@ btnClassify.addEventListener('click', async ()=>{
   finally { showSpinner(false); btnClassify.disabled = false; }
 });
 
-btnPrevRoi.addEventListener('click', ()=>{
-  const currentRois = getCurrentRois();
-  if(!currentRois.length) return;
-  roiIdx=(roiIdx-1+currentRois.length)%currentRois.length;
-  highlight(currentRois[roiIdx]);
-});
-
-btnNextRoi.addEventListener('click', ()=>{
-  const currentRois = getCurrentRois();
-  if(!currentRois.length) return;
-  roiIdx=(roiIdx+1)%currentRois.length;
-  highlight(currentRois[roiIdx]);
-});
-
-btnToggleRoiMode.addEventListener('click', ()=>{
-  // Toggle between ground truth and AI detections
-  roiMode = roiMode === 'ground_truth' ? 'ai_detections' : 'ground_truth';
-  roiIdx = -1; // Reset ROI index
-
-  // Update button text and style
-  if (roiMode === 'ai_detections') {
-    btnToggleRoiMode.textContent = 'AI Detections';
-    btnToggleRoiMode.style.background = '#DC2626'; // Red for AI
-    overlayCanvas.style.cursor = 'default';
-  } else {
-    btnToggleRoiMode.textContent = 'Ground Truth';
-    btnToggleRoiMode.style.background = '#374151'; // Gray for ground truth
-    overlayCanvas.style.cursor = 'crosshair';
-  }
-
-  // Clear any existing highlights
-  renderOverlays();
-  setStatus(`Switched to ${roiMode === 'ai_detections' ? 'AI Detections' : 'Ground Truth'} navigation`);
-});
 
 btnDownload.addEventListener('click', () => {
   downloadImageWithOverlays();
@@ -438,55 +611,15 @@ btnClearRois.addEventListener('click', () => {
 
   const count = userDrawnRois.length;
   userDrawnRois = [];
-  roiIdx = -1;
   renderOverlays();
   setStatus(`Cleared ${count} ROIs`);
 });
 
 function getCurrentRois() {
-  if (roiMode === 'ai_detections' && lastBoxes.length > 0) {
-    // Convert AI detection boxes to ROI format
-    return lastBoxes.map(box => ({
-      xmin: box.x,
-      ymin: box.y,
-      xmax: box.x + box.w,
-      ymax: box.y + box.h,
-      label: box.label,
-      score: box.score
-    }));
-  }
-  // In ground truth mode, use user-drawn ROIs if available, otherwise use loaded ROIs
+  // Return user-drawn ROIs if available, otherwise use loaded ground truth ROIs
   return userDrawnRois.length > 0 ? userDrawnRois : rois;
 }
 
-function highlight(roi){
-  // Redraw all overlays first to clear previous highlights
-  renderOverlays();
-
-  const currentRois = getCurrentRois();
-  const isAI = roiMode === 'ai_detections';
-
-  // Then draw the highlight on top
-  overlayCtx.save();
-  overlayCtx.strokeStyle = isAI ? '#FFD700' : '#22C55E'; // Gold for AI, Green for ground truth
-  overlayCtx.lineWidth=4*transform.scale;
-  overlayCtx.setLineDash([8, 4]); // Dashed line to make it more visible
-
-  const x1=roi.xmin*transform.scale+transform.tx, y1=roi.ymin*transform.scale+transform.ty;
-  const x2=roi.xmax*transform.scale+transform.tx, y2=roi.ymax*transform.scale+transform.ty;
-  overlayCtx.strokeRect(x1,y1,x2-x1,y2-y1);
-
-  overlayCtx.restore();
-
-  // Show different status for AI vs ground truth
-  if (isAI && roi.label && roi.score) {
-    setStatus(`AI Detection ${(roiIdx+1)}/${currentRois.length}: ${roi.label} (${Math.round(roi.score*100)}%)`);
-  } else if (roi.label) {
-    setStatus(`ROI ${(roiIdx+1)}/${currentRois.length}: ${roi.label}`);
-  } else {
-    setStatus(`ROI ${(roiIdx+1)}/${currentRois.length} - Ground Truth`);
-  }
-}
 
 // Drag and Drop functionality
 function setupDragAndDrop() {
@@ -550,37 +683,23 @@ function handleDroppedFiles(files) {
       const img = new Image();
       img.onload = function() {
         // Clear existing content
-        layersEl.innerHTML = '';
+        if (layersEl) layersEl.innerHTML = '';
+        if (mobileLayersEl) mobileLayersEl.innerHTML = '';
         overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
         layerCache.clear();
         visibleLayers.clear();
         lastBoxes = [];
         rois = [];
-        roiIdx = -1;
         userDrawnRois = []; // Clear user-drawn ROIs
         currentImageFile = null; // Clear current image file
+        currentImageDimensions = { width: 1024, height: 1024 }; // Reset dimensions
+        currentImageObject = null; // Clear stored image object
 
         // Display the new image
-        displayImageOnCanvas(img);
-        fitOverlayToImage(img.width, img.height);
-
-        // Ensure overlay canvas is properly positioned and sized
-        overlayCanvas.style.position = 'absolute';
-        overlayCanvas.style.top = '0';
-        overlayCanvas.style.left = '0';
-        overlayCanvas.style.width = glCanvas.clientWidth + 'px';
-        overlayCanvas.style.height = glCanvas.clientHeight + 'px';
-        overlayCanvas.style.zIndex = '10';
-
-        // Force a re-render after a short delay to ensure everything is positioned correctly
-        setTimeout(() => {
-          console.log('🔧 Transform after fitOverlayToImage:', transform);
-          console.log('🔧 Canvas dimensions:', {
-            glCanvas: { width: glCanvas.clientWidth, height: glCanvas.clientHeight },
-            overlayCanvas: { width: overlayCanvas.width, height: overlayCanvas.height }
-          });
-          renderOverlays();
-        }, 100);
+        // Store actual image dimensions
+        currentImageDimensions = { width: img.width, height: img.height };
+        currentImageObject = img; // Store the image object
+        redrawCurrentImage({ ensureSize: true, reason: 'file-drop' });
 
         // Update current slide info
         currentSlideId = `DROPPED-${Date.now()}`;
@@ -589,8 +708,7 @@ function handleDroppedFiles(files) {
         console.log('Set currentImageFile:', currentImageFile);
 
         // Set ROI mode to AI detections for custom images
-        roiMode = 'ai_detections';
-        console.log('Set roiMode to ai_detections for custom image');
+        console.log('Custom image loaded');
 
         // Update UI
         setStatus(`${file.name} loaded - ${img.width}×${img.height}px`);
@@ -652,11 +770,7 @@ function setupDrawingMode() {
 }
 
 function handleMouseDown(e) {
-  console.log('Mouse down event', { roiMode, isDrawing });
-  if (roiMode !== 'ground_truth') {
-    console.log('Not in ground truth mode, ignoring');
-    return;
-  }
+  console.log('Mouse down event', { isDrawing });
 
   const rect = overlayCanvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -684,7 +798,7 @@ function handleMouseDown(e) {
 }
 
 function handleMouseMove(e) {
-  if (!isDrawing || roiMode !== 'ground_truth') return;
+  if (!isDrawing) return;
 
   const rect = overlayCanvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -694,7 +808,6 @@ function handleMouseMove(e) {
 }
 
 function handleMouseMoveHover(e) {
-  if (roiMode !== 'ground_truth') return;
 
   const rect = overlayCanvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -725,7 +838,7 @@ function handleMouseMoveHover(e) {
 }
 
 function handleMouseUp(e) {
-  if (!isDrawing || roiMode !== 'ground_truth') return;
+  if (!isDrawing) return;
 
   const rect = overlayCanvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -736,7 +849,6 @@ function handleMouseUp(e) {
 
 function handleTouchStart(e) {
   e.preventDefault();
-  if (roiMode !== 'ground_truth') return;
 
   const rect = overlayCanvas.getBoundingClientRect();
   const touch = e.touches[0];
@@ -765,7 +877,6 @@ function handleTouchStart(e) {
 
 function handleTouchMoveHover(e) {
   e.preventDefault();
-  if (roiMode !== 'ground_truth') return;
 
   const rect = overlayCanvas.getBoundingClientRect();
   const touch = e.touches[0];
@@ -798,7 +909,7 @@ function handleTouchMoveHover(e) {
 
 function handleTouchMove(e) {
   e.preventDefault();
-  if (!isDrawing || roiMode !== 'ground_truth') return;
+  if (!isDrawing) return;
 
   const rect = overlayCanvas.getBoundingClientRect();
   const touch = e.touches[0];
@@ -810,7 +921,7 @@ function handleTouchMove(e) {
 
 function handleTouchEnd(e) {
   e.preventDefault();
-  if (!isDrawing || roiMode !== 'ground_truth') return;
+  if (!isDrawing) return;
 
   const rect = overlayCanvas.getBoundingClientRect();
   const touch = e.changedTouches[0];
@@ -962,9 +1073,6 @@ function drawUserRois() {
   if (userDrawnRois.length === 0) return;
 
   overlayCtx.save();
-  overlayCtx.strokeStyle = '#4ECDC4';
-  overlayCtx.lineWidth = 2;
-  overlayCtx.fillStyle = 'rgba(78, 205, 196, 0.1)';
   overlayCtx.font = 'bold 13px Arial';
 
   userDrawnRois.forEach((roi, index) => {
@@ -973,8 +1081,27 @@ function drawUserRois() {
     const x2 = roi.xmax * transform.scale + transform.tx;
     const y2 = roi.ymax * transform.scale + transform.ty;
 
+    // Determine if this ROI is being hovered
+    const isHovered = hoveredRoiIndex === index;
+
+    // Use bright, visible colors for manual ROIs
+    if (isHovered) {
+      // Bright yellow-orange for hover
+      overlayCtx.strokeStyle = '#FF8C00';
+      overlayCtx.lineWidth = 4;
+      overlayCtx.fillStyle = 'rgba(255, 140, 0, 0.25)';
+      // Add glow effect
+      overlayCtx.shadowColor = '#FF8C00';
+      overlayCtx.shadowBlur = 8;
+    } else {
+      // Bright cyan for normal state
+      overlayCtx.strokeStyle = '#00FFFF';
+      overlayCtx.lineWidth = 3;
+      overlayCtx.fillStyle = 'rgba(0, 255, 255, 0.15)';
+      overlayCtx.shadowBlur = 0;
+    }
+
     // Draw rectangle
-    overlayCtx.fillStyle = 'rgba(78, 205, 196, 0.1)';
     overlayCtx.fillRect(x1, y1, x2 - x1, y2 - y1);
     overlayCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
 
@@ -1043,9 +1170,25 @@ function setupResponsiveFeatures() {
   // Add resize listener for canvas
   window.addEventListener('resize', debouncedResize);
 
+  // Use ResizeObserver to detect when the viewer container changes size
+  // This catches layout changes from CSS media queries that window.resize might miss
+  const viewer = document.getElementById('viewer');
+  if (viewer && window.ResizeObserver) {
+    const resizeObserver = new ResizeObserver(() => {
+      debouncedResize();
+    });
+    resizeObserver.observe(viewer);
+  }
+
   // Add orientation change listener for mobile devices
   window.addEventListener('orientationchange', () => {
-    setTimeout(handleCanvasResize, 500); // Delay to allow orientation change to complete
+    setTimeout(() => {
+      debouncedResize();
+      // Also trigger NiiVue resize if available
+      if (nv && typeof nv.resize === 'function') {
+        nv.resize();
+      }
+    }, 500); // Delay to allow orientation change to complete
   });
 
   // Setup touch events for better mobile interaction
@@ -1095,9 +1238,9 @@ function downloadImageWithOverlays() {
       // Draw user-drawn ROIs
       if (showUserDrawnRois && userDrawnRois.length > 0) {
         tempCtx.save();
-        tempCtx.strokeStyle = '#4ECDC4';
-        tempCtx.lineWidth = 2;
-        tempCtx.fillStyle = 'rgba(78, 205, 196, 0.1)';
+        tempCtx.strokeStyle = '#00FFFF';
+        tempCtx.lineWidth = 3;
+        tempCtx.fillStyle = 'rgba(0, 255, 255, 0.15)';
         tempCtx.font = 'bold 16px Arial';
 
         userDrawnRois.forEach((roi, index) => {
@@ -1107,7 +1250,6 @@ function downloadImageWithOverlays() {
           const y2 = roi.ymax * scaleY;
 
           // Draw rectangle
-          tempCtx.fillStyle = 'rgba(78, 205, 196, 0.1)';
           tempCtx.fillRect(x1, y1, x2 - x1, y2 - y1);
           tempCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
 
@@ -1134,7 +1276,7 @@ function downloadImageWithOverlays() {
       if (showAIDetections && lastBoxes.length > 0) {
         tempCtx.save();
         tempCtx.strokeStyle = '#FF6B6B';
-        tempCtx.lineWidth = 2;
+        tempCtx.lineWidth = 3;
         tempCtx.fillStyle = 'rgba(255, 107, 107, 0.1)';
         tempCtx.font = 'bold 16px Arial';
 
@@ -1209,8 +1351,16 @@ function downloadImageWithOverlays() {
 // Initialize responsive features
 setupResponsiveFeatures();
 
-// Ensure spinner is hidden on page load
-showSpinner(false);
+// Defer initial load until after page layout
+// This ensures the canvas has proper dimensions from the flex container
+setTimeout(() => {
+  // Update canvas size to ensure proper dimensions
+  updateCanvasSize();
 
-// initial load
-loadCaseFromUrl().catch(e=>{ console.error(e); setStatus('error'); showSpinner(false); });
+  // Load initial case
+  loadCaseFromUrl().catch(e => {
+    console.error('Failed to load initial case:', e);
+    setStatus('error');
+    showSpinner(false);
+  });
+}, 100);
