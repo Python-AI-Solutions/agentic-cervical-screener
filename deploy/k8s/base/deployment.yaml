@@ -22,7 +22,7 @@ spec:
         - name: ghcr-secret
       containers:
         - name: cervical-app
-          image: us-central1-docker.pkg.dev/midyear-pattern-470017-b8/docker-builds/agentic-cervical-screener:v1.0.0
+          image: us-central1-docker.pkg.dev/midyear-pattern-470017-b8/docker-builds/agentic-cervical-screener:latest
           ports:
             - containerPort: 8000
               name: http

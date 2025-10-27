@@ -8,9 +8,11 @@ resources:
   - namespace.yaml
   - ingress.yaml
 
-# Common labels for staging
-commonLabels:
-  environment: staging
+# Common labels for staging (using labels to avoid selector immutability issues)
+labels:
+  - pairs:
+      environment: staging
+    includeSelectors: false
 
 # Patches for staging-specific configurations
 patches:

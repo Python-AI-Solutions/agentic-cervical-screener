@@ -7,9 +7,11 @@ resources:
   - ../base
   - namespace.yaml
 
-# Common labels for production
-commonLabels:
-  environment: production
+# Common labels for production (using labels to avoid selector immutability issues)
+labels:
+  - pairs:
+      environment: production
+    includeSelectors: false
 
 # Patches for production-specific configurations
 patches:

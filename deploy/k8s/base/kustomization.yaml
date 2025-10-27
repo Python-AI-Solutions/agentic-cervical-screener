@@ -5,11 +5,11 @@ resources:
   - deployment.yaml
   - service.yaml
   - configmap.yaml
-  - secret.yaml
   - pdb.yaml
   - ingress-route.yaml
   - middlewares.yaml
 
-commonLabels:
-  app: cervical-ai-viewer
-  managed-by: kustomize
+labels:
+  - pairs:
+      managed-by: kustomize
+    includeSelectors: false
