@@ -44,6 +44,23 @@ function getCanvasContainerSize() {
   };
 }
 
+function ensureImageCanvas() {
+  if (!glCanvas) return null;
+  let imageCanvas = document.getElementById('imageCanvas');
+  if (!imageCanvas) {
+    imageCanvas = document.createElement('canvas');
+    imageCanvas.id = 'imageCanvas';
+    imageCanvas.style.position = 'absolute';
+    imageCanvas.style.top = '0';
+    imageCanvas.style.left = '0';
+    imageCanvas.style.zIndex = '5';
+    imageCanvas.style.minWidth = '0';
+    imageCanvas.style.minHeight = '0';
+    glCanvas.parentNode.insertBefore(imageCanvas, overlayCanvas);
+  }
+  return imageCanvas;
+}
+
 const transform = { scale:1, tx:0, ty:0 };
 let nv=null, rois=[], currentSlideId=null, currentSlideUri=null, lastLoadedCase=null;
 let layerCache = new Map();          // layer_id -> FeatureCollection (for rects/points)
@@ -243,71 +260,63 @@ function debouncedResize() {
   }, 100);
 }
 
-function displayImageOnCanvas(img) {
+function renderImageCanvas() {
+  if (!currentImageObject) {
+    return;
+  }
+
   // Hide the drop zone when image is loaded
   const dropZone = document.getElementById('dropZone');
   if (dropZone) {
     dropZone.style.display = 'none';
   }
 
-  let imageCanvas = document.getElementById('imageCanvas');
-  if (!imageCanvas) {
-    imageCanvas = document.createElement('canvas');
-    imageCanvas.id = 'imageCanvas';
-    imageCanvas.style.position = 'absolute';
-    imageCanvas.style.top = '0';
-    imageCanvas.style.left = '0';
-    imageCanvas.style.zIndex = '5';
-    imageCanvas.style.minWidth = '0';
-    imageCanvas.style.minHeight = '0';
-    glCanvas.parentNode.insertBefore(imageCanvas, overlayCanvas);
-  }
+  const imageCanvas = ensureImageCanvas();
+  if (!imageCanvas) return;
 
-  // Get current container dimensions
   const { width: containerWidthRaw, height: containerHeightRaw } = getCanvasContainerSize();
   const containerWidth = Math.round(containerWidthRaw);
   const containerHeight = Math.round(containerHeightRaw);
 
   if (containerWidth === 0 || containerHeight === 0) {
-    console.warn('⚠️ displayImageOnCanvas skipped - container has zero size', { containerWidthRaw, containerHeightRaw });
+    console.warn('⚠️ renderImageCanvas skipped - container has zero size', { containerWidthRaw, containerHeightRaw });
     return;
   }
 
-  // Account for device pixel ratio
   const dpr = window.devicePixelRatio || 1;
+  const targetCanvasWidth = Math.round(containerWidth * dpr);
+  const targetCanvasHeight = Math.round(containerHeight * dpr);
 
-  // Set canvas resolution with DPR
-  imageCanvas.width = containerWidth * dpr;
-  imageCanvas.height = containerHeight * dpr;
-
-  // Set CSS display size
-  imageCanvas.style.width = containerWidth + 'px';
-  imageCanvas.style.height = containerHeight + 'px';
+  if (imageCanvas.width !== targetCanvasWidth || imageCanvas.height !== targetCanvasHeight) {
+    imageCanvas.width = targetCanvasWidth;
+    imageCanvas.height = targetCanvasHeight;
+    imageCanvas.style.width = `${containerWidth}px`;
+    imageCanvas.style.height = `${containerHeight}px`;
+  }
 
   const ctx = imageCanvas.getContext('2d');
   if (!ctx) return;
 
-  // Scale context for DPR
+  // CRITICAL: Use unified transform system - apply DPR scale + transform consistently
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.scale(dpr, dpr);
-
-  // Clear canvas
   ctx.clearRect(0, 0, containerWidth, containerHeight);
 
-  // Calculate scaling to fit image in container while maintaining aspect ratio
-  const scale = Math.min(containerWidth / img.width, containerHeight / img.height);
-  const scaledWidth = img.width * scale;
-  const scaledHeight = img.height * scale;
-  const x = (containerWidth - scaledWidth) / 2;
-  const y = (containerHeight - scaledHeight) / 2;
+  // Apply the unified transform to the canvas context
+  // This matches how overlay is rendered and ensures perfect alignment
+  ctx.translate(transform.tx, transform.ty);
+  ctx.scale(transform.scale, transform.scale);
 
-  // Draw the image centered and scaled
-  ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+  const imgWidth = currentImageDimensions?.width || currentImageObject.width;
+  const imgHeight = currentImageDimensions?.height || currentImageObject.height;
 
-  console.log('✅ Image canvas rendered:', {
+  // Draw image at original coordinates (0, 0) - transform is applied by context
+  ctx.drawImage(currentImageObject, 0, 0, imgWidth, imgHeight);
+
+  console.log('🖼️ Image canvas rendered with unified transform:', {
     containerSize: { width: containerWidth, height: containerHeight },
-    imageSize: { width: img.width, height: img.height },
-    scale,
+    imageSize: { width: imgWidth, height: imgHeight },
+    transform: { ...transform },
     dpr
   });
 }
@@ -321,12 +330,12 @@ function redrawCurrentImage({ ensureSize = false, reason = 'resize' } = {}) {
     updateCanvasSize();
   }
 
-  displayImageOnCanvas(currentImageObject);
-
   const { width, height } = currentImageDimensions || {};
   if (width && height) {
     fitOverlayToImage(width, height);
   }
+
+  renderImageCanvas();
 
   renderOverlays();
 
@@ -477,18 +486,32 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
 
 function renderOverlays(){
   console.log('🎨 renderOverlays called:', { showUserDrawnRois, showAIDetections, lastBoxesLength: lastBoxes.length });
-  overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
+  
+  // Setup context with DPR scale
+  const dpr = window.devicePixelRatio || 1;
+  overlayCtx.setTransform(1, 0, 0, 1, 0, 0);
+  overlayCtx.scale(dpr, dpr);
+  
+  const { width: containerWidthRaw, height: containerHeightRaw } = getCanvasContainerSize();
+  const containerWidth = Math.round(containerWidthRaw);
+  const containerHeight = Math.round(containerHeightRaw);
+  
+  overlayCtx.clearRect(0, 0, containerWidth, containerHeight);
+
+  // Apply the unified transform to match image canvas exactly
+  overlayCtx.translate(transform.tx, transform.ty);
+  overlayCtx.scale(transform.scale, transform.scale);
 
   // Only show user-drawn ROIs (no hardcoded detections)
   if (showUserDrawnRois) {
     console.log('🎨 Drawing user-drawn ROIs');
-    drawUserRois();
+    drawUserRoisTransformed();
   }
 
   // Show AI detection boxes if enabled (regardless of mode)
   if (showAIDetections) {
     console.log('🎨 Drawing AI detection boxes');
-    drawLabeledBoxes(overlayCtx, lastBoxes, transform);
+    drawLabeledBoxesTransformed();
   } else {
     console.log('🎨 Not drawing AI boxes:', { showAIDetections });
   }
@@ -1170,6 +1193,144 @@ function drawUserRois() {
 }
 
 /**
+ * Draw user ROIs using unified transform (canvas context-based)
+ * This is called from renderOverlays which has already applied the transform
+ */
+function drawUserRoisTransformed() {
+  if (userDrawnRois.length === 0) return;
+
+  overlayCtx.save();
+  overlayCtx.font = `bold ${13 / transform.scale}px Arial`;
+
+  userDrawnRois.forEach((roi, index) => {
+    // Since context is already transformed, use image coordinates directly
+    const x1 = roi.xmin;
+    const y1 = roi.ymin;
+    const x2 = roi.xmax;
+    const y2 = roi.ymax;
+
+    // Determine if this ROI is being hovered
+    const isHovered = hoveredRoiIndex === index;
+
+    // Use bright, visible colors for manual ROIs
+    if (isHovered) {
+      // Bright yellow-orange for hover
+      overlayCtx.strokeStyle = '#FF8C00';
+      overlayCtx.lineWidth = 4 / transform.scale;
+      overlayCtx.fillStyle = 'rgba(255, 140, 0, 0.25)';
+      overlayCtx.shadowColor = '#FF8C00';
+      overlayCtx.shadowBlur = 8 / transform.scale;
+    } else {
+      // Bright cyan for normal state
+      overlayCtx.strokeStyle = '#00FFFF';
+      overlayCtx.lineWidth = 3 / transform.scale;
+      overlayCtx.fillStyle = 'rgba(0, 255, 255, 0.15)';
+      overlayCtx.shadowBlur = 0;
+    }
+
+    // Draw rectangle
+    overlayCtx.fillRect(x1, y1, x2 - x1, y2 - y1);
+    overlayCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+    // Draw label with dark background for better visibility
+    if (roi.label) {
+      const labelText = `${index + 1}: ${roi.label}`;
+      const textMetrics = overlayCtx.measureText(labelText);
+      const textWidth = textMetrics.width;
+      const textHeight = 15 / transform.scale;
+
+      // Draw dark background rectangle for text
+      overlayCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      overlayCtx.fillRect(x1, y1 - textHeight - 2, textWidth + 8, textHeight + 4);
+
+      // Draw white text
+      overlayCtx.fillStyle = '#FFFFFF';
+      overlayCtx.fillText(labelText, x1 + 4, y1 - 5);
+    }
+
+    // Store delete button coordinates for click detection
+    const deleteButtonSize = 16 / transform.scale;
+    const deleteX = x2 - deleteButtonSize - 2;
+    const deleteY = y1 + 2;
+
+    roi._deleteButton = {
+      x: deleteX * transform.scale + transform.tx,
+      y: deleteY * transform.scale + transform.ty,
+      width: deleteButtonSize * transform.scale,
+      height: deleteButtonSize * transform.scale
+    };
+
+    // Draw delete button only if this ROI is being hovered
+    if (hoveredRoiIndex === index) {
+      // Draw delete button background
+      overlayCtx.fillStyle = 'rgba(255, 0, 0, 0.9)';
+      overlayCtx.fillRect(deleteX, deleteY, deleteButtonSize, deleteButtonSize);
+
+      // Draw delete button border
+      overlayCtx.strokeStyle = '#FFFFFF';
+      overlayCtx.lineWidth = 1 / transform.scale;
+      overlayCtx.strokeRect(deleteX, deleteY, deleteButtonSize, deleteButtonSize);
+
+      // Draw X symbol
+      overlayCtx.strokeStyle = '#FFFFFF';
+      overlayCtx.lineWidth = 1.5 / transform.scale;
+      overlayCtx.beginPath();
+      overlayCtx.moveTo(deleteX + 3 / transform.scale, deleteY + 3 / transform.scale);
+      overlayCtx.lineTo(deleteX + deleteButtonSize - 3 / transform.scale, deleteY + deleteButtonSize - 3 / transform.scale);
+      overlayCtx.moveTo(deleteX + deleteButtonSize - 3 / transform.scale, deleteY + 3 / transform.scale);
+      overlayCtx.lineTo(deleteX + 3 / transform.scale, deleteY + deleteButtonSize - 3 / transform.scale);
+      overlayCtx.stroke();
+    }
+  });
+
+  overlayCtx.restore();
+}
+
+/**
+ * Draw AI detection boxes using unified transform (canvas context-based)
+ * This is called from renderOverlays which has already applied the transform
+ */
+function drawLabeledBoxesTransformed() {
+  if (!lastBoxes || !lastBoxes.length) return;
+
+  const { colorForLabel, formatLabel } = window.__overlayAdapters || {};
+  if (!colorForLabel || !formatLabel) {
+    console.warn('⚠️ overlayAdapters utilities not available');
+    return;
+  }
+
+  for (const b of lastBoxes) {
+    const color = colorForLabel(b.label);
+    
+    // Since context is already transformed, use image coordinates directly
+    const x1 = b.x;
+    const y1 = b.y;
+    const w = b.w;
+    const h = b.h;
+
+    // Box with better visibility
+    overlayCtx.save();
+    overlayCtx.strokeStyle = color;
+    overlayCtx.lineWidth = Math.max(2, 3) / transform.scale;
+    overlayCtx.shadowColor = color;
+    overlayCtx.shadowBlur = 3 / transform.scale;
+    overlayCtx.strokeRect(x1, y1, w, h);
+
+    // Label (with tiny background for readability)
+    const text = formatLabel(b.label, b.score);
+    overlayCtx.font = `${Math.max(12, Math.floor(12))}px system-ui, sans-serif`;
+    const pad = 2 / transform.scale;
+    const tw = overlayCtx.measureText(text).width + pad * 2;
+    const th = 14 / transform.scale + pad * 2;
+    overlayCtx.fillStyle = 'rgba(0,0,0,0.55)';
+    overlayCtx.fillRect(x1, y1 - th, tw, th);
+    overlayCtx.fillStyle = '#fff';
+    overlayCtx.fillText(text, x1 + pad, y1 - pad);
+    overlayCtx.restore();
+  }
+}
+
+/**
  * Recalculate transform based on current zoom level and pan values
  * This is called whenever zoom or pan changes to ensure ROI positioning stays correct
  */
@@ -1224,6 +1385,8 @@ function recalculateTransform() {
   transform.scale = scale;
   transform.tx = tx;
   transform.ty = ty;
+
+  renderImageCanvas();
 
   console.log('🔍 Transform recalculated:', {
     zoomLevel: currentZoomLevel,

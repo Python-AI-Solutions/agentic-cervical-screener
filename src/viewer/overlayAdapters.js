@@ -34,6 +34,14 @@ export function formatLabel(label, score) {
   return `${label || ''} ${pct}%`.trim();
 }
 
+// Make functions globally available for overlay rendering
+if (typeof window !== 'undefined') {
+  window.__overlayAdapters = {
+    colorForLabel,
+    formatLabel
+  };
+}
+
 // --- draw helpers ------------------------------------------------------------
 export function drawGeoJSON(ctx, fc, color, transform) {
   if (!fc || fc.type !== 'FeatureCollection') return;
