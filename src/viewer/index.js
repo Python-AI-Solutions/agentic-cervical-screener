@@ -232,9 +232,14 @@ function handleCanvasResize() {
   const sizeChanged = updateCanvasSize();
 
   if (currentImageObject) {
-    redrawCurrentImage({
-      reason: sizeChanged ? 'resize:size-change' : 'resize:style-only'
-    });
+    // Recompute transform using current zoom/pan rather than resetting it.  This
+    // preserves ROI alignment when the browser window or device pixel ratio
+    // changes (e.g. due to page zoom).  Using redrawCurrentImage() here would
+    // reset the transform to a fit‑to‑window state, causing misaligned
+    // detections after browser zoom events.
+    recalculateTransform();
+    renderImageCanvas();
+    renderOverlays();
     return;
   }
 
@@ -626,6 +631,11 @@ btnClassify.addEventListener('click', async ()=>{
     addAIDetectionsToggle();
 
     // Keep AI detections visible after classification
+
+    // Preserve current zoom/pan by recalculating the transform based on the current
+    // container size and state. Without this, subsequent browser zoom/resize
+    // events could leave the ROI overlays misaligned relative to the image.
+    recalculateTransform();
 
     // Keep cursor as crosshair for drawing
     overlayCanvas.style.cursor = 'crosshair';
@@ -1439,9 +1449,13 @@ function handleZoom(deltaZoom, clientX, clientY) {
     const newScreenX = imageX * transform.scale + transform.tx;
     const newScreenY = imageY * transform.scale + transform.ty;
 
-    // Adjust pan to keep the point at the same screen position
-    panX += (x - newScreenX) / (currentZoomLevel / oldZoom);
-    panY += (y - newScreenY) / (currentZoomLevel / oldZoom);
+    // Adjust pan to keep the point at the same screen position.  We add the
+    // full pixel difference rather than dividing by the zoom ratio.  Dividing
+    // by the zoom ratio under‑translated the image, leading to misalignment
+    // between the image and detection boxes when zooming.  Instead, apply
+    // the entire difference; recalculateTransform() will clamp the result.
+    panX += (x - newScreenX);
+    panY += (y - newScreenY);
   }
 
   recalculateTransform();
