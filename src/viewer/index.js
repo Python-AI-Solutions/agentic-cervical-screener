@@ -495,7 +495,13 @@ function renderOverlays(){
   const containerWidth = Math.round(containerWidthRaw);
   const containerHeight = Math.round(containerHeightRaw);
   
-  // Clear using logical dimensions (DPR already applied to context)
+  // CRITICAL: Reset transform and reapply DPR scaling
+  // Browser zoom can change DPR, so we must recalculate every time
+  const dpr = window.devicePixelRatio || 1;
+  overlayCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset to identity
+  overlayCtx.scale(dpr, dpr); // Apply DPR for crisp rendering
+  
+  // Clear using logical dimensions (DPR scaling is now applied)
   overlayCtx.clearRect(0, 0, containerWidth, containerHeight);
 
   // Only show user-drawn ROIs (no hardcoded detections)
