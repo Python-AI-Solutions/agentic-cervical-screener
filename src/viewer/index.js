@@ -485,33 +485,19 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
 }
 
 function renderOverlays(){
-  console.log('🎨 renderOverlays called:', { showUserDrawnRois, showAIDetections, lastBoxesLength: lastBoxes.length });
-  
-  // Setup context with DPR scale
-  const dpr = window.devicePixelRatio || 1;
-  overlayCtx.setTransform(1, 0, 0, 1, 0, 0);
-  overlayCtx.scale(dpr, dpr);
-  
-  const { width: containerWidthRaw, height: containerHeightRaw } = getCanvasContainerSize();
-  const containerWidth = Math.round(containerWidthRaw);
-  const containerHeight = Math.round(containerHeightRaw);
-  
-  overlayCtx.clearRect(0, 0, containerWidth, containerHeight);
-
-  // Apply the unified transform to match image canvas exactly
-  overlayCtx.translate(transform.tx, transform.ty);
-  overlayCtx.scale(transform.scale, transform.scale);
+  console.log('🎨 renderOverlays called:', { showUserDrawnRois, showAIDetections, lastBoxesLength: lastBoxes.length, transform });
+  overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 
   // Only show user-drawn ROIs (no hardcoded detections)
   if (showUserDrawnRois) {
     console.log('🎨 Drawing user-drawn ROIs');
-    drawUserRoisTransformed();
+    drawUserRois();
   }
 
   // Show AI detection boxes if enabled (regardless of mode)
   if (showAIDetections) {
     console.log('🎨 Drawing AI detection boxes');
-    drawLabeledBoxesTransformed();
+    drawLabeledBoxes(overlayCtx, lastBoxes, transform);
   } else {
     console.log('🎨 Not drawing AI boxes:', { showAIDetections });
   }
@@ -1386,8 +1372,6 @@ function recalculateTransform() {
   transform.tx = tx;
   transform.ty = ty;
 
-  renderImageCanvas();
-
   console.log('🔍 Transform recalculated:', {
     zoomLevel: currentZoomLevel,
     baseScale,
@@ -1439,6 +1423,7 @@ function handleZoom(deltaZoom, clientX, clientY) {
   }
 
   recalculateTransform();
+  renderImageCanvas();
   renderOverlays();
 
   console.log('🔍 Zoom updated:', {
