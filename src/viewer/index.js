@@ -15,15 +15,7 @@ const glCanvas     = document.getElementById('glCanvas');
 const overlayCanvas= document.getElementById('overlayCanvas');
 const overlayCtx   = overlayCanvas.getContext('2d');
 
-overlayCanvas.style.zIndex = '10';
-if (glCanvas) {
-  glCanvas.style.minWidth = '0';
-  glCanvas.style.minHeight = '0';
-}
-if (overlayCanvas) {
-  overlayCanvas.style.minWidth = '0';
-  overlayCanvas.style.minHeight = '0';
-}
+// Don't set inline styles - CSS from index.html handles all positioning
 
 /**
  * Returns the size of the Niivue viewer container independent of any inline
@@ -50,12 +42,7 @@ function ensureImageCanvas() {
   if (!imageCanvas) {
     imageCanvas = document.createElement('canvas');
     imageCanvas.id = 'imageCanvas';
-    imageCanvas.style.position = 'absolute';
-    imageCanvas.style.top = '0';
-    imageCanvas.style.left = '0';
-    imageCanvas.style.zIndex = '5';
-    imageCanvas.style.minWidth = '0';
-    imageCanvas.style.minHeight = '0';
+    // Don't set inline styles - let CSS handle positioning from index.html
     glCanvas.parentNode.insertBefore(imageCanvas, overlayCanvas);
   }
   return imageCanvas;
@@ -195,10 +182,7 @@ function updateCanvasSize() {
 }
 
 function fitOverlayToImage(imageWidth, imageHeight) {
-  // First ensure canvases are properly sized
-  updateCanvasSize();
-
-  // Get container dimensions
+  // Get container dimensions ONCE when image loads
   const { width: containerWidthRaw, height: containerHeightRaw } = getCanvasContainerSize();
   const containerWidth = Math.round(containerWidthRaw);
   const containerHeight = Math.round(containerHeightRaw);
@@ -217,11 +201,12 @@ function fitOverlayToImage(imageWidth, imageHeight) {
   const tx = (containerWidth - scaledWidth) / 2;
   const ty = (containerHeight - scaledHeight) / 2;
 
+  // Set transform ONCE - it won't be recalculated on browser zoom
   transform.scale = scale;
   transform.tx = tx;
   transform.ty = ty;
 
-  console.log('✅ Image fit calculated:', {
+  console.log('✅ Transform calculated (will NOT change on browser zoom):', {
     imageSize: { width: imageWidth, height: imageHeight },
     containerSize: { width: containerWidth, height: containerHeight },
     transform: { scale, tx, ty }
@@ -232,19 +217,15 @@ function handleCanvasResize() {
   const sizeChanged = updateCanvasSize();
 
   if (currentImageObject) {
-    // Recompute transform using current zoom/pan rather than resetting it.  This
-    // preserves ROI alignment when the browser window or device pixel ratio
-    // changes (e.g. due to page zoom).  Using redrawCurrentImage() here would
-    // reset the transform to a fit‑to‑window state, causing misaligned
-    // detections after browser zoom events.
-    recalculateTransform();
+    // CRITICAL: DO NOT recalculate transform on browser zoom/resize
+    // The transform is in IMAGE PIXEL coordinates and should NOT change with browser zoom
+    // Only redraw the canvases using the EXISTING transform
     renderImageCanvas();
     renderOverlays();
     return;
   }
 
   if (sizeChanged && (lastBoxes.length > 0 || layerCache.size > 0 || userDrawnRois.length > 0)) {
-    recalculateTransform();
     renderOverlays();
   }
 }
@@ -302,7 +283,7 @@ function renderImageCanvas() {
   const ctx = imageCanvas.getContext('2d');
   if (!ctx) return;
 
-  // CRITICAL: Use SAME coordinate system as overlays - manual transformation, not context-based
+  // Reset and apply DPR scaling
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, containerWidth, containerHeight);
@@ -310,8 +291,7 @@ function renderImageCanvas() {
   const imgWidth = currentImageDimensions?.width || currentImageObject.width;
   const imgHeight = currentImageDimensions?.height || currentImageObject.height;
 
-  // Calculate screen position using SAME math as overlay boxes
-  // This ensures perfect alignment: both use (imageCoord * scale + offset)
+  // Calculate screen position using transform (which stays constant across browser zoom)
   const drawX = transform.tx;
   const drawY = transform.ty;
   const drawWidth = imgWidth * transform.scale;
@@ -320,7 +300,7 @@ function renderImageCanvas() {
   // Draw image at calculated screen coordinates
   ctx.drawImage(currentImageObject, drawX, drawY, drawWidth, drawHeight);
 
-  console.log('🖼️ Image canvas rendered with manual transform (matches overlay):', {
+  console.log('🖼️ Image canvas rendered:', {
     containerSize: { width: containerWidth, height: containerHeight },
     imageSize: { width: imgWidth, height: imgHeight },
     screenPosition: { drawX, drawY, drawWidth, drawHeight },
@@ -500,22 +480,21 @@ function renderOverlays(){
   const containerWidth = Math.round(containerWidthRaw);
   const containerHeight = Math.round(containerHeightRaw);
   
-  // CRITICAL: Reset transform and reapply DPR scaling
-  // Browser zoom can change DPR, so we must recalculate every time
+  // CRITICAL: Reset transform and reapply DPR scaling every time
   const dpr = window.devicePixelRatio || 1;
-  overlayCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset to identity
-  overlayCtx.scale(dpr, dpr); // Apply DPR for crisp rendering
+  overlayCtx.setTransform(1, 0, 0, 1, 0, 0);
+  overlayCtx.scale(dpr, dpr);
   
-  // Clear using logical dimensions (DPR scaling is now applied)
+  // Clear using logical dimensions
   overlayCtx.clearRect(0, 0, containerWidth, containerHeight);
 
-  // Only show user-drawn ROIs (no hardcoded detections)
+  // Only show user-drawn ROIs
   if (showUserDrawnRois) {
     console.log('🎨 Drawing user-drawn ROIs');
     drawUserRois();
   }
 
-  // Show AI detection boxes if enabled (regardless of mode)
+  // Show AI detection boxes if enabled
   if (showAIDetections) {
     console.log('🎨 Drawing AI detection boxes');
     drawLabeledBoxes(overlayCtx, lastBoxes, transform);
@@ -631,11 +610,6 @@ btnClassify.addEventListener('click', async ()=>{
     addAIDetectionsToggle();
 
     // Keep AI detections visible after classification
-
-    // Preserve current zoom/pan by recalculating the transform based on the current
-    // container size and state. Without this, subsequent browser zoom/resize
-    // events could leave the ROI overlays misaligned relative to the image.
-    recalculateTransform();
 
     // Keep cursor as crosshair for drawing
     overlayCanvas.style.cursor = 'crosshair';
@@ -1208,6 +1182,114 @@ function drawUserRois() {
   });
 
   overlayCtx.restore();
+}
+
+/**
+ * OPTION A: Draw user ROIs in fixed canvas coordinate system
+ * Context already has zoom/pan applied, so draw at image pixel coordinates
+ */
+function drawUserRoisFixed() {
+  if (userDrawnRois.length === 0) return;
+
+  overlayCtx.save();
+  
+  // Font size relative to current zoom
+  const fontSize = 13 / (transform.scale * currentZoomLevel);
+  overlayCtx.font = `bold ${fontSize}px Arial`;
+
+  userDrawnRois.forEach((roi, index) => {
+    // Draw directly at image coordinates - context transform handles screen mapping
+    const x1 = roi.xmin;
+    const y1 = roi.ymin;
+    const x2 = roi.xmax;
+    const y2 = roi.ymax;
+
+    // Determine if this ROI is being hovered
+    const isHovered = hoveredRoiIndex === index;
+
+    // Line width relative to zoom
+    const lineWidth = (isHovered ? 4 : 3) / (transform.scale * currentZoomLevel);
+    
+    // Use bright, visible colors
+    if (isHovered) {
+      overlayCtx.strokeStyle = '#FF8C00';
+      overlayCtx.lineWidth = lineWidth;
+      overlayCtx.fillStyle = 'rgba(255, 140, 0, 0.25)';
+      overlayCtx.shadowColor = '#FF8C00';
+      overlayCtx.shadowBlur = 8 / (transform.scale * currentZoomLevel);
+    } else {
+      overlayCtx.strokeStyle = '#00FFFF';
+      overlayCtx.lineWidth = lineWidth;
+      overlayCtx.fillStyle = 'rgba(0, 255, 255, 0.15)';
+      overlayCtx.shadowBlur = 0;
+    }
+
+    // Draw rectangle
+    overlayCtx.fillRect(x1, y1, x2 - x1, y2 - y1);
+    overlayCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+    // Draw label
+    if (roi.label) {
+      const labelText = `${index + 1}: ${roi.label}`;
+      const textMetrics = overlayCtx.measureText(labelText);
+      const textWidth = textMetrics.width;
+      const textHeight = fontSize;
+
+      overlayCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      overlayCtx.fillRect(x1, y1 - textHeight - 2, textWidth + 8, textHeight + 4);
+      overlayCtx.fillStyle = '#FFFFFF';
+      overlayCtx.fillText(labelText, x1 + 4, y1 - 5);
+    }
+  });
+
+  overlayCtx.restore();
+}
+
+/**
+ * OPTION A: Draw AI detection boxes in fixed canvas coordinate system
+ * Context already has zoom/pan applied, so draw at image pixel coordinates
+ */
+function drawLabeledBoxesFixed(ctx, boxes) {
+  if (!boxes || !boxes.length) return;
+
+  for (const b of boxes) {
+    const { colorForLabel, formatLabel } = window.__overlayAdapters || {};
+    if (!colorForLabel || !formatLabel) {
+      console.warn('⚠️ overlayAdapters utilities not available');
+      return;
+    }
+
+    const color = colorForLabel(b.label);
+    
+    // Draw directly at image coordinates - context transform handles screen mapping
+    const x1 = b.x;
+    const y1 = b.y;
+    const w = b.w;
+    const h = b.h;
+
+    // Line width relative to zoom
+    const lineWidth = 3 / (transform.scale * currentZoomLevel);
+
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 3 / (transform.scale * currentZoomLevel);
+    ctx.strokeRect(x1, y1, w, h);
+
+    // Label
+    const text = formatLabel(b.label, b.score);
+    const fontSize = 12 / (transform.scale * currentZoomLevel);
+    ctx.font = `${fontSize}px system-ui, sans-serif`;
+    const pad = 2 / (transform.scale * currentZoomLevel);
+    const tw = ctx.measureText(text).width + pad * 2;
+    const th = fontSize + pad * 2;
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(x1, y1 - th, tw, th);
+    ctx.fillStyle = '#fff';
+    ctx.fillText(text, x1 + pad, y1 - pad);
+    ctx.restore();
+  }
 }
 
 /**
