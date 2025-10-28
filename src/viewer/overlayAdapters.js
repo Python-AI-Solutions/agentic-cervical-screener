@@ -94,18 +94,27 @@ export function drawGeoJSON(ctx, fc, color, transform) {
 
 export function drawLabeledBoxes(ctx, boxes, transform) {
   if (!boxes || !boxes.length) return;
-  console.log('🎨 drawLabeledBoxes called with:', { boxesCount: boxes.length, transform });
+  console.log('🎨 drawLabeledBoxes called with:', { 
+    boxesCount: boxes.length, 
+    transform,
+    firstBox: boxes[0] 
+  });
+  
   for (const b of boxes) {
     const color = colorForLabel(b.label);
+    
+    // CRITICAL: Boxes MUST be in image pixel coordinates from API
+    // Transform to screen coordinates: screenX = imageX * scale + offset
     const x1 = b.x * transform.scale + transform.tx;
     const y1 = b.y * transform.scale + transform.ty;
     const w  = b.w * transform.scale;
     const h  = b.h * transform.scale;
 
     console.log('🎨 Drawing box:', {
-      original: { x: b.x, y: b.y, w: b.w, h: b.h },
-      transformed: { x1, y1, w, h },
-      transform
+      imageCoords: { x: b.x, y: b.y, w: b.w, h: b.h },
+      screenCoords: { x1, y1, w, h },
+      transform: { scale: transform.scale, tx: transform.tx, ty: transform.ty },
+      label: b.label
     });
 
     // box with better visibility

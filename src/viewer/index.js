@@ -297,25 +297,28 @@ function renderImageCanvas() {
   const ctx = imageCanvas.getContext('2d');
   if (!ctx) return;
 
-  // CRITICAL: Use unified transform system - apply DPR scale + transform consistently
+  // CRITICAL: Use SAME coordinate system as overlays - manual transformation, not context-based
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, containerWidth, containerHeight);
 
-  // Apply the unified transform to the canvas context
-  // This matches how overlay is rendered and ensures perfect alignment
-  ctx.translate(transform.tx, transform.ty);
-  ctx.scale(transform.scale, transform.scale);
-
   const imgWidth = currentImageDimensions?.width || currentImageObject.width;
   const imgHeight = currentImageDimensions?.height || currentImageObject.height;
 
-  // Draw image at original coordinates (0, 0) - transform is applied by context
-  ctx.drawImage(currentImageObject, 0, 0, imgWidth, imgHeight);
+  // Calculate screen position using SAME math as overlay boxes
+  // This ensures perfect alignment: both use (imageCoord * scale + offset)
+  const drawX = transform.tx;
+  const drawY = transform.ty;
+  const drawWidth = imgWidth * transform.scale;
+  const drawHeight = imgHeight * transform.scale;
 
-  console.log('🖼️ Image canvas rendered with unified transform:', {
+  // Draw image at calculated screen coordinates
+  ctx.drawImage(currentImageObject, drawX, drawY, drawWidth, drawHeight);
+
+  console.log('🖼️ Image canvas rendered with manual transform (matches overlay):', {
     containerSize: { width: containerWidth, height: containerHeight },
     imageSize: { width: imgWidth, height: imgHeight },
+    screenPosition: { drawX, drawY, drawWidth, drawHeight },
     transform: { ...transform },
     dpr
   });
@@ -486,7 +489,14 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
 
 function renderOverlays(){
   console.log('🎨 renderOverlays called:', { showUserDrawnRois, showAIDetections, lastBoxesLength: lastBoxes.length, transform });
-  overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+  
+  // Get logical dimensions (not physical pixels)
+  const { width: containerWidthRaw, height: containerHeightRaw } = getCanvasContainerSize();
+  const containerWidth = Math.round(containerWidthRaw);
+  const containerHeight = Math.round(containerHeightRaw);
+  
+  // Clear using logical dimensions (DPR already applied to context)
+  overlayCtx.clearRect(0, 0, containerWidth, containerHeight);
 
   // Only show user-drawn ROIs (no hardcoded detections)
   if (showUserDrawnRois) {
@@ -598,7 +608,13 @@ btnClassify.addEventListener('click', async ()=>{
     console.log('🔍 Classification response:', res);
 
     lastBoxes = res.boxes || [];
-    console.log('🔍 lastBoxes set to:', lastBoxes);
+    console.log('🔍 Classification complete:', {
+      boxCount: lastBoxes.length,
+      firstBox: lastBoxes[0],
+      currentImageDimensions,
+      currentTransform: { ...transform },
+      note: 'Boxes MUST be in image pixel coordinates (0 to imageWidth/Height)'
+    });
 
     // Add AI detections toggle if it doesn't exist
     addAIDetectionsToggle();
