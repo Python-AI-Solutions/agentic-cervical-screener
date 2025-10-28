@@ -63,6 +63,11 @@ let currentImageFile = null;         // Store the current image file for classif
 let hoveredRoiIndex = -1;            // Index of currently hovered ROI (-1 if none)
 let currentImageDimensions = { width: 1024, height: 1024 }; // Store actual image dimensions
 let currentImageObject = null;       // Store the current image object for redrawing on resize
+// Zoom variables
+let currentZoomLevel = 1.0;          // Current zoom level (1.0 = fit to window)
+let panX = 0;                        // Pan offset X
+let panY = 0;                        // Pan offset Y
+let lastTouchDistance = 0;           // For pinch zoom detection
 
 // Available labels for cervical cytology
 const CERVICAL_LABELS = [
@@ -217,6 +222,7 @@ function handleCanvasResize() {
   }
 
   if (sizeChanged && (lastBoxes.length > 0 || layerCache.size > 0 || userDrawnRois.length > 0)) {
+    recalculateTransform();
     renderOverlays();
   }
 }
@@ -345,6 +351,10 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
   currentImageDimensions = { width: 1024, height: 1024 }; // Reset dimensions
   currentImageObject = null; // Clear stored image object
   showAIDetections = true; // Reset AI detections visibility
+  currentZoomLevel = 1.0; // Reset zoom
+  panX = 0; // Reset pan
+  panY = 0; // Reset pan
+  lastTouchDistance = 0; // Reset pinch distance
 
   // Show drop zone when loading new case
   const dropZone = document.getElementById('dropZone');
@@ -1159,11 +1169,177 @@ function drawUserRois() {
   overlayCtx.restore();
 }
 
+/**
+ * Recalculate transform based on current zoom level and pan values
+ * This is called whenever zoom or pan changes to ensure ROI positioning stays correct
+ */
+function recalculateTransform() {
+  if (!currentImageDimensions || !currentImageDimensions.width) {
+    console.warn('⚠️ recalculateTransform: image dimensions not set');
+    return;
+  }
+
+  // Get container dimensions
+  const { width: containerWidthRaw, height: containerHeightRaw } = getCanvasContainerSize();
+  const containerWidth = Math.round(containerWidthRaw);
+  const containerHeight = Math.round(containerHeightRaw);
+
+  if (containerWidth === 0 || containerHeight === 0) {
+    console.warn('⚠️ recalculateTransform: container has zero size');
+    return;
+  }
+
+  const imageWidth = currentImageDimensions.width;
+  const imageHeight = currentImageDimensions.height;
+
+  // Base scale (fit to window at zoom 1.0)
+  const baseScale = Math.min(containerWidth / imageWidth, containerHeight / imageHeight);
+
+  // Apply zoom multiplier
+  const scale = baseScale * currentZoomLevel;
+
+  // Calculate scaled dimensions
+  const scaledWidth = imageWidth * scale;
+  const scaledHeight = imageHeight * scale;
+
+  // Calculate center offset for scaling around image center
+  const imageRatio = imageWidth / imageHeight;
+  const containerRatio = containerWidth / containerHeight;
+
+  // Start with base centering
+  let tx = (containerWidth - scaledWidth) / 2;
+  let ty = (containerHeight - scaledHeight) / 2;
+
+  // Apply pan offsets (limited to prevent dragging too far)
+  const maxPanX = Math.abs(scaledWidth - containerWidth) / 2;
+  const maxPanY = Math.abs(scaledHeight - containerHeight) / 2;
+
+  if (scaledWidth > containerWidth) {
+    tx += Math.max(-maxPanX, Math.min(maxPanX, panX));
+  }
+  if (scaledHeight > containerHeight) {
+    ty += Math.max(-maxPanY, Math.min(maxPanY, panY));
+  }
+
+  transform.scale = scale;
+  transform.tx = tx;
+  transform.ty = ty;
+
+  console.log('🔍 Transform recalculated:', {
+    zoomLevel: currentZoomLevel,
+    baseScale,
+    finalScale: scale,
+    pan: { panX, panY },
+    transform,
+    containerSize: { width: containerWidth, height: containerHeight },
+    imageSize: { width: imageWidth, height: imageHeight }
+  });
+}
+
+/**
+ * Handle zoom events (wheel scroll or pinch)
+ * @param {number} deltaZoom - Change in zoom level
+ * @param {number} clientX - Mouse/touch X coordinate (optional, for zoom center)
+ * @param {number} clientY - Mouse/touch Y coordinate (optional, for zoom center)
+ */
+function handleZoom(deltaZoom, clientX, clientY) {
+  // Constrain zoom between 0.5x and 5x
+  const MIN_ZOOM = 0.5;
+  const MAX_ZOOM = 5.0;
+  const oldZoom = currentZoomLevel;
+
+  currentZoomLevel = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoomLevel + deltaZoom));
+
+  if (currentZoomLevel === oldZoom) {
+    return; // No change
+  }
+
+  // If we have client coordinates, try to zoom around that point
+  if (clientX !== undefined && clientY !== undefined) {
+    const rect = overlayCanvas.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+
+    // Convert screen coords to image coords at old zoom
+    const imageX = (x - transform.tx) / transform.scale;
+    const imageY = (y - transform.ty) / transform.scale;
+
+    recalculateTransform();
+
+    // Calculate new screen position of the same image point
+    const newScreenX = imageX * transform.scale + transform.tx;
+    const newScreenY = imageY * transform.scale + transform.ty;
+
+    // Adjust pan to keep the point at the same screen position
+    panX += (x - newScreenX) / (currentZoomLevel / oldZoom);
+    panY += (y - newScreenY) / (currentZoomLevel / oldZoom);
+  }
+
+  recalculateTransform();
+  renderOverlays();
+
+  console.log('🔍 Zoom updated:', {
+    oldZoom,
+    newZoom: currentZoomLevel,
+    zoomChange: currentZoomLevel - oldZoom,
+    pan: { panX, panY }
+  });
+}
+
+/**
+ * Setup zoom and pan handlers (wheel, pinch, etc.)
+ */
+function setupZoomHandlers() {
+  if (!overlayCanvas) return;
+
+  // Wheel zoom (mouse scroll)
+  overlayCanvas.addEventListener('wheel', (e) => {
+    if (!currentImageObject) return; // Only zoom if image is loaded
+    
+    e.preventDefault();
+    
+    // Scroll up = zoom in (positive), down = zoom out (negative)
+    const zoomDelta = e.deltaY < 0 ? 0.1 : -0.1;
+    handleZoom(zoomDelta, e.clientX, e.clientY);
+  }, { passive: false });
+
+  // Touch pinch zoom
+  overlayCanvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
+    }
+  }, { passive: false });
+
+  overlayCanvas.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && lastTouchDistance > 0) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const currentDistance = Math.sqrt(dx * dx + dy * dy);
+      const distanceDelta = currentDistance - lastTouchDistance;
+
+      // Pinch sensitivity: 100px of pinch = 0.2 zoom change
+      const zoomDelta = distanceDelta / 500;
+      handleZoom(zoomDelta);
+
+      lastTouchDistance = currentDistance;
+    }
+  }, { passive: false });
+
+  overlayCanvas.addEventListener('touchend', () => {
+    lastTouchDistance = 0;
+  }, { passive: false });
+}
+
 // Setup drag and drop
 setupDragAndDrop();
 
 // Setup drawing mode
 setupDrawingMode();
+
+// Setup zoom and pan handlers
+setupZoomHandlers();
 
 // Setup responsive features
 function setupResponsiveFeatures() {
