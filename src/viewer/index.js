@@ -63,6 +63,7 @@ let drawingStart = null;
 let drawingRect = null;
 let userDrawnRois = [];              // User-drawn rectangles
 let showUserDrawnRois = true;        // Toggle for user-drawn rectangles visibility
+let showGroundTruth = true;          // Toggle for ground truth visibility
 let currentImageFile = null;         // Store the current image file for classification
 let hoveredRoiIndex = -1;            // Index of currently hovered ROI (-1 if none)
 let currentImageDimensions = { width: 1024, height: 1024 }; // Store actual image dimensions
@@ -446,6 +447,9 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
   // Add user-drawn ROIs toggle
   addUserDrawnRoisToggle();
 
+  // Add ground-truth toggle
+  addGroundTruthToggle();
+
   // Build layer controls + prefetch & cache asynchronously
   const layerPromises = (slide.layers||[]).map(async (L) => {
     // UI - create immediately for better UX (add to both desktop and mobile)
@@ -565,6 +569,8 @@ function addLayerToggle(layerId, geometry, checked = true) {
         showAIDetections = cb.checked;
       } else if (layerId === 'user-drawn-rois') {
         showUserDrawnRois = cb.checked;
+      } else if (layerId === 'ground-truth') {
+        showGroundTruth = cb.checked;
       } else {
         // Handle regular layers
         cb.checked ? visibleLayers.add(layerId) : visibleLayers.delete(layerId);
@@ -581,6 +587,10 @@ function addAIDetectionsToggle() {
 
 function addUserDrawnRoisToggle() {
   addLayerToggle('user-drawn-rois', 'rects', true);
+}
+
+function addGroundTruthToggle() {
+  addLayerToggle('ground-truth', 'annotations', true);
 }
 
 
@@ -762,6 +772,9 @@ function handleDroppedFiles(files) {
 
         // Add user-drawn ROIs toggle for dropped images
         addUserDrawnRoisToggle();
+
+        // Add ground-truth toggle for dropped images
+        addGroundTruthToggle();
       };
 
       img.onerror = function() {
