@@ -1633,6 +1633,38 @@ function setupResponsiveFeatures() {
   // Add resize listener for canvas
   window.addEventListener('resize', debouncedResize);
 
+  // CRITICAL: Detect CSS breakpoint changes (mobile ↔ desktop) using media query
+  // This is MORE RELIABLE than ResizeObserver for layout breakpoint detection
+  const mobileBreakpoint = window.matchMedia('(max-width: 1024px)');
+  let wasMobile = mobileBreakpoint.matches;
+
+  const handleBreakpointChange = (e) => {
+    const isMobileNow = e.matches;
+    if (isMobileNow !== wasMobile) {
+      console.log('🔄 Viewport breakpoint changed:', wasMobile ? 'desktop→mobile' : 'mobile→desktop');
+      wasMobile = isMobileNow;
+
+      // Clear fixed canvas size and recalculate for new viewport
+      if (currentImageObject && currentImageDimensions) {
+        fixedCanvasPixelSize = null; // Force recalculation
+        const { width, height } = currentImageDimensions;
+        if (width && height) {
+          fitOverlayToImage(width, height);
+          renderImageCanvas();
+          renderOverlays();
+        }
+      }
+    }
+  };
+
+  // Modern API
+  if (mobileBreakpoint.addEventListener) {
+    mobileBreakpoint.addEventListener('change', handleBreakpointChange);
+  } else {
+    // Legacy API
+    mobileBreakpoint.addListener(handleBreakpointChange);
+  }
+
   // Use ResizeObserver to detect when the viewer container changes size
   // This catches layout changes from CSS media queries that window.resize might miss
   const viewer = document.getElementById('viewer');
