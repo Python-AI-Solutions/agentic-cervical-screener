@@ -94,15 +94,15 @@ export function drawGeoJSON(ctx, fc, color, transform) {
 
 export function drawLabeledBoxes(ctx, boxes, transform) {
   if (!boxes || !boxes.length) return;
-  console.log('🎨 drawLabeledBoxes called with:', { 
-    boxesCount: boxes.length, 
+  console.log('🎨 drawLabeledBoxes called with:', {
+    boxesCount: boxes.length,
     transform,
-    firstBox: boxes[0] 
+    firstBox: boxes[0]
   });
-  
+
   for (const b of boxes) {
     const color = colorForLabel(b.label);
-    
+
     // CRITICAL: Boxes MUST be in image pixel coordinates from API
     // Transform to screen coordinates: screenX = imageX * scale + offset
     const x1 = b.x * transform.scale + transform.tx;

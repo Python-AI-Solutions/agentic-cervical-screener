@@ -288,7 +288,7 @@ function renderImageCanvas() {
 
   // Use the ORIGINAL DPR from when canvas was sized
   const dpr = fixedCanvasPixelSize.width / fixedCanvasPixelSize.logicalWidth;
-  
+
   // Reset and apply DPR scaling
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.scale(dpr, dpr);
@@ -481,12 +481,12 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
 
 function renderOverlays(){
   console.log('🎨 renderOverlays called:', { showUserDrawnRois, showAIDetections, lastBoxesLength: lastBoxes.length, transform });
-  
+
   if (!fixedCanvasPixelSize) {
     console.warn('⚠️ renderOverlays skipped - fixedCanvasPixelSize not set');
     return;
   }
-  
+
   // CRITICAL: Use FIXED pixel size for overlay canvas buffer (matches imageCanvas)
   if (overlayCanvas.width !== fixedCanvasPixelSize.width || overlayCanvas.height !== fixedCanvasPixelSize.height) {
     overlayCanvas.width = fixedCanvasPixelSize.width;
@@ -500,11 +500,11 @@ function renderOverlays(){
 
   // Use the ORIGINAL DPR from when canvas was sized
   const dpr = fixedCanvasPixelSize.width / fixedCanvasPixelSize.logicalWidth;
-  
+
   // Reset transform and reapply DPR scaling
   overlayCtx.setTransform(1, 0, 0, 1, 0, 0);
   overlayCtx.scale(dpr, dpr);
-  
+
   // Clear using FIXED logical dimensions
   overlayCtx.clearRect(0, 0, fixedCanvasPixelSize.logicalWidth, fixedCanvasPixelSize.logicalHeight);
 
@@ -1213,7 +1213,7 @@ function drawUserRoisFixed() {
   if (userDrawnRois.length === 0) return;
 
   overlayCtx.save();
-  
+
   // Font size relative to current zoom
   const fontSize = 13 / (transform.scale * currentZoomLevel);
   overlayCtx.font = `bold ${fontSize}px Arial`;
@@ -1230,7 +1230,7 @@ function drawUserRoisFixed() {
 
     // Line width relative to zoom
     const lineWidth = (isHovered ? 4 : 3) / (transform.scale * currentZoomLevel);
-    
+
     // Use bright, visible colors
     if (isHovered) {
       overlayCtx.strokeStyle = '#FF8C00';
@@ -1281,7 +1281,7 @@ function drawLabeledBoxesFixed(ctx, boxes) {
     }
 
     const color = colorForLabel(b.label);
-    
+
     // Draw directly at image coordinates - context transform handles screen mapping
     const x1 = b.x;
     const y1 = b.y;
@@ -1422,7 +1422,7 @@ function drawLabeledBoxesTransformed() {
 
   for (const b of lastBoxes) {
     const color = colorForLabel(b.label);
-    
+
     // Since context is already transformed, use image coordinates directly
     const x1 = b.x;
     const y1 = b.y;
@@ -1582,9 +1582,9 @@ function setupZoomHandlers() {
   // Wheel zoom (mouse scroll)
   overlayCanvas.addEventListener('wheel', (e) => {
     if (!currentImageObject) return; // Only zoom if image is loaded
-    
+
     e.preventDefault();
-    
+
     // Scroll up = zoom in (positive), down = zoom out (negative)
     const zoomDelta = e.deltaY < 0 ? 0.1 : -0.1;
     handleZoom(zoomDelta, e.clientX, e.clientY);
