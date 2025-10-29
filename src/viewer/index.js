@@ -67,6 +67,8 @@ let currentImageFile = null;         // Store the current image file for classif
 let hoveredRoiIndex = -1;            // Index of currently hovered ROI (-1 if none)
 let currentImageDimensions = { width: 1024, height: 1024 }; // Store actual image dimensions
 let currentImageObject = null;       // Store the current image object for redrawing on resize
+// CRITICAL: Fixed canvas dimensions - set once at image load, NEVER changes with browser zoom
+let fixedCanvasPixelSize = null;     // { width, height } in actual pixels
 // Zoom variables
 let currentZoomLevel = 1.0;          // Current zoom level (1.0 = fit to window)
 let panX = 0;                        // Pan offset X
@@ -192,6 +194,16 @@ function fitOverlayToImage(imageWidth, imageHeight) {
     return;
   }
 
+  // CRITICAL: FREEZE canvas pixel dimensions at image load
+  // These will NEVER change, even with browser zoom
+  const dpr = window.devicePixelRatio || 1;
+  fixedCanvasPixelSize = {
+    width: Math.round(containerWidth * dpr),
+    height: Math.round(containerHeight * dpr),
+    logicalWidth: containerWidth,
+    logicalHeight: containerHeight
+  };
+
   // Calculate scale to fit image in container
   const scale = Math.min(containerWidth / imageWidth, containerHeight / imageHeight);
 
@@ -206,9 +218,9 @@ function fitOverlayToImage(imageWidth, imageHeight) {
   transform.tx = tx;
   transform.ty = ty;
 
-  console.log('✅ Transform calculated (will NOT change on browser zoom):', {
+  console.log('✅ Canvas size and transform FROZEN (immune to browser zoom):', {
     imageSize: { width: imageWidth, height: imageHeight },
-    containerSize: { width: containerWidth, height: containerHeight },
+    fixedCanvasPixelSize,
     transform: { scale, tx, ty }
   });
 }
@@ -247,7 +259,7 @@ function debouncedResize() {
 }
 
 function renderImageCanvas() {
-  if (!currentImageObject) {
+  if (!currentImageObject || !fixedCanvasPixelSize) {
     return;
   }
 
@@ -260,38 +272,32 @@ function renderImageCanvas() {
   const imageCanvas = ensureImageCanvas();
   if (!imageCanvas) return;
 
-  const { width: containerWidthRaw, height: containerHeightRaw } = getCanvasContainerSize();
-  const containerWidth = Math.round(containerWidthRaw);
-  const containerHeight = Math.round(containerHeightRaw);
-
-  if (containerWidth === 0 || containerHeight === 0) {
-    console.warn('⚠️ renderImageCanvas skipped - container has zero size', { containerWidthRaw, containerHeightRaw });
-    return;
+  // CRITICAL: Use FIXED pixel size for canvas buffer (NEVER changes with browser zoom)
+  if (imageCanvas.width !== fixedCanvasPixelSize.width || imageCanvas.height !== fixedCanvasPixelSize.height) {
+    imageCanvas.width = fixedCanvasPixelSize.width;
+    imageCanvas.height = fixedCanvasPixelSize.height;
   }
 
-  const dpr = window.devicePixelRatio || 1;
-  const targetCanvasWidth = Math.round(containerWidth * dpr);
-  const targetCanvasHeight = Math.round(containerHeight * dpr);
-
-  if (imageCanvas.width !== targetCanvasWidth || imageCanvas.height !== targetCanvasHeight) {
-    imageCanvas.width = targetCanvasWidth;
-    imageCanvas.height = targetCanvasHeight;
-    imageCanvas.style.width = `${containerWidth}px`;
-    imageCanvas.style.height = `${containerHeight}px`;
-  }
+  // CSS size adapts to current viewport (changes with browser zoom, but pixels don't)
+  const { width: currentContainerWidth, height: currentContainerHeight } = getCanvasContainerSize();
+  imageCanvas.style.width = `${Math.round(currentContainerWidth)}px`;
+  imageCanvas.style.height = `${Math.round(currentContainerHeight)}px`;
 
   const ctx = imageCanvas.getContext('2d');
   if (!ctx) return;
 
+  // Use the ORIGINAL DPR from when canvas was sized
+  const dpr = fixedCanvasPixelSize.width / fixedCanvasPixelSize.logicalWidth;
+  
   // Reset and apply DPR scaling
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, containerWidth, containerHeight);
+  ctx.clearRect(0, 0, fixedCanvasPixelSize.logicalWidth, fixedCanvasPixelSize.logicalHeight);
 
   const imgWidth = currentImageDimensions?.width || currentImageObject.width;
   const imgHeight = currentImageDimensions?.height || currentImageObject.height;
 
-  // Calculate screen position using transform (which stays constant across browser zoom)
+  // Calculate screen position using transform (which stays constant)
   const drawX = transform.tx;
   const drawY = transform.ty;
   const drawWidth = imgWidth * transform.scale;
@@ -300,12 +306,12 @@ function renderImageCanvas() {
   // Draw image at calculated screen coordinates
   ctx.drawImage(currentImageObject, drawX, drawY, drawWidth, drawHeight);
 
-  console.log('🖼️ Image canvas rendered:', {
-    containerSize: { width: containerWidth, height: containerHeight },
+  console.log('🖼️ Image canvas rendered (FIXED pixel buffer, CSS adapts):', {
+    fixedPixelSize: fixedCanvasPixelSize,
+    currentCSSSize: { width: currentContainerWidth, height: currentContainerHeight },
     imageSize: { width: imgWidth, height: imgHeight },
     screenPosition: { drawX, drawY, drawWidth, drawHeight },
-    transform: { ...transform },
-    dpr
+    transform: { ...transform }
   });
 }
 
@@ -347,6 +353,7 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
   currentImageFile = null; // Clear current image file
   currentImageDimensions = { width: 1024, height: 1024 }; // Reset dimensions
   currentImageObject = null; // Clear stored image object
+  fixedCanvasPixelSize = null; // Clear fixed canvas size - will be recalculated for new image
   showAIDetections = true; // Reset AI detections visibility
   currentZoomLevel = 1.0; // Reset zoom
   panX = 0; // Reset pan
@@ -475,18 +482,31 @@ window.loadCaseFromUrl = async function loadCaseFromUrl(url){
 function renderOverlays(){
   console.log('🎨 renderOverlays called:', { showUserDrawnRois, showAIDetections, lastBoxesLength: lastBoxes.length, transform });
   
-  // Get logical dimensions (not physical pixels)
-  const { width: containerWidthRaw, height: containerHeightRaw } = getCanvasContainerSize();
-  const containerWidth = Math.round(containerWidthRaw);
-  const containerHeight = Math.round(containerHeightRaw);
+  if (!fixedCanvasPixelSize) {
+    console.warn('⚠️ renderOverlays skipped - fixedCanvasPixelSize not set');
+    return;
+  }
   
-  // CRITICAL: Reset transform and reapply DPR scaling every time
-  const dpr = window.devicePixelRatio || 1;
+  // CRITICAL: Use FIXED pixel size for overlay canvas buffer (matches imageCanvas)
+  if (overlayCanvas.width !== fixedCanvasPixelSize.width || overlayCanvas.height !== fixedCanvasPixelSize.height) {
+    overlayCanvas.width = fixedCanvasPixelSize.width;
+    overlayCanvas.height = fixedCanvasPixelSize.height;
+  }
+
+  // CSS size adapts to current viewport (same as imageCanvas)
+  const { width: currentContainerWidth, height: currentContainerHeight } = getCanvasContainerSize();
+  overlayCanvas.style.width = `${Math.round(currentContainerWidth)}px`;
+  overlayCanvas.style.height = `${Math.round(currentContainerHeight)}px`;
+
+  // Use the ORIGINAL DPR from when canvas was sized
+  const dpr = fixedCanvasPixelSize.width / fixedCanvasPixelSize.logicalWidth;
+  
+  // Reset transform and reapply DPR scaling
   overlayCtx.setTransform(1, 0, 0, 1, 0, 0);
   overlayCtx.scale(dpr, dpr);
   
-  // Clear using logical dimensions
-  overlayCtx.clearRect(0, 0, containerWidth, containerHeight);
+  // Clear using FIXED logical dimensions
+  overlayCtx.clearRect(0, 0, fixedCanvasPixelSize.logicalWidth, fixedCanvasPixelSize.logicalHeight);
 
   // Only show user-drawn ROIs
   if (showUserDrawnRois) {
@@ -719,6 +739,7 @@ function handleDroppedFiles(files) {
         currentImageFile = null; // Clear current image file
         currentImageDimensions = { width: 1024, height: 1024 }; // Reset dimensions
         currentImageObject = null; // Clear stored image object
+        fixedCanvasPixelSize = null; // Clear fixed canvas size - will be recalculated for new image
 
         // Display the new image
         // Store actual image dimensions
