@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <title>Cervical AI Viewer</title>
+</head>
+<body class="m-0 overflow-x-hidden bg-medical-dark-secondary text-medical-text-primary font-sans">
+  <!-- Header -->
+  <header class="medical-header">
+    <button 
+      class="md:hidden flex items-center justify-center w-11 h-11 p-2 mr-2 bg-white/10 border border-white/20 text-medical-text-primary text-2xl cursor-pointer rounded-medical hover:bg-white/10 active:bg-white/20 active:scale-95" 
+      id="mobileMenuBtn" 
+      aria-label="Toggle menu"
+    >
+      ☰
+    </button>
+    <div class="flex items-center gap-2 flex-1 min-w-0">
+      <div class="font-semibold text-lg whitespace-nowrap mr-2">Cervical AI Viewer</div>
+      <div class="hidden md:flex items-center gap-2 flex-wrap min-w-0 ml-3" id="headerButtons">
+        <button id="btnClassify" class="medical-button">Classify</button>
+        <button id="btnClearRois" class="medical-button">Clear ROIs</button>
+        <button id="btnDownload" class="medical-button">Download</button>
+        <button id="btnSidebar" class="medical-button bg-blue-600 border-blue-600 text-white hover:bg-blue-700 hover:border-blue-700">Load Image</button>
+        <div class="md:hidden grid-cols-1 mt-3 pt-3 border-t border-medical-dark-border">
+          <h4 class="m-0 mb-2 text-base font-semibold text-medical-text-primary text-center">Layers</h4>
+          <div id="mobileLayers"></div>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 ml-auto flex-shrink-0">
+      <span class="pill bg-medical-dark-button text-medical-text-primary px-2 py-1 rounded-full text-xs whitespace-nowrap border border-medical-dark-border" id="status">idle</span>
+      <span id="spinner" class="spinner hidden w-3.5 h-3.5 border-2 border-white/35 border-t-white rounded-full animate-spin ml-2" aria-label="loading"></span>
+      <span class="text-medical-text-muted text-xs hidden md:inline">prototype – not for clinical use</span>
+    </div>
+  </header>
+
+  <!-- Mobile Overlay -->
+  <div class="hidden fixed inset-0 bg-black/50 z-[999]" id="mobileOverlay"></div>
+
+  <!-- Main Layout -->
+  <main class="absolute top-[56px] left-0 right-0 bottom-0 grid grid-cols-[280px_1fr]" style="grid-template-areas: 'sidebar viewer';">
+    <!-- Sidebar -->
+    <aside 
+      id="sidebar" 
+      class="medical-sidebar md:translate-x-0 -translate-x-full md:static fixed top-[56px] left-0 bottom-0 z-[1001] shadow-medical"
+      style="grid-area: sidebar;"
+    >
+      <div class="flex justify-between items-center mb-4 mt-4 pb-2 border-b border-medical-dark-border">
+        <h3 class="m-0 text-lg font-semibold text-medical-text-primary">Case Management</h3>
+        <button 
+          class="md:hidden block bg-transparent border-none text-2xl text-medical-text-secondary cursor-pointer p-1 hover:text-medical-text-primary" 
+          id="mobileCloseBtn" 
+          aria-label="Close sidebar"
+        >
+          ×
+        </button>
+      </div>
+      <div class="flex items-center gap-2 mb-2 flex-wrap">
+        <input id="imageFile" type="file" accept="image/*" class="hidden"/>
+        <button id="btnLoadImage" class="medical-button w-full justify-start">Load Image from Computer</button>
+      </div>
+      <div class="my-4">
+        <div class="text-medical-text-secondary mb-2 font-medium text-xs">Quick Load Cases:</div>
+        <button onclick="loadQuickCase('/cases/DEMO-001')" class="medical-button w-full mb-1 text-left justify-start">Case 1</button>
+        <button onclick="loadQuickCase('/cases/DEMO-002')" class="medical-button w-full mb-1 text-left justify-start">Case 2</button>
+        <button onclick="loadQuickCase('/cases/DEMO-003')" class="medical-button w-full mb-1 text-left justify-start">Case 3</button>
+        <button onclick="loadQuickCase('/cases/DEMO-004')" class="medical-button w-full mb-1 text-left justify-start">Case 4</button>
+      </div>
+      <hr class="border-none border-t border-medical-dark-border my-4">
+      <div class="mt-4">
+        <h4 class="m-0 mb-2 text-base font-semibold text-medical-text-primary">Layers</h4>
+        <div id="layers"></div>
+      </div>
+    </aside>
+
+    <!-- Viewer -->
+    <section id="viewer" class="canvas-container" style="grid-area: viewer;">
+      <div 
+        id="dropZone" 
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-medical-text-muted pointer-events-none z-[5]"
+      >
+        <div class="text-3xl mb-3">📁</div>
+        <div>Drop image here or use the "Load Image from Computer" button</div>
+        <div class="text-xs mt-2">Supports PNG, JPG, JPEG formats</div>
+      </div>
+      <canvas id="glCanvas" class="gl-canvas"></canvas>
+      <canvas id="overlayCanvas" class="overlay-canvas"></canvas>
+    </section>
+  </main>
+
+  <script>window.__ENV__={API_BASE:''}</script>
+  <script>
+    console.log('Environment loaded:', window.__ENV__);
+
+    // Quick case loading function
+    function loadQuickCase(url) {
+      if (window.loadCaseFromUrl) {
+        window.loadCaseFromUrl(url);
+      }
+    }
+
+    // Mobile menu functionality
+    function toggleMobileMenu() {
+      const headerButtons = document.getElementById('headerButtons');
+      const mobileOverlay = document.getElementById('mobileOverlay');
+
+      if (headerButtons) {
+        headerButtons.classList.toggle('mobile-visible');
+        if (mobileOverlay) {
+          mobileOverlay.classList.toggle('visible');
+          document.body.style.overflow = headerButtons.classList.contains('mobile-visible') ? 'hidden' : '';
+        }
+      }
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const mobileOverlay = document.getElementById('mobileOverlay');
+
+      if (sidebar) {
+        sidebar.classList.toggle('mobile-visible');
+        if (mobileOverlay) {
+          mobileOverlay.classList.toggle('visible');
+          document.body.style.overflow = sidebar.classList.contains('mobile-visible') ? 'hidden' : '';
+        }
+      }
+    }
+
+    function closeAllPanels() {
+      const headerButtons = document.getElementById('headerButtons');
+      const sidebar = document.getElementById('sidebar');
+      const mobileOverlay = document.getElementById('mobileOverlay');
+
+      if (headerButtons) headerButtons.classList.remove('mobile-visible');
+      if (sidebar) sidebar.classList.remove('mobile-visible');
+      if (mobileOverlay) mobileOverlay.classList.remove('visible');
+      document.body.style.overflow = '';
+    }
+
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+      const mobileCloseBtn = document.getElementById('mobileCloseBtn');
+      const mobileOverlay = document.getElementById('mobileOverlay');
+      const btnSidebar = document.getElementById('btnSidebar');
+
+      if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          toggleMobileMenu();
+        });
+      }
+
+      if (mobileCloseBtn) {
+        mobileCloseBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          closeAllPanels();
+        });
+      }
+
+      if (btnSidebar) {
+        btnSidebar.addEventListener('click', function(e) {
+          e.preventDefault();
+          const headerButtons = document.getElementById('headerButtons');
+          const isMobile = window.innerWidth <= 1024;
+
+          if (isMobile) {
+            if (headerButtons) headerButtons.classList.remove('mobile-visible');
+            toggleSidebar();
+          } else {
+            toggleSidebar();
+          }
+        });
+      }
+
+      if (mobileOverlay) {
+        mobileOverlay.addEventListener('click', function(e) {
+          e.preventDefault();
+          closeAllPanels();
+        });
+      }
+
+      // Handle window resize
+      window.addEventListener('resize', function() {
+        if (window.innerWidth > 1024) {
+          closeAllPanels();
+        }
+      });
+
+      // Handle escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closeAllPanels();
+        }
+      });
+    });
+    console.log('API_BASE:', window.__ENV__.API_BASE);
+  </script>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

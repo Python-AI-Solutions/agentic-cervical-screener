@@ -47,7 +47,7 @@ def start_test_server(port=None):
 
     # Start server using python -m to avoid PYTHONPATH issues
     process = subprocess.Popen(
-        ["python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", str(port)],
+        ["python", "-m", "uvicorn", "agentic_cervical_screener.main:app", "--host", "0.0.0.0", "--port", str(port)],
         cwd=root_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

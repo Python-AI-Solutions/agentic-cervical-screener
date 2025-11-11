@@ -4,7 +4,6 @@ import os
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -22,7 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files
+# Mount static assets used by the API responses
 # Use current working directory since public is copied to /app/public
 public_dir = os.path.join(os.getcwd(), "public")
 
@@ -91,10 +90,14 @@ class ClassifyResp(BaseModel):
 
 
 @app.get("/")
-def read_index():
-    """Serve the main frontend HTML file"""
-    index_path = os.path.join(public_dir, "index.html")
-    return FileResponse(index_path)
+def read_root():
+    """Provide a lightweight API landing response with documentation links"""
+    return {
+        "message": "Cervical AI inference API",
+        "docs_url": "/docs",
+        "openapi_url": "/openapi.json",
+        "health_url": "/healthz",
+    }
 
 
 @app.get("/healthz")

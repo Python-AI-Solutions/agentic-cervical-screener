@@ -1,4 +1,11 @@
+mlruns
 node_modules/
+src/frontend/node_modules/
+src/frontend/dist/
+frontend/dist/
+frontend/playwright-report/
+frontend/test-results/
+.ipynb_checkpoints
 npm-debug.log*
 .DS_Store
 __pycache__/
