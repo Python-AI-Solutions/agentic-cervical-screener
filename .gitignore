@@ -1,7 +1,5 @@
 mlruns
 node_modules/
-src/frontend/node_modules/
-src/frontend/dist/
 frontend/dist/
 frontend/playwright-report/
 frontend/test-results/

@@ -49,6 +49,7 @@ jobs:
         IMAGE_URI="us-central1-docker.pkg.dev/$GCP_PROJECT_ID/$ARTIFACT_REGISTRY/$IMAGE_NAME:$TAG"
 
         echo "Building and pushing: $IMAGE_URI"
+        echo "Building image with frontend and backend..."
 
         # Build and push with caching
         docker buildx build \
