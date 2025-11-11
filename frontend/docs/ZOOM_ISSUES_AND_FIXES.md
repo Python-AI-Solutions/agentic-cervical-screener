@@ -256,6 +256,40 @@ The transform is now calculated using:
 - Transform calculation and rendering must use matching dimensions
 - DPR scaling must be applied consistently
 
+## 2025 Refinements (Safari + Mobile)
+
+While re-validating the stack in November 2025 we hit a fresh set of Safari-specific gotchas. The fixes below are already merged, but the lessons are worth recording to avoid reintroducing regressions:
+
+1. **Never divide pointer coordinates by browser zoom** – `clientX/clientY` and `getBoundingClientRect()` are already in CSS pixels even when Safari or Chrome is zoomed. Our conversions (`screenToCanvasLogical`, `canvasLogicalToScreen`) now simply subtract/add the element offsets.
+2. **Prefer DOM bounds, correct to `visualViewport` only when clearly wrong** – Safari’s dev tools sometimes report the sidebar width (≈256 px) even when the viewer occupies the full viewport. We now:
+   - Read the parent element’s bounding rect first.
+   - Detect “impossible” values (difference >20 px from `visualViewport`) on mobile layouts and replace them with `visualViewport` − header height.
+   - Fall back to client size, computed style, cached logical size, window size, and finally zeros (with logging).
+3. **Align the CSS grid with the measurement assumptions** – The main layout now forces `grid-template-columns: minmax(0, 1fr)` and sets `#viewer` to `width: 100vw` under 1024 px. Without this, the DOM rect could legitimately be the sidebar width even after we corrected the viewer logic.
+4. **Instrument aggressively** – `window.__viewerDebug` exposes `getAlignmentSnapshot`, `getUserRois`, `forceTransformRecalc`, and `addSyntheticRoi`. Always grab a snapshot when debugging Safari; it captures transforms, container sizes, bounding rects, viewport data, and DPR in a single serializable object.
+5. **Automate the regression** – Playwright now includes a dedicated Mobile Safari project plus `e2e/mobile-alignment.spec.ts`, which asserts:
+   - Image and overlay canvases share the same client rect and transform.
+   - A synthetic ROI placed around the canvas center converts to image coordinates near the image center.
+   Run `npm run test:e2e:ci` (headless, non-blocking) whenever you modify transform or layout code; it spins up Chromium + WebKit automatically.
+
+### Debugging Checklist
+
+When something looks off on real hardware:
+
+1. Open the Safari/WebKit dev tools console and run `window.__viewerDebug.getAlignmentSnapshot()`. Verify:
+   - `containerSize` matches the expected viewport minus the 56 px header.
+   - `boundingRects.imageCanvas/overlayCanvas` are identical.
+   - `transform.tx/ty` center the scaled image (`tx ≈ (containerWidth - scaledWidth) / 2`).
+2. If `containerSize` is wrong:
+   - Inspect the CSS grid – ensure `main` has a single column on mobile.
+   - Check the console logs for messages starting with `📐 Using…` to see which measurement path was taken.
+3. If pointer interactions drift:
+   - Confirm that `screenToCanvasLogical` is being passed the *overlay* canvas element (Chrome dev tools can mislead by selecting the Niivue canvas).
+   - Verify DPR scaling: overlay contexts must `scale(devicePixelRatio, devicePixelRatio)` before drawing, but coordinate math stays in logical pixels.
+4. Reproduce with Playwright: `cd frontend && npm run test:e2e:ci`. Inspect the per-test attachments under `test-results/` or run `npx playwright show-report` for the latest run.
+
+By following the snapshot + Playwright loop we were able to diagnose mis-sized containers, sidebar interactions, and ROI drift much faster than ad-hoc console logging.
+
 ## Testing and Validation
 
 ### Test Cases Covered
@@ -321,4 +355,3 @@ The zoom and mobile viewport issues were resolved by:
 5. Improving timing with forced reflows
 
 The solution is robust and handles edge cases through multiple fallback methods, ensuring images display correctly across different devices and zoom levels.
-

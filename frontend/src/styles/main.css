@@ -115,12 +115,13 @@
   @media (max-width: 1024px) {
     #headerButtons {
       @apply hidden fixed top-[56px] left-0 right-0 bg-medical-dark-primary p-3 shadow-medical z-[1001];
-      @apply max-h-[80vh] overflow-y-auto transform -translate-y-full transition-transform duration-300;
-      @apply grid grid-cols-2 gap-2 ml-0;
+      @apply max-h-[80vh] overflow-y-auto -translate-y-full transition-transform duration-300;
+      @apply pointer-events-none;
     }
 
     #headerButtons.mobile-visible {
-      @apply grid translate-y-0;
+      @apply grid grid-cols-2 gap-2 translate-y-0 ml-0;
+      @apply pointer-events-auto;
     }
 
     #headerButtons.mobile-visible .sidebar-btn {

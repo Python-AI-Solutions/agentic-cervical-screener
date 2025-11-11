@@ -12,11 +12,8 @@ async function showSidebarIfHidden(page: Page, testInfo: TestInfo) {
     return el?.classList.contains('mobile-visible');
   });
   if (!sidebarVisible) {
-    await page.evaluate(() => {
-      const el = document.getElementById('sidebar');
-      el?.classList.add('mobile-visible');
-    });
-    await page.waitForTimeout(200);
+    await page.locator('#mobileMenuBtn').click();
+    await page.waitForFunction(() => document.getElementById('sidebar')?.classList.contains('mobile-visible'));
   }
 }
 
@@ -133,12 +130,10 @@ test.describe('UI Interactions E2E', () => {
     // Sidebar should be off-screen (x position negative or outside viewport)
     expect(initialBox!.x).toBeLessThan(0);
     
-    // Click menu button - use force click to bypass pointer interception
-    // The button might be covered by an overlay or other element
     const menuButton = page.locator('#mobileMenuBtn');
     await menuButton.scrollIntoViewIfNeeded();
-    await menuButton.click({ force: true });
-    
+    await menuButton.click();
+
     // Wait for animation/transition and CSS class application
     await page.waitForTimeout(1000);
     
@@ -147,14 +142,8 @@ test.describe('UI Interactions E2E', () => {
       return el.classList.contains('mobile-visible');
     });
     
-    // If class wasn't added, the click might not have worked
     if (!hasMobileVisible) {
-      // Try clicking again with a different approach
-      await page.evaluate(() => {
-        const btn = document.getElementById('mobileMenuBtn');
-        if (btn) btn.click();
-      });
-      await page.waitForTimeout(1000);
+      throw new Error('Sidebar did not become visible after tapping mobile menu button');
     }
     
     // Sidebar should now be visible (x position should be 0 or positive)
@@ -174,6 +163,57 @@ test.describe('UI Interactions E2E', () => {
     // Check layers section exists
     const layersSection = page.locator('#layers');
     await expect(layersSection).toBeVisible();
+  });
+});
+
+test.describe('Mobile Responsiveness', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('#viewer', { timeout: 5000 });
+  });
+
+  test('should render header action drawer responsively', async ({ page }, testInfo) => {
+    if (!isMobileProject(testInfo)) {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.waitForTimeout(100);
+    }
+    await page.waitForSelector('#mobileMenuBtn', { timeout: 5000 });
+
+    const headerButtons = page.locator('#headerButtons');
+    await expect(headerButtons).toHaveCSS('pointer-events', 'none');
+
+    await page.evaluate(() => {
+      document.getElementById('headerButtons')?.classList.add('mobile-visible');
+    });
+    await page.waitForTimeout(200);
+    await expect(headerButtons).toHaveCSS('pointer-events', 'auto');
+
+    const gridTemplate = await headerButtons.evaluate((el) => window.getComputedStyle(el).gridTemplateColumns);
+    const gridColumns = gridTemplate.split(/\s+/).filter(Boolean);
+    expect(gridColumns.length).toBeGreaterThanOrEqual(2);
+
+    const metrics = await page.evaluate(() => {
+      const viewportWidth = window.innerWidth;
+      const buttons = Array.from(document.querySelectorAll('#headerButtons button.medical-button')).map((btn) => {
+        const rect = btn.getBoundingClientRect();
+        return {
+          text: btn.textContent?.trim(),
+          width: rect.width,
+          left: rect.left,
+          right: rect.right,
+        };
+      });
+      return { viewportWidth, buttons };
+    });
+
+    expect(metrics.buttons.length).toBeGreaterThanOrEqual(4);
+    const uniqueColumns = new Set(metrics.buttons.map((b) => Math.round(b.left)));
+    expect(uniqueColumns.size).toBeGreaterThanOrEqual(2);
+
+    metrics.buttons.forEach((button) => {
+      expect(button.width).toBeGreaterThanOrEqual(120);
+      expect(button.right).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+    });
   });
 });
 
