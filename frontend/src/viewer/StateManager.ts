@@ -1,7 +1,7 @@
 /**
  * StateManager - Centralized state management for the viewer
  * Manages all global state variables and provides getters/setters
- * 
+gs * 
  * Note: Coordinate transformations are handled by CoordinateTransformManager
  * (see CoordinateTransformManager.ts), which manages browser zoom detection
  * and coordinate space conversions. The transform state here is updated by

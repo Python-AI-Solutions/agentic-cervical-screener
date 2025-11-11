@@ -290,13 +290,21 @@ class CoordinateTransformManager {
       transform: state.transform,
       containerSize: { width: containerWidth, height: containerHeight },
       imageSize: { width: imageWidth, height: imageHeight },
-      scaledSize: { width: scaledWidth, height: scaledHeight }
+      scaledSize: { width: scaledWidth, height: scaledHeight },
+      usingExplicit: explicitWidth !== undefined,
+      viewportSize: window.visualViewport ? {
+        width: window.visualViewport.width,
+        height: window.visualViewport.height
+      } : null,
+      windowSize: { width: window.innerWidth, height: window.innerHeight }
     });
   }
 
   /**
    * Get zoom-aware container size
    * Validates and ensures reasonable values
+   * Uses multiple fallback methods to ensure accurate sizing
+   * Prioritizes visual viewport and direct measurements over zoom-aware calculations
    */
   getContainerSize(): { width: number; height: number } {
     if (!glCanvas) return { width: 0, height: 0 };
@@ -304,25 +312,68 @@ class CoordinateTransformManager {
     const container = glCanvas.parentElement || glCanvas;
     if (!container) return { width: 0, height: 0 };
     
+    // PRIORITY 1: Use visual viewport if available (most reliable for mobile)
+    if (window.visualViewport && window.visualViewport.width > 0 && window.visualViewport.height > 0) {
+      const vpWidth = Math.round(window.visualViewport.width);
+      const vpHeight = Math.round(window.visualViewport.height);
+      
+      // Validate visual viewport dimensions are reasonable
+      if (vpWidth > 100 && vpHeight > 100 && vpWidth < 10000 && vpHeight < 10000) {
+        console.log('📐 Using visual viewport for container size:', { width: vpWidth, height: vpHeight });
+        return { width: vpWidth, height: vpHeight };
+      }
+    }
+    
+    // PRIORITY 2: Direct bounding rect measurement (no zoom compensation)
+    const directRect = container.getBoundingClientRect();
+    if (directRect.width > 100 && directRect.height > 100) {
+      const width = Math.round(directRect.width);
+      const height = Math.round(directRect.height);
+      console.log('📐 Using direct bounding rect for container size:', { width, height });
+      return { width, height };
+    }
+    
+    // PRIORITY 3: Computed style (CSS dimensions)
+    const computed = window.getComputedStyle(container);
+    const computedWidth = parseFloat(computed.width);
+    const computedHeight = parseFloat(computed.height);
+    if (computedWidth > 100 && computedHeight > 100) {
+      console.log('📐 Using computed style for container size:', { width: computedWidth, height: computedHeight });
+      return {
+        width: Math.round(computedWidth),
+        height: Math.round(computedHeight)
+      };
+    }
+    
+    // PRIORITY 4: Zoom-aware bounding rect (fallback)
     const zoomAwareRect = this.getZoomAwareBoundingClientRect(container);
+    let width = Math.max(0, Math.round(zoomAwareRect.width));
+    let height = Math.max(0, Math.round(zoomAwareRect.height));
+    
+    // PRIORITY 5: Window dimensions minus header (last resort)
+    if (width < 100 || height < 100) {
+      const headerHeight = 56; // Header height from CSS
+      width = Math.round(window.innerWidth);
+      height = Math.round(window.innerHeight - headerHeight);
+      console.log('📐 Using window dimensions for container size:', { width, height });
+    }
     
     // Validate dimensions are reasonable
-    const width = Math.max(0, Math.round(zoomAwareRect.width));
-    const height = Math.max(0, Math.round(zoomAwareRect.height));
-    
-    // If dimensions seem invalid, try direct measurement as fallback
-    if (width === 0 || height === 0) {
-      const directRect = container.getBoundingClientRect();
-      const computed = window.getComputedStyle(container);
-      const computedWidth = parseFloat(computed.width) || directRect.width;
-      const computedHeight = parseFloat(computed.height) || directRect.height;
-      
-      if (computedWidth > 0 && computedHeight > 0) {
-        return {
-          width: Math.round(computedWidth),
-          height: Math.round(computedHeight)
-        };
-      }
+    if (width <= 0 || height <= 0 || !isFinite(width) || !isFinite(height)) {
+      console.warn('⚠️ getContainerSize: invalid dimensions after all fallbacks', {
+        width,
+        height,
+        container: container.id || container.className,
+        zoomAwareRect,
+        directRect,
+        computed: { width: computedWidth, height: computedHeight },
+        visualViewport: window.visualViewport ? {
+          width: window.visualViewport.width,
+          height: window.visualViewport.height
+        } : null,
+        windowSize: { width: window.innerWidth, height: window.innerHeight }
+      });
+      return { width: 0, height: 0 };
     }
     
     return { width, height };
