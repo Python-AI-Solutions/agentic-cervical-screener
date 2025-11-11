@@ -136,8 +136,12 @@
     }
 
     main {
-      @apply grid-cols-1;
-      grid-template-areas: "viewer";
+      grid-template-columns: minmax(0, 1fr) !important;
+      grid-template-areas: "viewer" !important;
+    }
+
+    #viewer {
+      width: 100vw;
     }
   }
 
@@ -308,4 +312,3 @@
   scrollbar-width: thin;
   scrollbar-color: #374151 #1f2937;
 }
-

@@ -16,6 +16,7 @@ class CoordinateTransformManager {
   private browserZoom: number = 1.0;
   private cachedZoom: number = 1.0;
   private zoomCheckElement: HTMLElement | null = null;
+  private lastContainerSize: { width: number; height: number } = { width: 0, height: 0 };
 
   /**
    * Detect browser zoom factor by comparing getBoundingClientRect() with computed styles
@@ -85,19 +86,17 @@ class CoordinateTransformManager {
   }
 
   /**
-   * Get zoom-compensated bounding client rect
-   * Returns dimensions that account for browser zoom
+   * Get the element's bounding client rect in CSS pixels.
+   * We no longer attempt to compensate for browser zoom because clientX/Y
+   * and getBoundingClientRect() already live in the same coordinate space.
    */
   getZoomAwareBoundingClientRect(element: HTMLElement): { left: number; top: number; width: number; height: number } {
     const rect = element.getBoundingClientRect();
-    const zoom = this.getBrowserZoom();
-    
-    // Compensate for browser zoom
     return {
       left: rect.left,
       top: rect.top,
-      width: rect.width / zoom,
-      height: rect.height / zoom
+      width: rect.width,
+      height: rect.height
     };
   }
 
@@ -107,11 +106,10 @@ class CoordinateTransformManager {
    */
   screenToCanvasLogical(clientX: number, clientY: number, element: HTMLElement): { x: number; y: number } {
     const zoomAwareRect = this.getZoomAwareBoundingClientRect(element);
-    const zoom = this.getBrowserZoom(); // Ensure zoom is up to date
     
     return {
-      x: (clientX - zoomAwareRect.left) / zoom,
-      y: (clientY - zoomAwareRect.top) / zoom
+      x: clientX - zoomAwareRect.left,
+      y: clientY - zoomAwareRect.top
     };
   }
 
@@ -144,11 +142,10 @@ class CoordinateTransformManager {
    */
   canvasLogicalToScreen(canvasX: number, canvasY: number, element: HTMLElement): { x: number; y: number } {
     const zoomAwareRect = this.getZoomAwareBoundingClientRect(element);
-    const zoom = this.getBrowserZoom(); // Ensure zoom is up to date
     
     return {
-      x: canvasX * zoom + zoomAwareRect.left,
-      y: canvasY * zoom + zoomAwareRect.top
+      x: canvasX + zoomAwareRect.left,
+      y: canvasY + zoomAwareRect.top
     };
   }
 
@@ -301,35 +298,69 @@ class CoordinateTransformManager {
   }
 
   /**
-   * Get zoom-aware container size
-   * Validates and ensures reasonable values
-   * Uses multiple fallback methods to ensure accurate sizing
-   * Prioritizes visual viewport and direct measurements over zoom-aware calculations
+   * Get container size using real DOM measurements whenever possible.
+   * Uses multiple fallbacks (cached size, fixed canvas info, visual viewport) to remain stable.
    */
   getContainerSize(): { width: number; height: number } {
     if (!glCanvas) return { width: 0, height: 0 };
     
     const container = glCanvas.parentElement || glCanvas;
     if (!container) return { width: 0, height: 0 };
-    
-    // PRIORITY 1: Use visual viewport if available (most reliable for mobile)
-    if (window.visualViewport && window.visualViewport.width > 0 && window.visualViewport.height > 0) {
-      const vpWidth = Math.round(window.visualViewport.width);
-      const vpHeight = Math.round(window.visualViewport.height);
-      
-      // Validate visual viewport dimensions are reasonable
-      if (vpWidth > 100 && vpHeight > 100 && vpWidth < 10000 && vpHeight < 10000) {
-        console.log('📐 Using visual viewport for container size:', { width: vpWidth, height: vpHeight });
-        return { width: vpWidth, height: vpHeight };
-      }
-    }
-    
-    // PRIORITY 2: Direct bounding rect measurement (no zoom compensation)
+
+    // PRIORITY 1: Direct bounding rect measurement
     const directRect = container.getBoundingClientRect();
-    if (directRect.width > 100 && directRect.height > 100) {
-      const width = Math.round(directRect.width);
-      const height = Math.round(directRect.height);
-      console.log('📐 Using direct bounding rect for container size:', { width, height });
+    let width = directRect.width;
+    let height = directRect.height;
+    if (width > 0 && height > 0 && isFinite(width) && isFinite(height)) {
+      const isMobileLayout = typeof window.matchMedia === 'function'
+        ? window.matchMedia('(max-width: 1024px)').matches
+        : window.innerWidth <= 1024;
+      const visualViewport = window.visualViewport;
+      const viewportWidth = visualViewport?.width;
+      const viewportHeight = visualViewport?.height;
+      const headerHeight = 56;
+
+      if (isMobileLayout && viewportWidth && viewportWidth > 0) {
+        const widthDiff = Math.abs(width - viewportWidth);
+        if (widthDiff > 20) {
+          console.log('📐 Adjusting width using visual viewport (mobile layout):', {
+            directWidth: width,
+            viewportWidth,
+            widthDiff,
+          });
+          width = viewportWidth;
+        }
+      }
+
+      if (isMobileLayout && viewportHeight && viewportHeight > 0) {
+        const candidateHeight = Math.max(0, viewportHeight - headerHeight);
+        const heightDiff = Math.abs(height - candidateHeight);
+        if (heightDiff > 20) {
+          console.log('📐 Adjusting height using visual viewport (mobile layout):', {
+            directHeight: height,
+            viewportHeight,
+            candidateHeight,
+            heightDiff,
+          });
+          height = candidateHeight;
+        }
+      }
+
+      width = Math.round(width);
+      height = Math.round(height);
+      this.lastContainerSize = { width, height };
+      console.log('📐 Using container bounding rect for size:', { width, height });
+      return { width, height };
+    }
+
+    // PRIORITY 2: Client size
+    const clientWidth = container.clientWidth;
+    const clientHeight = container.clientHeight;
+    if (clientWidth > 0 && clientHeight > 0) {
+      const width = Math.round(clientWidth);
+      const height = Math.round(clientHeight);
+      this.lastContainerSize = { width, height };
+      console.log('📐 Using container client size:', { width, height });
       return { width, height };
     }
     
@@ -337,49 +368,48 @@ class CoordinateTransformManager {
     const computed = window.getComputedStyle(container);
     const computedWidth = parseFloat(computed.width);
     const computedHeight = parseFloat(computed.height);
-    if (computedWidth > 100 && computedHeight > 100) {
-      console.log('📐 Using computed style for container size:', { width: computedWidth, height: computedHeight });
-      return {
-        width: Math.round(computedWidth),
-        height: Math.round(computedHeight)
-      };
+    if (computedWidth > 0 && computedHeight > 0) {
+      const width = Math.round(computedWidth);
+      const height = Math.round(computedHeight);
+      this.lastContainerSize = { width, height };
+      console.log('📐 Using computed style for container size:', { width, height });
+      return { width, height };
     }
-    
-    // PRIORITY 4: Zoom-aware bounding rect (fallback)
-    const zoomAwareRect = this.getZoomAwareBoundingClientRect(container);
-    let width = Math.max(0, Math.round(zoomAwareRect.width));
-    let height = Math.max(0, Math.round(zoomAwareRect.height));
-    
-    // PRIORITY 5: Window dimensions minus header (last resort)
-    if (width < 100 || height < 100) {
+
+    // PRIORITY 4: Previously known logical size (from canvas state)
+    if (state.fixedCanvasPixelSize && state.fixedCanvasPixelSize.logicalWidth > 0 && state.fixedCanvasPixelSize.logicalHeight > 0) {
+      const width = Math.round(state.fixedCanvasPixelSize.logicalWidth);
+      const height = Math.round(state.fixedCanvasPixelSize.logicalHeight);
+      console.log('📐 Using fixed canvas logical size:', { width, height });
+      return { width, height };
+    }
+
+    // PRIORITY 5: Visual viewport (last known viewport)
+    if (window.visualViewport && window.visualViewport.width > 0 && window.visualViewport.height > 0) {
+      const width = Math.round(window.visualViewport.width);
+      const height = Math.round(window.visualViewport.height);
+      console.log('📐 Using visual viewport fallback for container size:', { width, height });
+      return { width, height };
+    }
+
+    // PRIORITY 6: Window dimensions minus header (final fallback)
+    if (window.innerWidth > 0 && window.innerHeight > 0) {
       const headerHeight = 56; // Header height from CSS
-      width = Math.round(window.innerWidth);
-      height = Math.round(window.innerHeight - headerHeight);
-      console.log('📐 Using window dimensions for container size:', { width, height });
+      const width = Math.round(window.innerWidth);
+      const height = Math.round(Math.max(0, window.innerHeight - headerHeight));
+      console.log('📐 Using window dimensions fallback for container size:', { width, height });
+      return { width, height };
     }
-    
-    // Validate dimensions are reasonable
-    if (width <= 0 || height <= 0 || !isFinite(width) || !isFinite(height)) {
-      console.warn('⚠️ getContainerSize: invalid dimensions after all fallbacks', {
-        width,
-        height,
-        container: container.id || container.className,
-        zoomAwareRect,
-        directRect,
-        computed: { width: computedWidth, height: computedHeight },
-        visualViewport: window.visualViewport ? {
-          width: window.visualViewport.width,
-          height: window.visualViewport.height
-        } : null,
-        windowSize: { width: window.innerWidth, height: window.innerHeight }
-      });
-      return { width: 0, height: 0 };
+
+    // Fall back to last known size or zeros
+    if (this.lastContainerSize.width > 0 && this.lastContainerSize.height > 0) {
+      return { ...this.lastContainerSize };
     }
-    
-    return { width, height };
+
+    console.warn('⚠️ getContainerSize: unable to determine size, returning zeros');
+    return { width: 0, height: 0 };
   }
 }
 
 // Export singleton instance
 export const coordinateTransform = new CoordinateTransformManager();
-

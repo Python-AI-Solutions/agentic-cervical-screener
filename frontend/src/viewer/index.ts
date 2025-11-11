@@ -26,6 +26,7 @@ import { renderOverlays } from './OverlayRenderer';
 import { setupDrawingMode } from './DrawingManager';
 import { setupZoomHandlers, recalculateTransform } from './ZoomPanManager';
 import { loadImageFromUrl, loadImageFromFile } from './ImageLoader';
+import { coordinateTransform } from './CoordinateTransformManager';
 
 // DOM elements
 const statusEl = document.getElementById('status');
@@ -518,12 +519,83 @@ function setupResponsiveFeatures() {
   }
 
   // Handle viewport changes
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', () => {
-      debouncedResize(renderOverlays, state.nv);
-    });
-  }
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => {
+    debouncedResize(renderOverlays, state.nv);
+  });
 }
+}
+
+function rectToSnapshot(rect: DOMRect | null): { left: number; top: number; width: number; height: number } | null {
+  if (!rect) return null;
+  return {
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height
+  };
+}
+
+function setupViewerDebugHelpers() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.__viewerDebug = {
+    getAlignmentSnapshot: () => {
+      const imageCanvas = document.getElementById('imageCanvas') as HTMLCanvasElement | null;
+      const overlayRect = overlayCanvas ? overlayCanvas.getBoundingClientRect() : null;
+      const glRect = glCanvas ? glCanvas.getBoundingClientRect() : null;
+
+      return {
+        transform: { ...state.transform },
+        zoomLevel: state.currentZoomLevel,
+        pan: { x: state.panX, y: state.panY },
+        containerSize: coordinateTransform.getContainerSize(),
+        fixedCanvas: state.fixedCanvasPixelSize ? { ...state.fixedCanvasPixelSize } : null,
+        boundingRects: {
+          imageCanvas: rectToSnapshot(imageCanvas ? imageCanvas.getBoundingClientRect() : null),
+          overlayCanvas: rectToSnapshot(overlayRect),
+          glCanvas: rectToSnapshot(glRect)
+        },
+        imageDimensions: { ...state.currentImageDimensions },
+        visualViewport: window.visualViewport
+          ? {
+              width: window.visualViewport.width,
+              height: window.visualViewport.height,
+              scale: window.visualViewport.scale
+            }
+          : null,
+        devicePixelRatio: window.devicePixelRatio || 1
+      };
+    },
+    getUserRois: () => state.userDrawnRois.map((roi) => {
+      const { _deleteButton, ...rest } = roi;
+      return { ...rest };
+    }),
+    forceTransformRecalc: () => coordinateTransform.recalculateTransform(),
+    addSyntheticRoi: (canvasRect: { x: number; y: number; width: number; height: number }) => {
+      if (!canvasRect) return null;
+      const topLeft = coordinateTransform.canvasLogicalToImage(canvasRect.x, canvasRect.y);
+      const bottomRight = coordinateTransform.canvasLogicalToImage(
+        canvasRect.x + canvasRect.width,
+        canvasRect.y + canvasRect.height
+      );
+      const roi = {
+        xmin: topLeft.x,
+        ymin: topLeft.y,
+        xmax: bottomRight.x,
+        ymax: bottomRight.y,
+        label: 'synthetic',
+      };
+      state.userDrawnRois.push(roi);
+      renderOverlays();
+      return { ...roi };
+    }
+  };
+}
+
+setupViewerDebugHelpers();
 
 // Initialize everything
 setupDragAndDrop();

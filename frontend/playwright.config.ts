@@ -30,6 +30,10 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'mobile-safari',
+      use: { ...devices['iPhone 12'] },
+    },
     // Uncomment for multi-browser testing
     // {
     //   name: 'firefox',
@@ -53,4 +57,3 @@ export default defineConfig({
     timeout: 120 * 1000,
   },
 });
-

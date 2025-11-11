@@ -1,14 +1,28 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, TestInfo, Page } from '@playwright/test';
+
+/**
+ * Helpers
+ */
+const isMobileProject = (testInfo: TestInfo) => /mobile/i.test(testInfo.project.name ?? '');
+
+async function showSidebarIfHidden(page: Page, testInfo: TestInfo) {
+  if (!isMobileProject(testInfo)) return;
+  const sidebarVisible = await page.evaluate(() => {
+    const el = document.getElementById('sidebar');
+    return el?.classList.contains('mobile-visible');
+  });
+  if (!sidebarVisible) {
+    await page.evaluate(() => {
+      const el = document.getElementById('sidebar');
+      el?.classList.add('mobile-visible');
+    });
+    await page.waitForTimeout(200);
+  }
+}
 
 /**
  * E2E tests using Playwright
  * These tests run in a real browser and test actual functionality
- * Use these for tests that require:
- * - Real DOM rendering
- * - Canvas operations
- * - Image loading
- * - User interactions
- * - Full application workflows
  */
 
 test.describe('Image Loading E2E', () => {
@@ -31,7 +45,8 @@ test.describe('Image Loading E2E', () => {
     await expect(dropZone).not.toBeVisible();
   });
 
-  test('should load Case 2 when clicking button', async ({ page }) => {
+  test('should load Case 2 when clicking button', async ({ page }, testInfo) => {
+    await showSidebarIfHidden(page, testInfo);
     // Click Case 2 button
     await page.click('button:has-text("Case 2")');
     
@@ -69,9 +84,10 @@ test.describe('Image Loading E2E', () => {
 });
 
 test.describe('Case Loading E2E', () => {
-  test('should load all demo cases', async ({ page }) => {
+  test('should load all demo cases', async ({ page }, testInfo) => {
     await page.goto('/');
     await page.waitForSelector('#viewer', { timeout: 5000 });
+    await showSidebarIfHidden(page, testInfo);
     
     const cases = ['Case 1', 'Case 2', 'Case 3', 'Case 4'];
     
@@ -174,7 +190,8 @@ test.describe('Drawing Functionality E2E', () => {
     await expect(overlayCanvas).toHaveCSS('cursor', 'crosshair');
   });
 
-  test('should draw ROI on canvas', async ({ page }) => {
+  test('should draw ROI on canvas', async ({ page }, testInfo) => {
+    test.skip(isMobileProject(testInfo), 'Pointer drawing relies on mouse input');
     const overlayCanvas = page.locator('canvas#overlayCanvas');
     
     // Get canvas bounding box
@@ -184,11 +201,15 @@ test.describe('Drawing Functionality E2E', () => {
       return;
     }
     
-    // Draw a rectangle
+    const startX = box.x + box.width / 4;
+    const startY = box.y + box.height / 4;
+    const endX = box.x + box.width / 2;
+    const endY = box.y + box.height / 2;
+
     await overlayCanvas.hover();
-    await page.mouse.move(box.x + box.width / 4, box.y + box.height / 4);
+    await page.mouse.move(startX, startY);
     await page.mouse.down();
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.move(endX, endY);
     await page.mouse.up();
     
     // Wait for ROI to be added
@@ -206,7 +227,8 @@ test.describe('Zoom and Pan E2E', () => {
     await page.waitForSelector('canvas#glCanvas', { timeout: 10000 });
   });
 
-  test('should zoom with mouse wheel', async ({ page }) => {
+  test('should zoom with mouse wheel', async ({ page }, testInfo) => {
+    test.skip(isMobileProject(testInfo), 'Mouse wheel not available on touch-only devices');
     const overlayCanvas = page.locator('canvas#overlayCanvas');
     
     // Get canvas center
@@ -228,4 +250,3 @@ test.describe('Zoom and Pan E2E', () => {
     await expect(status).not.toContainText('error');
   });
 });
-

@@ -136,6 +136,7 @@ npm run preview       # Preview production build
 npm test              # Run unit/integration tests
 npm run test:watch    # Run tests in watch mode
 npm run test:e2e      # Run E2E tests (Playwright)
+npm run test:e2e:ci   # Run headless E2E suite (no browser UI, CI-safe)
 npm run test:e2e:ui   # Run E2E tests with UI
 npm run test:all      # Run all tests (unit + E2E)
 ```

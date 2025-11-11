@@ -3,7 +3,7 @@
  * Tests browser zoom detection and coordinate conversions
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { coordinateTransform } from './CoordinateTransformManager';
 import { state } from './StateManager';
 import { glCanvas } from './CanvasManager';
@@ -38,12 +38,37 @@ const mockGetComputedStyle = vi.fn(() => ({
   height: '600px',
 }));
 
+let mobileMatch = false;
+const matchMediaMock = vi.fn().mockImplementation((query: string) => ({
+  matches: query.includes('max-width: 1024px') ? mobileMatch : false,
+  media: query,
+  onchange: null,
+  addListener: vi.fn(),
+  removeListener: vi.fn(),
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  dispatchEvent: vi.fn(),
+}));
+
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: matchMediaMock,
+});
+
+const originalVisualViewport = window.visualViewport;
+
 beforeEach(() => {
   state.reset();
   state.currentImageDimensions = { width: 1920, height: 1080 };
   state.transform.scale = 0.5;
   state.transform.tx = 100;
   state.transform.ty = 50;
+  mobileMatch = false;
+  Object.defineProperty(window, 'visualViewport', {
+    configurable: true,
+    writable: true,
+    value: originalVisualViewport ?? undefined,
+  });
   
   // Reset mocks
   vi.clearAllMocks();
@@ -60,6 +85,14 @@ beforeEach(() => {
   if (glCanvas) {
     vi.mocked(glCanvas.getBoundingClientRect).mockReturnValue({ width: 800, height: 600, left: 0, top: 0 });
   }
+});
+
+afterEach(() => {
+  Object.defineProperty(window, 'visualViewport', {
+    configurable: true,
+    writable: true,
+    value: originalVisualViewport ?? undefined,
+  });
 });
 
 describe('CoordinateTransformManager - Browser Zoom Detection', () => {
@@ -140,6 +173,58 @@ describe('CoordinateTransformManager - Container Size', () => {
     expect(size.height).toBeCloseTo(600, 0);
   });
 
+  it('should prefer actual container bounds over visual viewport', () => {
+    const originalViewport = window.visualViewport;
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: { width: 1600, height: 900 },
+    });
+
+    if (glCanvas && glCanvas.parentElement) {
+      vi.mocked(glCanvas.parentElement.getBoundingClientRect).mockReturnValue({
+        width: 900,
+        height: 700,
+        left: 0,
+        top: 0,
+      } as any);
+    }
+
+    const size = coordinateTransform.getContainerSize();
+    expect(size.width).toBe(900);
+    expect(size.height).toBe(700);
+
+    if (originalViewport) {
+      Object.defineProperty(window, 'visualViewport', {
+        configurable: true,
+        value: originalViewport,
+      });
+    } else {
+      // Restore to undefined to mimic default jsdom environment
+      delete (window as any).visualViewport;
+    }
+  });
+
+  it('should override container size using visual viewport on mobile when bounding rect is too small', () => {
+    mobileMatch = true;
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: { width: 402, height: 874, scale: 1 },
+    });
+
+    if (glCanvas && glCanvas.parentElement) {
+      vi.mocked(glCanvas.parentElement.getBoundingClientRect).mockReturnValue({
+        width: 256,
+        height: 1109,
+        left: 0,
+        top: 0,
+      } as any);
+    }
+
+    const size = coordinateTransform.getContainerSize();
+    expect(size.width).toBe(402);
+    expect(size.height).toBe(Math.round(874 - 56));
+  });
+
   it('should return zero size when glCanvas is not available', () => {
     // This test is difficult to mock properly, so we'll skip the null case
     // The actual implementation handles null gracefully
@@ -179,7 +264,7 @@ describe('CoordinateTransformManager - Coordinate Conversions', () => {
     const result = coordinateTransform.screenToCanvasLogical(200, 150, mockElement);
     
     // Client (200, 150) - element position (100, 50) = (100, 100) relative
-    // Divided by zoom (1.0) = (100, 100) canvas logical
+    // Canvas logical coordinates should stay in CSS pixels
     expect(result.x).toBeCloseTo(100, 0);
     expect(result.y).toBeCloseTo(100, 0);
   });
@@ -323,4 +408,3 @@ describe('CoordinateTransformManager - Zoom-Aware Bounding Rect', () => {
     expect(rect.top).toBeDefined();
   });
 });
-

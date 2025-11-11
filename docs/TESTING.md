@@ -49,6 +49,7 @@ This project uses a two-tier testing approach:
 - Cross-browser compatibility
 
 **Run**: 
+- `npm run test:e2e:ci` - Run all E2E tests headlessly (recommended for local/CI automation)
 - `npm run test:e2e` - Run all E2E tests
 - `npm run test:e2e:ui` - Run with Playwright UI
 - `npm run test:e2e:debug` - Debug mode
@@ -99,7 +100,11 @@ setConsoleSuppression(false);
 npm test
 
 # E2E tests only (slower, requires dev server)
+# (use this when you need to see the browser)
 npm run test:e2e
+
+# Headless CI-friendly E2E run (preferred for automation)
+npm run test:e2e:ci
 
 # All tests
 npm run test:all
@@ -107,4 +112,3 @@ npm run test:all
 # Watch mode for development
 npm run test:watch
 ```
-

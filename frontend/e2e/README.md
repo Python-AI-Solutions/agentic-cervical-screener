@@ -10,6 +10,9 @@ For comprehensive testing documentation, see `docs/TESTING.md` in the project ro
 # Run all E2E tests
 npm run test:e2e
 
+# Headless CI-friendly run (no browser UI)
+npm run test:e2e:ci
+
 # Run with UI (interactive)
 npm run test:e2e:ui
 
@@ -25,4 +28,3 @@ npm run test:e2e:debug
   - UI interactions
   - Drawing functionality
   - Zoom/pan functionality
-

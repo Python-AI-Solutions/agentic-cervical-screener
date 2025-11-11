@@ -96,11 +96,14 @@ cd frontend && npm test
 # E2E tests (requires dev server)
 cd frontend && npm run test:e2e
 
+# Headless CI-friendly E2E run (preferred for automation)
+cd frontend && npm run test:e2e:ci
+
 # All tests
 cd frontend && npm run test:all
 ```
 
-**Note**: E2E tests start a dev server automatically. Don't run `npm run test:e2e` in a blocking way - it will wait for Ctrl+C. Use `npx playwright test` directly or run with timeout.
+**Note**: E2E tests start a dev server automatically. Prefer `npm run test:e2e:ci` for headless runs so the browser UI doesn't block the terminal. If you need the interactive UI, use `npm run test:e2e:ui` or `npx playwright test --ui`.
 
 ### Building
 
@@ -220,4 +223,3 @@ See `docs/MIGRATION_PLAN.md` for historical context (can be removed after migrat
 - Check `docs/TESTING.md` for testing details
 - Check `frontend/e2e/README.md` for E2E test quick reference
 - Review existing code patterns before adding new features
-
