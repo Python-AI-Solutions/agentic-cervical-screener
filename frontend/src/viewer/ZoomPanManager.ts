@@ -1,76 +1,25 @@
 /**
  * ZoomPanManager - Handles zoom and pan controls
+ * Uses CoordinateTransformManager for zoom-aware coordinate conversions
  */
 
 import { state } from './StateManager';
 import { overlayCanvas } from './CanvasManager';
-import { getCanvasContainerSize } from './CanvasManager';
 import { renderImageCanvas } from './CanvasManager';
 import { renderOverlays } from './OverlayRenderer';
+import { coordinateTransform } from './CoordinateTransformManager';
 
 /**
  * Recalculate transform based on current zoom level and pan values
+ * Delegates to CoordinateTransformManager for zoom-aware calculations
  */
 export function recalculateTransform(): void {
-  if (!state.currentImageDimensions || !state.currentImageDimensions.width) {
-    console.warn('⚠️ recalculateTransform: image dimensions not set');
-    return;
-  }
-
-  const { width: containerWidthRaw, height: containerHeightRaw } = getCanvasContainerSize();
-  const containerWidth = Math.round(containerWidthRaw);
-  const containerHeight = Math.round(containerHeightRaw);
-
-  if (containerWidth === 0 || containerHeight === 0) {
-    console.warn('⚠️ recalculateTransform: container has zero size');
-    return;
-  }
-
-  const imageWidth = state.currentImageDimensions.width;
-  const imageHeight = state.currentImageDimensions.height;
-
-  // Base scale (fit to window at zoom 1.0)
-  const baseScale = Math.min(containerWidth / imageWidth, containerHeight / imageHeight);
-
-  // Apply zoom multiplier
-  const scale = baseScale * state.currentZoomLevel;
-
-  // Calculate scaled dimensions
-  const scaledWidth = imageWidth * scale;
-  const scaledHeight = imageHeight * scale;
-
-  // Start with base centering
-  let tx = (containerWidth - scaledWidth) / 2;
-  let ty = (containerHeight - scaledHeight) / 2;
-
-  // Apply pan offsets (limited to prevent dragging too far)
-  const maxPanX = Math.abs(scaledWidth - containerWidth) / 2;
-  const maxPanY = Math.abs(scaledHeight - containerHeight) / 2;
-
-  if (scaledWidth > containerWidth) {
-    tx += Math.max(-maxPanX, Math.min(maxPanX, state.panX));
-  }
-  if (scaledHeight > containerHeight) {
-    ty += Math.max(-maxPanY, Math.min(maxPanY, state.panY));
-  }
-
-  state.transform.scale = scale;
-  state.transform.tx = tx;
-  state.transform.ty = ty;
-
-  console.log('🔍 Transform recalculated:', {
-    zoomLevel: state.currentZoomLevel,
-    baseScale,
-    finalScale: scale,
-    pan: { panX: state.panX, panY: state.panY },
-    transform: state.transform,
-    containerSize: { width: containerWidth, height: containerHeight },
-    imageSize: { width: imageWidth, height: imageHeight }
-  });
+  coordinateTransform.recalculateTransform();
 }
 
 /**
  * Handle zoom events (wheel scroll or pinch)
+ * Uses zoom-aware coordinate conversions for accurate zoom-around-point
  */
 export function handleZoom(deltaZoom: number, clientX?: number, clientY?: number): void {
   const MIN_ZOOM = 0.5;
@@ -85,23 +34,31 @@ export function handleZoom(deltaZoom: number, clientX?: number, clientY?: number
 
   // If we have client coordinates, try to zoom around that point
   if (clientX !== undefined && clientY !== undefined && overlayCanvas) {
-    const rect = overlayCanvas.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
+    // Get old transform before recalculating
+    const oldTransform = coordinateTransform.getTransform();
+    
+    // Convert screen coordinates to canvas logical coordinates (zoom-aware)
+    const canvasLogical = coordinateTransform.screenToCanvasLogical(clientX, clientY, overlayCanvas);
+    
+    // Convert canvas logical coords to image coords at old zoom
+    const imageCoords = coordinateTransform.canvasLogicalToImage(canvasLogical.x, canvasLogical.y);
 
-    // Convert screen coords to image coords at old zoom
-    const imageX = (x - state.transform.tx) / state.transform.scale;
-    const imageY = (y - state.transform.ty) / state.transform.scale;
-
+    // Recalculate transform with new zoom level
     recalculateTransform();
-
-    // Calculate new screen position of the same image point
-    const newScreenX = imageX * state.transform.scale + state.transform.tx;
-    const newScreenY = imageY * state.transform.scale + state.transform.ty;
-
+    
+    // Get new transform
+    const newTransform = coordinateTransform.getTransform();
+    
+    // Calculate new canvas logical position of the same image point
+    const newCanvasLogical = coordinateTransform.imageToCanvasLogical(imageCoords.x, imageCoords.y);
+    
+    // Calculate the difference in canvas logical coordinates
+    const deltaX = canvasLogical.x - newCanvasLogical.x;
+    const deltaY = canvasLogical.y - newCanvasLogical.y;
+    
     // Adjust pan to keep the point at the same screen position
-    state.panX += (x - newScreenX);
-    state.panY += (y - newScreenY);
+    state.panX += deltaX;
+    state.panY += deltaY;
   }
 
   recalculateTransform();
@@ -112,7 +69,8 @@ export function handleZoom(deltaZoom: number, clientX?: number, clientY?: number
     oldZoom,
     newZoom: state.currentZoomLevel,
     zoomChange: state.currentZoomLevel - oldZoom,
-    pan: { panX: state.panX, panY: state.panY }
+    pan: { panX: state.panX, panY: state.panY },
+    browserZoom: coordinateTransform.getBrowserZoom()
   });
 }
 

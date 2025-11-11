@@ -1,6 +1,11 @@
 /**
  * StateManager - Centralized state management for the viewer
  * Manages all global state variables and provides getters/setters
+ * 
+ * Note: Coordinate transformations are handled by CoordinateTransformManager
+ * (see CoordinateTransformManager.ts), which manages browser zoom detection
+ * and coordinate space conversions. The transform state here is updated by
+ * CoordinateTransformManager.recalculateTransform().
  */
 
 export interface ViewerState {
@@ -30,9 +35,11 @@ export interface ViewerState {
   currentImageFile: File | null;
   currentImageDimensions: { width: number; height: number };
   currentImageObject: HTMLImageElement | null;
+  // Note: fixedCanvasPixelSize is now dynamically updated based on container size and DPR
+  // It's no longer "frozen" but still used for DPR calculations during rendering
   fixedCanvasPixelSize: { width: number; height: number; logicalWidth: number; logicalHeight: number } | null;
   
-  // Transform
+  // Transform (managed by CoordinateTransformManager, which accounts for browser zoom)
   transform: { scale: number; tx: number; ty: number };
   
   // Zoom/pan

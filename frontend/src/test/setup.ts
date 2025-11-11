@@ -30,7 +30,10 @@ console.warn = (...args: any[]) => {
       message.includes('renderOverlays skipped') ||
       message.includes('container has zero size') ||
       message.includes('fixedCanvasPixelSize not set') ||
-      message.includes('recalculateTransform: container has zero size')
+      message.includes('recalculateTransform: container has zero size') ||
+      message.includes('recalculateTransform: image dimensions not set') ||
+      message.includes('recalculateTransform: glCanvas not available') ||
+      message.includes('Failed to detect browser zoom')
     )
   ) {
     return; // Suppress these expected warnings
@@ -65,6 +68,7 @@ console.log = (...args: any[]) => {
       message.includes('Image canvas rendered') ||
       message.includes('Canvas size updated:') ||
       message.includes('Canvas size and transform FROZEN') ||
+      message.includes('Canvas size and transform initialized') ||
       message.includes('Image redraw complete:') ||
       message.includes('All layers processed')
     )

@@ -1,3 +1,7 @@
+import type { Niivue } from '@niivue/niivue';
+import type { ClassificationBox } from '../services/classifyClient';
+import type { Transform } from './CoordinateTransformManager';
+
 // --- color rules -------------------------------------------------------------
 const CLASS_COLORS: Record<string, string> = {
   'HSIL-like': '#FF1493',  // Deep pink - highly visible for high-grade lesions
@@ -174,14 +178,6 @@ export async function addLayerToNiivue(
   // masks/raster not implemented in this demo
   return null;
 }
-import type { Niivue } from '@niivue/niivue';
-import type { ClassificationBox } from '../services/classifyClient';
-
-type Transform = {
-  scale: number;
-  tx: number;
-  ty: number;
-};
 
 type FeatureCollection = {
   type: string;

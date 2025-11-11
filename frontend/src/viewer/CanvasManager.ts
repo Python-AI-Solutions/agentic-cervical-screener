@@ -3,6 +3,7 @@
  */
 
 import { state } from './StateManager';
+import { coordinateTransform } from './CoordinateTransformManager';
 
 const glCanvas = document.getElementById('glCanvas') as HTMLCanvasElement;
 const overlayCanvas = document.getElementById('overlayCanvas') as HTMLCanvasElement;
@@ -11,18 +12,10 @@ const overlayCtx = overlayCanvas?.getContext('2d');
 /**
  * Returns the size of the Niivue viewer container independent of any inline
  * sizing we might apply to the canvases themselves.
+ * Uses zoom-aware coordinate system.
  */
 export function getCanvasContainerSize(): { width: number; height: number } {
-  if (!glCanvas) return { width: 0, height: 0 };
-  const container = glCanvas.parentElement || glCanvas;
-  const rect = container.getBoundingClientRect();
-  if (rect.width && rect.height) {
-    return { width: rect.width, height: rect.height };
-  }
-  return {
-    width: glCanvas.clientWidth || 0,
-    height: glCanvas.clientHeight || 0,
-  };
+  return coordinateTransform.getContainerSize();
 }
 
 export function ensureImageCanvas(): HTMLCanvasElement | null {
@@ -31,6 +24,7 @@ export function ensureImageCanvas(): HTMLCanvasElement | null {
   if (!imageCanvas) {
     imageCanvas = document.createElement('canvas');
     imageCanvas.id = 'imageCanvas';
+    imageCanvas.className = 'image-canvas'; // Ensure proper CSS positioning (absolute, top-0, left-0)
     glCanvas.parentNode?.insertBefore(imageCanvas, overlayCanvas);
   }
   return imageCanvas;
@@ -77,7 +71,11 @@ export function updateCanvasSize(): boolean {
   }
 
   // Account for device pixel ratio for crisp rendering
+  // Note: DPR is separate from browser zoom - DPR is device-specific, browser zoom is user-controlled
   const dpr = window.devicePixelRatio || 1;
+  const browserZoom = coordinateTransform.getBrowserZoom();
+  
+  // Use zoom-aware dimensions for canvas sizing
   const roundedWidth = Math.round(width);
   const roundedHeight = Math.round(height);
   const actualWidth = Math.round(roundedWidth * dpr);
@@ -125,19 +123,18 @@ export function updateCanvasSize(): boolean {
 }
 
 /**
- * Fit overlay to image - sets transform and fixed canvas size
+ * Fit overlay to image - initializes transform using CoordinateTransformManager
+ * Now uses dynamic sizing that accounts for browser zoom
  */
 export function fitOverlayToImage(imageWidth: number, imageHeight: number): void {
-  const { width: containerWidthRaw, height: containerHeightRaw } = getCanvasContainerSize();
-  const containerWidth = Math.round(containerWidthRaw);
-  const containerHeight = Math.round(containerHeightRaw);
+  const { width: containerWidth, height: containerHeight } = getCanvasContainerSize();
 
   if (containerWidth === 0 || containerHeight === 0) {
     console.warn('⚠️ fitOverlayToImage skipped - container has zero size');
     return;
   }
 
-  // CRITICAL: FREEZE canvas pixel dimensions at image load
+  // Store canvas pixel size info for rendering (but don't freeze - allow dynamic updates)
   const dpr = window.devicePixelRatio || 1;
   state.fixedCanvasPixelSize = {
     width: Math.round(containerWidth * dpr),
@@ -146,29 +143,21 @@ export function fitOverlayToImage(imageWidth: number, imageHeight: number): void
     logicalHeight: containerHeight
   };
 
-  // Calculate scale to fit image in container
-  const scale = Math.min(containerWidth / imageWidth, containerHeight / imageHeight);
+  // Use CoordinateTransformManager to calculate initial transform
+  // This ensures browser zoom is accounted for
+  coordinateTransform.recalculateTransform();
 
-  // Center the image
-  const scaledWidth = imageWidth * scale;
-  const scaledHeight = imageHeight * scale;
-  const tx = (containerWidth - scaledWidth) / 2;
-  const ty = (containerHeight - scaledHeight) / 2;
-
-  // Set transform ONCE
-  state.transform.scale = scale;
-  state.transform.tx = tx;
-  state.transform.ty = ty;
-
-  console.log('✅ Canvas size and transform FROZEN:', {
+  console.log('✅ Canvas size and transform initialized:', {
     imageSize: { width: imageWidth, height: imageHeight },
-    fixedCanvasPixelSize: state.fixedCanvasPixelSize,
-    transform: { scale, tx, ty }
+    canvasPixelSize: state.fixedCanvasPixelSize,
+    transform: state.transform,
+    browserZoom: coordinateTransform.getBrowserZoom()
   });
 }
 
 /**
  * Render image to image canvas
+ * Uses zoom-aware coordinate system
  */
 export function renderImageCanvas(): void {
   if (!state.currentImageObject || !state.fixedCanvasPixelSize) {
@@ -184,50 +173,135 @@ export function renderImageCanvas(): void {
   const imageCanvas = ensureImageCanvas();
   if (!imageCanvas) return;
 
-  // Use FIXED pixel size for canvas buffer
-  if (imageCanvas.width !== state.fixedCanvasPixelSize.width || 
-      imageCanvas.height !== state.fixedCanvasPixelSize.height) {
-    imageCanvas.width = state.fixedCanvasPixelSize.width;
-    imageCanvas.height = state.fixedCanvasPixelSize.height;
+  // Get current container size (zoom-aware)
+  const { width: currentContainerWidth, height: currentContainerHeight } = getCanvasContainerSize();
+  
+  // Update canvas pixel buffer size based on current container size and DPR
+  const dpr = window.devicePixelRatio || 1;
+  const actualWidth = Math.round(currentContainerWidth * dpr);
+  const actualHeight = Math.round(currentContainerHeight * dpr);
+  
+  if (imageCanvas.width !== actualWidth || imageCanvas.height !== actualHeight) {
+    imageCanvas.width = actualWidth;
+    imageCanvas.height = actualHeight;
+    
+    // Update fixedCanvasPixelSize to reflect current state
+    state.fixedCanvasPixelSize = {
+      width: actualWidth,
+      height: actualHeight,
+      logicalWidth: currentContainerWidth,
+      logicalHeight: currentContainerHeight
+    };
   }
 
-  // CSS size adapts to current viewport
-  const { width: currentContainerWidth, height: currentContainerHeight } = getCanvasContainerSize();
-  imageCanvas.style.width = `${Math.round(currentContainerWidth)}px`;
-  imageCanvas.style.height = `${Math.round(currentContainerHeight)}px`;
+  // CSS size adapts to current viewport (zoom-aware)
+  // Use 100% instead of explicit pixels to work with CSS w-full h-full
+  // This ensures the canvas fills its container properly
+  imageCanvas.style.width = '100%';
+  imageCanvas.style.height = '100%';
+
+  // CRITICAL: Force a reflow to ensure CSS sizing is applied before reading clientWidth
+  // Without this, clientWidth/clientHeight might return 0 or stale values
+  void imageCanvas.offsetHeight; // Force reflow
 
   const ctx = imageCanvas.getContext('2d');
   if (!ctx) return;
 
-  // Use the ORIGINAL DPR from when canvas was sized
-  const dpr = state.fixedCanvasPixelSize.width / state.fixedCanvasPixelSize.logicalWidth;
-  
+  // Get the ACTUAL rendered size of the canvas (after CSS sizing)
+  // This is critical - we need to use the actual rendered size, not the container size
+  const actualRenderedWidth = imageCanvas.clientWidth || imageCanvas.offsetWidth || currentContainerWidth;
+  const actualRenderedHeight = imageCanvas.clientHeight || imageCanvas.offsetHeight || currentContainerHeight;
+
+  // Validate we got reasonable values
+  if (actualRenderedWidth === 0 || actualRenderedHeight === 0) {
+    console.error('❌ renderImageCanvas: canvas has zero rendered size', {
+      clientWidth: imageCanvas.clientWidth,
+      clientHeight: imageCanvas.clientHeight,
+      offsetWidth: imageCanvas.offsetWidth,
+      offsetHeight: imageCanvas.offsetHeight,
+      currentContainerWidth,
+      currentContainerHeight,
+      styleWidth: imageCanvas.style.width,
+      styleHeight: imageCanvas.style.height
+    });
+    return;
+  }
+
   // Reset and apply DPR scaling
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, state.fixedCanvasPixelSize.logicalWidth, state.fixedCanvasPixelSize.logicalHeight);
+  ctx.clearRect(0, 0, actualRenderedWidth, actualRenderedHeight);
 
   const imgWidth = state.currentImageDimensions?.width || state.currentImageObject.width;
   const imgHeight = state.currentImageDimensions?.height || state.currentImageObject.height;
 
+  // CRITICAL: Recalculate transform using the ACTUAL rendered canvas size
+  // This ensures the transform matches the actual canvas dimensions, not just
+  // the calculated container size. This is essential for proper centering.
+  coordinateTransform.recalculateTransform(actualRenderedWidth, actualRenderedHeight);
+  
+  // Get current transform (zoom-aware)
+  const transform = coordinateTransform.getTransform();
+
+  // Validate transform before using
+  if (!transform || !isFinite(transform.scale) || !isFinite(transform.tx) || !isFinite(transform.ty)) {
+    console.error('❌ renderImageCanvas: invalid transform', transform);
+    return;
+  }
+
   // Calculate screen position using transform
-  const drawX = state.transform.tx;
-  const drawY = state.transform.ty;
-  const drawWidth = imgWidth * state.transform.scale;
-  const drawHeight = imgHeight * state.transform.scale;
+  // Note: ctx is scaled by DPR, so we work in logical coordinates
+  const drawX = transform.tx;
+  const drawY = transform.ty;
+  const drawWidth = imgWidth * transform.scale;
+  const drawHeight = imgHeight * transform.scale;
+
+  // Validate draw dimensions
+  if (!isFinite(drawX) || !isFinite(drawY) || !isFinite(drawWidth) || !isFinite(drawHeight)) {
+    console.error('❌ renderImageCanvas: invalid draw dimensions', {
+      drawX, drawY, drawWidth, drawHeight,
+      transform, imgWidth, imgHeight
+    });
+    return;
+  }
 
   // Draw image at calculated screen coordinates
+  // The context is already scaled by DPR, so coordinates are in logical space
   ctx.drawImage(state.currentImageObject, drawX, drawY, drawWidth, drawHeight);
+  
+  console.log('🖼️ Image rendered:', {
+    drawPosition: { x: drawX, y: drawY },
+    drawSize: { width: drawWidth, height: drawHeight },
+    containerSize: { width: currentContainerWidth, height: currentContainerHeight },
+    actualRenderedSize: { width: actualRenderedWidth, height: actualRenderedHeight },
+    canvasBufferSize: { width: actualWidth, height: actualHeight },
+    canvasElementSize: { 
+      clientWidth: imageCanvas.clientWidth, 
+      clientHeight: imageCanvas.clientHeight,
+      offsetWidth: imageCanvas.offsetWidth,
+      offsetHeight: imageCanvas.offsetHeight
+    },
+    transform,
+    dpr,
+    imageSize: { width: imgWidth, height: imgHeight },
+    // Calculate expected center position for debugging
+    expectedCenterX: (actualRenderedWidth - drawWidth) / 2,
+    expectedCenterY: (actualRenderedHeight - drawHeight) / 2,
+    actualCenterX: drawX + drawWidth / 2,
+    actualCenterY: drawY + drawHeight / 2
+  });
 }
 
 /**
  * Handle canvas resize
+ * Now properly handles browser zoom and window resizing
  */
 export function handleCanvasResize(renderOverlays: () => void): void {
   const sizeChanged = updateCanvasSize();
 
   if (state.currentImageObject) {
-    // DO NOT recalculate transform on browser zoom/resize
+    // Recalculate transform to account for browser zoom and container size changes
+    coordinateTransform.recalculateTransform();
     renderImageCanvas();
     renderOverlays();
     return;

@@ -1,10 +1,12 @@
 /**
  * DrawingManager - Handles drawing/ROI functionality
+ * Uses CoordinateTransformManager for zoom-aware coordinate conversions
  */
 
 import { state } from './StateManager';
 import { overlayCanvas } from './CanvasManager';
 import { renderOverlays } from './OverlayRenderer';
+import { coordinateTransform } from './CoordinateTransformManager';
 
 // Available labels for cervical cytology
 export const CERVICAL_LABELS = [
@@ -93,6 +95,7 @@ export function updateDrawing(x: number, y: number): void {
 
 /**
  * Finish drawing
+ * Converts canvas logical coordinates to image coordinates using CoordinateTransformManager
  */
 export function finishDrawing(x: number, y: number): void {
   if (!state.isDrawing || !state.drawingStart) return;
@@ -106,12 +109,15 @@ export function finishDrawing(x: number, y: number): void {
   
   // Only add if rectangle is large enough
   if (rect.width > 10 && rect.height > 10) {
-    // Convert to image coordinates
+    // Convert canvas logical coordinates to image coordinates using CoordinateTransformManager
+    const topLeft = coordinateTransform.canvasLogicalToImage(rect.x, rect.y);
+    const bottomRight = coordinateTransform.canvasLogicalToImage(rect.x + rect.width, rect.y + rect.height);
+    
     const imageRect = {
-      xmin: (rect.x - state.transform.tx) / state.transform.scale,
-      ymin: (rect.y - state.transform.ty) / state.transform.scale,
-      xmax: (rect.x + rect.width - state.transform.tx) / state.transform.scale,
-      ymax: (rect.y + rect.height - state.transform.ty) / state.transform.scale
+      xmin: topLeft.x,
+      ymin: topLeft.y,
+      xmax: bottomRight.x,
+      ymax: bottomRight.y
     };
     
     // Show label selection dialog
@@ -187,9 +193,12 @@ export function setupDrawingMode(): void {
 }
 
 function handleMouseDown(e: MouseEvent): void {
-  const rect = overlayCanvas!.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+  if (!overlayCanvas) return;
+  
+  // Convert screen coordinates to canvas logical coordinates (zoom-aware)
+  const canvasLogical = coordinateTransform.screenToCanvasLogical(e.clientX, e.clientY, overlayCanvas);
+  const x = canvasLogical.x;
+  const y = canvasLogical.y;
   
   // Check if clicking on a delete button
   if (state.hoveredRoiIndex >= 0 && state.hoveredRoiIndex < state.userDrawnRois.length) {
@@ -210,28 +219,32 @@ function handleMouseDown(e: MouseEvent): void {
 }
 
 function handleMouseMove(e: MouseEvent): void {
-  if (!state.isDrawing) return;
-  const rect = overlayCanvas!.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-  updateDrawing(x, y);
+  if (!state.isDrawing || !overlayCanvas) return;
+  
+  // Convert screen coordinates to canvas logical coordinates (zoom-aware)
+  const canvasLogical = coordinateTransform.screenToCanvasLogical(e.clientX, e.clientY, overlayCanvas);
+  updateDrawing(canvasLogical.x, canvasLogical.y);
 }
 
 function handleMouseMoveHover(e: MouseEvent): void {
-  const rect = overlayCanvas!.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+  if (!overlayCanvas) return;
+  
+  // Convert screen coordinates to canvas logical coordinates (zoom-aware)
+  const canvasLogical = coordinateTransform.screenToCanvasLogical(e.clientX, e.clientY, overlayCanvas);
+  const x = canvasLogical.x;
+  const y = canvasLogical.y;
   
   // Check if hovering over any ROI rectangle
+  // Convert ROI image coordinates to canvas logical coordinates for comparison
   let newHoveredIndex = -1;
+  
   for (let i = 0; i < state.userDrawnRois.length; i++) {
     const roi = state.userDrawnRois[i];
-    const x1 = roi.xmin * state.transform.scale + state.transform.tx;
-    const y1 = roi.ymin * state.transform.scale + state.transform.ty;
-    const x2 = roi.xmax * state.transform.scale + state.transform.tx;
-    const y2 = roi.ymax * state.transform.scale + state.transform.ty;
+    // Convert ROI image coordinates to canvas logical coordinates
+    const topLeft = coordinateTransform.imageToCanvasLogical(roi.xmin, roi.ymin);
+    const bottomRight = coordinateTransform.imageToCanvasLogical(roi.xmax, roi.ymax);
     
-    if (x >= x1 && x <= x2 && y >= y1 && y <= y2) {
+    if (x >= topLeft.x && x <= bottomRight.x && y >= topLeft.y && y <= bottomRight.y) {
       newHoveredIndex = i;
       break;
     }
@@ -244,19 +257,22 @@ function handleMouseMoveHover(e: MouseEvent): void {
 }
 
 function handleMouseUp(e: MouseEvent): void {
-  if (!state.isDrawing) return;
-  const rect = overlayCanvas!.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-  finishDrawing(x, y);
+  if (!state.isDrawing || !overlayCanvas) return;
+  
+  // Convert screen coordinates to canvas logical coordinates (zoom-aware)
+  const canvasLogical = coordinateTransform.screenToCanvasLogical(e.clientX, e.clientY, overlayCanvas);
+  finishDrawing(canvasLogical.x, canvasLogical.y);
 }
 
 function handleTouchStart(e: TouchEvent): void {
   e.preventDefault();
-  const rect = overlayCanvas!.getBoundingClientRect();
+  if (!overlayCanvas) return;
+  
   const touch = e.touches[0];
-  const x = touch.clientX - rect.left;
-  const y = touch.clientY - rect.top;
+  // Convert screen coordinates to canvas logical coordinates (zoom-aware)
+  const canvasLogical = coordinateTransform.screenToCanvasLogical(touch.clientX, touch.clientY, overlayCanvas);
+  const x = canvasLogical.x;
+  const y = canvasLogical.y;
   
   // Check if clicking on a delete button
   if (state.hoveredRoiIndex >= 0 && state.hoveredRoiIndex < state.userDrawnRois.length) {
@@ -278,20 +294,25 @@ function handleTouchStart(e: TouchEvent): void {
 
 function handleTouchMoveHover(e: TouchEvent): void {
   e.preventDefault();
-  const rect = overlayCanvas!.getBoundingClientRect();
-  const touch = e.touches[0];
-  const x = touch.clientX - rect.left;
-  const y = touch.clientY - rect.top;
+  if (!overlayCanvas) return;
   
+  const touch = e.touches[0];
+  // Convert screen coordinates to canvas logical coordinates (zoom-aware)
+  const canvasLogical = coordinateTransform.screenToCanvasLogical(touch.clientX, touch.clientY, overlayCanvas);
+  const x = canvasLogical.x;
+  const y = canvasLogical.y;
+  
+  // Check if hovering over any ROI rectangle
+  // Convert ROI image coordinates to canvas logical coordinates for comparison
   let newHoveredIndex = -1;
+  
   for (let i = 0; i < state.userDrawnRois.length; i++) {
     const roi = state.userDrawnRois[i];
-    const x1 = roi.xmin * state.transform.scale + state.transform.tx;
-    const y1 = roi.ymin * state.transform.scale + state.transform.ty;
-    const x2 = roi.xmax * state.transform.scale + state.transform.tx;
-    const y2 = roi.ymax * state.transform.scale + state.transform.ty;
+    // Convert ROI image coordinates to canvas logical coordinates
+    const topLeft = coordinateTransform.imageToCanvasLogical(roi.xmin, roi.ymin);
+    const bottomRight = coordinateTransform.imageToCanvasLogical(roi.xmax, roi.ymax);
     
-    if (x >= x1 && x <= x2 && y >= y1 && y <= y2) {
+    if (x >= topLeft.x && x <= bottomRight.x && y >= topLeft.y && y <= bottomRight.y) {
       newHoveredIndex = i;
       break;
     }
@@ -305,21 +326,21 @@ function handleTouchMoveHover(e: TouchEvent): void {
 
 function handleTouchMove(e: TouchEvent): void {
   e.preventDefault();
-  if (!state.isDrawing) return;
-  const rect = overlayCanvas!.getBoundingClientRect();
+  if (!state.isDrawing || !overlayCanvas) return;
+  
   const touch = e.touches[0];
-  const x = touch.clientX - rect.left;
-  const y = touch.clientY - rect.top;
-  updateDrawing(x, y);
+  // Convert screen coordinates to canvas logical coordinates (zoom-aware)
+  const canvasLogical = coordinateTransform.screenToCanvasLogical(touch.clientX, touch.clientY, overlayCanvas);
+  updateDrawing(canvasLogical.x, canvasLogical.y);
 }
 
 function handleTouchEnd(e: TouchEvent): void {
   e.preventDefault();
-  if (!state.isDrawing) return;
-  const rect = overlayCanvas!.getBoundingClientRect();
+  if (!state.isDrawing || !overlayCanvas) return;
+  
   const touch = e.changedTouches[0];
-  const x = touch.clientX - rect.left;
-  const y = touch.clientY - rect.top;
-  finishDrawing(x, y);
+  // Convert screen coordinates to canvas logical coordinates (zoom-aware)
+  const canvasLogical = coordinateTransform.screenToCanvasLogical(touch.clientX, touch.clientY, overlayCanvas);
+  finishDrawing(canvasLogical.x, canvasLogical.y);
 }
 
