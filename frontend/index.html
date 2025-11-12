@@ -12,19 +12,18 @@
   <!-- Header -->
   <header class="medical-header">
     <button 
-      class="md:hidden flex items-center justify-center w-11 h-11 p-2 mr-2 bg-white/10 border border-white/20 text-medical-text-primary text-2xl cursor-pointer rounded-medical hover:bg-white/10 active:bg-white/20 active:scale-95" 
+      class="lg:hidden flex items-center justify-center w-11 h-11 p-2 mr-2 bg-white/10 border border-white/20 text-medical-text-primary text-2xl cursor-pointer rounded-medical hover:bg-white/10 active:bg-white/20 active:scale-95" 
       id="mobileMenuBtn" 
       aria-label="Toggle menu"
     >
       ☰
     </button>
-    <div class="flex items-center gap-2 flex-1 min-w-0">
-      <div class="font-semibold text-lg whitespace-nowrap mr-2">Cervical AI Viewer</div>
-      <div class="hidden md:flex items-center gap-2 flex-wrap min-w-0 ml-3" id="headerButtons">
+    <div class="flex flex-col lg:flex-row items-start lg:items-center gap-2 flex-1 min-w-0">
+      <div id="brandTitle" class="font-semibold text-lg whitespace-nowrap mr-2">Cervical AI Viewer</div>
+      <div class="flex flex-wrap lg:flex-nowrap items-center gap-2 w-full lg:w-auto lg:flex-1 lg:min-w-0 lg:ml-3" id="headerButtons">
         <button id="btnClassify" class="medical-button">Classify</button>
         <button id="btnClearRois" class="medical-button">Clear ROIs</button>
         <button id="btnDownload" class="medical-button">Download</button>
-        <button id="btnSidebar" class="medical-button bg-blue-600 border-blue-600 text-white hover:bg-blue-700 hover:border-blue-700">Load Image</button>
       </div>
       <!-- Mobile layers section - separate from headerButtons to avoid pointer interception -->
       <div class="md:hidden grid-cols-1 mt-3 pt-3 border-t border-medical-dark-border" id="mobileLayersContainer" style="display: none;">
@@ -104,20 +103,6 @@
       }
     }
 
-    // Mobile menu functionality
-    function toggleMobileMenu() {
-      const headerButtons = document.getElementById('headerButtons');
-      const mobileOverlay = document.getElementById('mobileOverlay');
-
-      if (headerButtons) {
-        headerButtons.classList.toggle('mobile-visible');
-        if (mobileOverlay) {
-          mobileOverlay.classList.toggle('visible');
-          document.body.style.overflow = headerButtons.classList.contains('mobile-visible') ? 'hidden' : '';
-        }
-      }
-    }
-
     function toggleSidebar() {
       const sidebar = document.getElementById('sidebar');
       const mobileOverlay = document.getElementById('mobileOverlay');
@@ -132,11 +117,9 @@
     }
 
     function closeAllPanels() {
-      const headerButtons = document.getElementById('headerButtons');
       const sidebar = document.getElementById('sidebar');
       const mobileOverlay = document.getElementById('mobileOverlay');
 
-      if (headerButtons) headerButtons.classList.remove('mobile-visible');
       if (sidebar) sidebar.classList.remove('mobile-visible');
       if (mobileOverlay) mobileOverlay.classList.remove('visible');
       document.body.style.overflow = '';
@@ -147,19 +130,11 @@
       const mobileMenuBtn = document.getElementById('mobileMenuBtn');
       const mobileCloseBtn = document.getElementById('mobileCloseBtn');
       const mobileOverlay = document.getElementById('mobileOverlay');
-      const btnSidebar = document.getElementById('btnSidebar');
-
       if (mobileMenuBtn) {
         mobileMenuBtn.addEventListener('click', function(e) {
           e.preventDefault();
           e.stopPropagation();
-          // On mobile, toggle sidebar instead of header menu
-          const isMobile = window.innerWidth <= 1024;
-          if (isMobile) {
-            toggleSidebar();
-          } else {
-            toggleMobileMenu();
-          }
+          toggleSidebar();
         });
       }
 
@@ -167,21 +142,6 @@
         mobileCloseBtn.addEventListener('click', function(e) {
           e.preventDefault();
           closeAllPanels();
-        });
-      }
-
-      if (btnSidebar) {
-        btnSidebar.addEventListener('click', function(e) {
-          e.preventDefault();
-          const headerButtons = document.getElementById('headerButtons');
-          const isMobile = window.innerWidth <= 1024;
-
-          if (isMobile) {
-            if (headerButtons) headerButtons.classList.remove('mobile-visible');
-            toggleSidebar();
-          } else {
-            toggleSidebar();
-          }
         });
       }
 

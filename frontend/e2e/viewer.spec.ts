@@ -17,6 +17,94 @@ async function showSidebarIfHidden(page: Page, testInfo: TestInfo) {
   }
 }
 
+type RectLike = { left: number; right: number; top: number; bottom: number; width: number; height: number };
+type HeaderMetrics = {
+  viewportWidth: number;
+  viewportHeight: number;
+  hamburgerVisible: boolean;
+  buttons: Array<RectLike & { text: string }>;
+  brand: RectLike | null;
+  status: RectLike | null;
+  container: RectLike | null;
+};
+
+async function collectHeaderMetrics(page: Page): Promise<HeaderMetrics> {
+  return page.evaluate(() => {
+    const toRect = (rect: DOMRect | null | undefined) =>
+      rect
+        ? {
+            left: rect.left,
+            right: rect.right,
+            top: rect.top,
+            bottom: rect.bottom,
+            width: rect.width,
+            height: rect.height,
+          }
+        : null;
+
+    const buttonRects = Array.from(document.querySelectorAll('#headerButtons button.medical-button')).map((btn) => {
+      const rect = btn.getBoundingClientRect();
+      return {
+        text: (btn.textContent || '').trim(),
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+      };
+    });
+
+    const hamburger = document.getElementById('mobileMenuBtn');
+    const hamburgerVisible = hamburger ? window.getComputedStyle(hamburger).display !== 'none' : false;
+
+    return {
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      hamburgerVisible,
+      buttons: buttonRects,
+      brand: toRect(document.getElementById('brandTitle')?.getBoundingClientRect()),
+      status: toRect(document.getElementById('status')?.getBoundingClientRect()),
+      container: toRect(document.getElementById('headerButtons')?.getBoundingClientRect()),
+    };
+  });
+}
+
+async function waitForHeaderButtons(page: Page): Promise<void> {
+  await page.waitForFunction(() => document.querySelectorAll('#headerButtons button.medical-button').length >= 3);
+}
+
+async function attachHeaderArtifacts(page: Page, testInfo: TestInfo, name: string, clipHeight = 220): Promise<void> {
+  const viewport = page.viewportSize();
+  const width = viewport?.width ?? (await page.evaluate(() => window.innerWidth));
+  const height = viewport?.height ?? (await page.evaluate(() => window.innerHeight));
+  const clip = {
+    x: 0,
+    y: 0,
+    width: Math.max(1, Math.min(Math.round(width), 1920)),
+    height: Math.max(1, Math.min(Math.round(clipHeight), Math.round(height))),
+  };
+  const screenshot = await page.screenshot({ clip }).catch(() => page.screenshot({ fullPage: true }));
+  await testInfo.attach(`${name}.png`, {
+    body: screenshot,
+    contentType: 'image/png',
+  });
+}
+
+function countDistinctRows(buttons: Array<RectLike & { text: string }>): number {
+  if (!buttons.length) return 0;
+  const sorted = buttons.map((b) => b.top).sort((a, b) => a - b);
+  const threshold = 6; // px
+  const rows: number[] = [];
+  for (const top of sorted) {
+    const last = rows[rows.length - 1];
+    if (last === undefined || Math.abs(top - last) > threshold) {
+      rows.push(top);
+    }
+  }
+  return rows.length;
+}
+
 /**
  * E2E tests using Playwright
  * These tests run in a real browser and test actual functionality
@@ -133,20 +221,14 @@ test.describe('UI Interactions E2E', () => {
     const menuButton = page.locator('#mobileMenuBtn');
     await menuButton.scrollIntoViewIfNeeded();
     await menuButton.click();
-
-    // Wait for animation/transition and CSS class application
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => document.getElementById('sidebar')?.classList.contains('mobile-visible'));
     
-    // Check if mobile-visible class was added
-    const hasMobileVisible = await sidebar.evaluate((el) => {
-      return el.classList.contains('mobile-visible');
+    await page.waitForFunction(() => {
+      const el = document.getElementById('sidebar');
+      if (!el) return false;
+      const rect = el.getBoundingClientRect();
+      return rect.left >= 0;
     });
-    
-    if (!hasMobileVisible) {
-      throw new Error('Sidebar did not become visible after tapping mobile menu button');
-    }
-    
-    // Sidebar should now be visible (x position should be 0 or positive)
     const visibleBox = await sidebar.boundingBox();
     expect(visibleBox).not.toBeNull();
     // Sidebar should be on-screen (x position >= 0)
@@ -167,53 +249,111 @@ test.describe('UI Interactions E2E', () => {
 });
 
 test.describe('Mobile Responsiveness', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForSelector('#viewer', { timeout: 5000 });
+  const layoutScenarios = [
+    {
+      name: 'desktop-wide',
+      viewport: { width: 1440, height: 900 },
+      expectHamburger: false,
+      minRows: 1,
+      maxRows: 1,
+      stackBelowBrand: false,
+      overflowAllowance: 0,
+    },
+    {
+      name: 'tablet-portrait',
+      viewport: { width: 834, height: 1112 },
+      expectHamburger: true,
+      minRows: 1,
+      maxRows: 2,
+      stackBelowBrand: true,
+      overflowAllowance: 0,
+    },
+    {
+      name: 'phone-large',
+      viewport: { width: 428, height: 926 },
+      expectHamburger: true,
+      minRows: 2,
+      stackBelowBrand: true,
+      overflowAllowance: 0,
+    },
+    {
+      name: 'phone-small',
+      viewport: { width: 375, height: 667 },
+      expectHamburger: true,
+      minRows: 2,
+      stackBelowBrand: true,
+      overflowAllowance: 0,
+    },
+  ];
+
+  layoutScenarios.forEach((scenario) => {
+    test(`header layout – ${scenario.name}`, async ({ page }, testInfo) => {
+      if (isMobileProject(testInfo)) {
+        test.skip();
+      }
+      await page.setViewportSize(scenario.viewport);
+      await page.goto('/');
+      await waitForHeaderButtons(page);
+      const metrics = await collectHeaderMetrics(page);
+      await attachHeaderArtifacts(page, testInfo, `header-${scenario.name}`);
+      await testInfo.attach(`metrics-${scenario.name}.json`, {
+        body: Buffer.from(JSON.stringify(metrics, null, 2)),
+        contentType: 'application/json',
+      });
+
+      expect(metrics.buttons.length).toBeGreaterThanOrEqual(3);
+      expect(metrics.hamburgerVisible).toBe(scenario.expectHamburger);
+
+      const rows = countDistinctRows(metrics.buttons);
+      expect(rows).toBeGreaterThanOrEqual(scenario.minRows ?? 1);
+      if (scenario.maxRows) {
+        expect(rows).toBeLessThanOrEqual(scenario.maxRows);
+      }
+
+      const EDGE_TOLERANCE = 1;
+      metrics.buttons.forEach((button) => {
+        expect(button.left).toBeGreaterThanOrEqual(-EDGE_TOLERANCE);
+        expect(button.right).toBeLessThanOrEqual(metrics.viewportWidth + (scenario.overflowAllowance ?? 0));
+      });
+
+      if (metrics.status) {
+        expect(metrics.status.right).toBeLessThanOrEqual(metrics.viewportWidth + EDGE_TOLERANCE);
+      }
+
+      if (scenario.stackBelowBrand && metrics.brand) {
+        const minTop = Math.min(...metrics.buttons.map((b) => b.top));
+        expect(minTop).toBeGreaterThanOrEqual(metrics.brand.bottom - 4);
+      } else if (!scenario.stackBelowBrand && metrics.brand) {
+        const avgButtonTop = metrics.buttons.reduce((sum, b) => sum + b.top, 0) / metrics.buttons.length;
+        expect(Math.abs(avgButtonTop - metrics.brand.top)).toBeLessThanOrEqual(10);
+      }
+    });
   });
 
-  test('should render header action drawer responsively', async ({ page }, testInfo) => {
-    if (!isMobileProject(testInfo)) {
-      await page.setViewportSize({ width: 390, height: 844 });
-      await page.waitForTimeout(100);
-    }
-    await page.waitForSelector('#mobileMenuBtn', { timeout: 5000 });
-
-    const headerButtons = page.locator('#headerButtons');
-    await expect(headerButtons).toHaveCSS('pointer-events', 'none');
-
-    await page.evaluate(() => {
-      document.getElementById('headerButtons')?.classList.add('mobile-visible');
-    });
-    await page.waitForTimeout(200);
-    await expect(headerButtons).toHaveCSS('pointer-events', 'auto');
-
-    const gridTemplate = await headerButtons.evaluate((el) => window.getComputedStyle(el).gridTemplateColumns);
-    const gridColumns = gridTemplate.split(/\s+/).filter(Boolean);
-    expect(gridColumns.length).toBeGreaterThanOrEqual(2);
-
-    const metrics = await page.evaluate(() => {
-      const viewportWidth = window.innerWidth;
-      const buttons = Array.from(document.querySelectorAll('#headerButtons button.medical-button')).map((btn) => {
-        const rect = btn.getBoundingClientRect();
-        return {
-          text: btn.textContent?.trim(),
-          width: rect.width,
-          left: rect.left,
-          right: rect.right,
-        };
-      });
-      return { viewportWidth, buttons };
+  test('header layout – device profile', async ({ page }, testInfo) => {
+    test.skip(!isMobileProject(testInfo));
+    await page.goto('/');
+    await waitForHeaderButtons(page);
+    const metrics = await collectHeaderMetrics(page);
+    await attachHeaderArtifacts(page, testInfo, 'header-device');
+    await testInfo.attach('metrics-device.json', {
+      body: Buffer.from(JSON.stringify(metrics, null, 2)),
+      contentType: 'application/json',
     });
 
-    expect(metrics.buttons.length).toBeGreaterThanOrEqual(4);
-    const uniqueColumns = new Set(metrics.buttons.map((b) => Math.round(b.left)));
-    expect(uniqueColumns.size).toBeGreaterThanOrEqual(2);
+    expect(metrics.buttons.length).toBeGreaterThanOrEqual(3);
+    const rows = countDistinctRows(metrics.buttons);
+    expect(rows).toBeGreaterThanOrEqual(2);
 
+    const EDGE_TOLERANCE = 1;
     metrics.buttons.forEach((button) => {
-      expect(button.width).toBeGreaterThanOrEqual(120);
-      expect(button.right).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+      expect(button.left).toBeGreaterThanOrEqual(-EDGE_TOLERANCE);
+      expect(button.right).toBeLessThanOrEqual(metrics.viewportWidth + 2);
     });
+
+    if (metrics.status) {
+      expect(metrics.status.right).toBeLessThanOrEqual(metrics.viewportWidth + EDGE_TOLERANCE);
+    }
   });
 });
 
