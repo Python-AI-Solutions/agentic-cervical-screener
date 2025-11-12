@@ -136,6 +136,24 @@ description: "Task list for Project Overview Guidance Index feature"
 
 ---
 
+## Phase 6: Viewer Responsive Audit (New)
+
+**Purpose**: Extend automation beyond documentation to cover the actual viewer shell so screenshots/MLX findings catch UI regressions like stacked buttons and obscured canvases.
+
+### Tests for Viewer Audit
+
+- [ ] T034 [P] Create `frontend/e2e/viewer-responsive.spec.ts` that loads the main viewer (`/`) and captures header/actions/canvas states at desktop/tablet/large-phone/small-phone, storing screenshots/JSON under `frontend/playwright-report/data/viewer/`.  
+- [ ] T035 [P] Update `frontend/playwright.config.ts` to add viewer-specific projects (mirroring docs-overview) and ensure tests only run when backend endpoints are available or stubbed.
+
+### Implementation for Viewer Audit
+
+- [ ] T036 Add utilities in `frontend/src/test/viewer-fixtures.ts` (or equivalent) to seed demo cases and expose selectors for header/actions/canvas/drawer so Playwright scripts can assert safe-area padding.  
+- [ ] T037 Extend `frontend/scripts/docs-overview-vlm.ts` (or create `frontend/scripts/viewer-vlm.ts`) to ingest viewer screenshots/JSON, tag findings (e.g., `[Viewer-Desktop]`), and fail CI on medium+ issues.  
+- [ ] T038 Update `README.md`, `docs/AGENT_GUIDE.md`, and `specs/001-project-guide-index/quickstart.md` to mention the new viewer audit commands (`npm run docs:e2e -- viewer-responsive.spec.ts`, `npm run docs:vlm-review -- --suite viewer`).  
+- [ ] T039 Wire the viewer audit into `npm run docs:metrics` summary output (or CI checklist) so reviewers must attach viewer screenshots + VLM notes in addition to documentation evidence.
+
+---
+
 ## Dependencies & Execution Order
 
 - **Phase Dependencies**: Setup → Foundational → US1 → US2 → US3 → Polish. Foundational tasks block all user stories because they supply the preview route, automation scripts, and metrics pipelines.
