@@ -2,10 +2,33 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { execa } from 'execa';
 
-const REPORT_ROOT = path.resolve(process.cwd(), 'playwright-report', 'data', 'docs-overview');
-const MODEL = process.argv.includes('--model')
-  ? process.argv[process.argv.indexOf('--model') + 1]
-  : process.env.DOCS_VLM_MODEL ?? 'mlx-community/llava-phi-3-mini-4k';
+type Options = {
+  suite: string;
+  model: string;
+};
+
+function parseOptions(): Options {
+  const args = process.argv.slice(2);
+  const opts: Options = {
+    suite: process.env.DOCS_VLM_SUITE ?? 'docs-overview',
+    model: process.env.DOCS_VLM_MODEL ?? 'mlx-community/llava-phi-3-mini-4k',
+  };
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+    if (arg === '--suite' && args[i + 1]) {
+      opts.suite = args[i + 1];
+      i += 1;
+    } else if (arg === '--model' && args[i + 1]) {
+      opts.model = args[i + 1];
+      i += 1;
+    }
+  }
+  return opts;
+}
+
+const { suite, model } = parseOptions();
+const REPORT_ROOT = path.resolve(process.cwd(), 'playwright-report', suite);
+const MODEL = model;
 
 interface Finding {
   image: string;
@@ -42,6 +65,12 @@ Respond with JSON: {"severity":"low|medium|high","notes":"concise text"}
 
 function tagFor(imagePath: string) {
   const lower = imagePath.toLowerCase();
+  if (suite === 'viewer') {
+    if (lower.includes('desktop')) return '[Viewer-Desktop]';
+    if (lower.includes('tablet')) return '[Viewer-Tablet]';
+    if (lower.includes('phone')) return '[Viewer-Mobile]';
+    return '[Viewer]';
+  }
   if (lower.includes('orientation')) return '[US1]';
   if (lower.includes('reference')) return '[US2]';
   if (lower.includes('metadata')) return '[US3]';
@@ -69,6 +98,7 @@ async function writeReport(findings: Finding[]) {
   const lines = [
     '# VLM UX Audit',
     '',
+    `Suite: ${suite}`,
     `Model: ${MODEL}`,
     `Generated: ${new Date().toISOString()}`,
     '',

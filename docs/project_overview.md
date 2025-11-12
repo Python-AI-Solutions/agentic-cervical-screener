@@ -52,14 +52,14 @@ This document captures the current product vision, architecture, and the primary
 
 | Topic | Source |
 | --- | --- |
-| Agent workflow, repo structure, run commands | [`docs/AGENT_GUIDE.md`](AGENT_GUIDE.md) |
+| Agent workflow, repo structure, run commands | [`AGENTS.md`](AGENT_GUIDE.md) |
 | Test strategy, responsive artifacts, CLI invocations | [`docs/TESTING.md`](TESTING.md) |
 | Browser zoom / transform history & do/don'ts | [`frontend/docs/ZOOM_ISSUES_AND_FIXES.md`](../frontend/docs/ZOOM_ISSUES_AND_FIXES.md) |
 
 ## Orientation Path
 
 1. **Skim the README for architecture + demo context** – Start with [`README.md`](../README.md) to understand the end-to-end workflow and tooling. Run `pixi run dev` followed by `cd frontend && npm run dev` so both backend and frontend boot successfully.
-2. **Read the Agent Development Guide and record onboarding metrics** – Follow [`docs/AGENT_GUIDE.md`](AGENT_GUIDE.md) to review conventions, then run `cd frontend && npm run docs:test` and `npm run docs:e2e` to capture the latest documentation evidence. Mentors log outcomes in `docs/metrics/onboarding-log.csv` (success flag must stay ≥90 %).
+2. **Read the Agent Development Guide and record onboarding metrics** – Follow [`AGENTS.md`](AGENT_GUIDE.md) to review conventions, then run `cd frontend && npm run docs:test` and `npm run docs:e2e` to capture the latest documentation evidence. Mentors log outcomes in `docs/metrics/onboarding-log.csv` (success flag must stay ≥90 %).
 3. **Verify the testing + responsiveness toolchain** – Use [`docs/TESTING.md`](TESTING.md) to run `npm test`, `npm run test:e2e:ci`, and `npm run docs:vlm-review` so you have dual-layer + VLM evidence before editing the viewer. Always finish with `npm run docs:metrics` to catch stale onboarding entries or outdated `last_reviewed` metadata.
 
 > **Logging Reminder**: Immediately after onboarding a new contributor, append a row to `docs/metrics/onboarding-log.csv` with the date, mentor, contributor, commands executed, and whether they completed the path successfully. This CSV powers the metrics gate enforced by `npm run docs:metrics`.
@@ -78,13 +78,13 @@ This document captures the current product vision, architecture, and the primary
 | Topic | Use When | Primary Doc | Secondary / Artifacts |
 | --- | --- | --- | --- |
 | Architecture & Stack | Need repo layout and backend/frontend boundaries | [`README.md`](../README.md) | [`docs/project_overview.md#2-architecture-what-where`](#2-architecture-what--where) |
-| Datasets & Demo Content | Need demo slides or static assets | [`public/`](../public) README | [`docs/AGENT_GUIDE.md`](AGENT_GUIDE.md#project-structure) |
+| Datasets & Demo Content | Need demo slides or static assets | [`public/`](../public) README | [`AGENTS.md`](AGENT_GUIDE.md#project-structure) |
 | Responsive UX Rules | Implement or verify breakpoints, safe areas | [`docs/project_overview.md#5-responsive-ux-expectations`](#5-responsive-ux-expectations-best-practices) | [`frontend/docs/ZOOM_ISSUES_AND_FIXES.md`](../frontend/docs/ZOOM_ISSUES_AND_FIXES.md) |
 | Testing & Evidence | Run Vitest/Playwright suites and log evidence | [`docs/TESTING.md`](TESTING.md) | `frontend/playwright-report/data/`, `npm run docs:test` scripts |
 | Automation & CI | Understand metrics, VLM audits, automation outputs | [`docs/project_overview.md#orientation-path`](#orientation-path) | `frontend/scripts/docs-overview-vlm.ts`, `docs/metrics/onboarding-log.csv` |
 | Deployment | Update backend services or Docker images | [`Dockerfile`](../Dockerfile), [`deploy/`](../deploy) | `pixi run start`, `.dockerignore` guidelines |
 | Data Governance | Reference update triggers, metadata owners | [`docs/project_overview.md#maintenance--update-workflow`](#maintenance--update-workflow) | YAML front matter (`audience`, `owners`, `update_triggers`) |
-| Troubleshooting | Resolve onboarding/test failures | [`docs/AGENT_GUIDE.md#debugging`](AGENT_GUIDE.md#debugging) | `docs/metrics/onboarding-log.csv` notes, `frontend/e2e/docs-overview.spec.ts` artifacts |
+| Troubleshooting | Resolve onboarding/test failures | [`AGENTS.md#debugging`](AGENT_GUIDE.md#debugging) | `docs/metrics/onboarding-log.csv` notes, `frontend/e2e/docs-overview.spec.ts` artifacts |
 
 ## Workflow Playbooks
 
@@ -127,3 +127,24 @@ The cropped header screenshots emitted by Playwright (`frontend/playwright-repor
 ---
 
 Questions or discrepancies? Open an issue referencing this overview so we can update the downstream guides in sync.
+
+## Maintenance & Update Workflow
+
+1. **Run the full evidence stack** – `npm run docs:test`, `npm run docs:e2e -- docs-overview.spec.ts`, `npm run docs:vlm-review`, and `npm run docs:metrics`. These commands must pass (and artifacts uploaded) before any documentation PR merges.
+2. **Update metadata + anchors** – bump `doc_version`, refresh `last_reviewed` (ISO format), and ensure `anchor_slugs` reflects every section enumerated in this file. If you add/remove headings, also update the Reference Anchors table below.
+3. **Append onboarding log entry** – mentors record outcomes in `docs/metrics/onboarding-log.csv` immediately after each session so the ≥90% success window remains truthful.
+4. **Attach artifacts to PRs** – include the latest Playwright screenshots (`frontend/playwright-report/data/docs-overview/*.png`), JSON metadata, `vlm-report.md`, and the console output from `npm run docs:metrics`.
+
+## Reference Anchors
+
+| Anchor Slug | Section |
+| --- | --- |
+| `product-goals` | 1. Product Goals |
+| `architecture` | 2. Architecture (What & Where) |
+| `references` | 3. How We Work |
+| `tooling` | 4. Tooling & Environments |
+| `responsive-ux-expectations` | 5. Responsive UX Expectations |
+| `orientation-path` | Orientation Path |
+| `topic-to-doc-index` | Topic-to-Doc Index |
+| `workflow-playbooks` | Workflow Playbooks |
+| `maintenance` | Maintenance & Update Workflow |

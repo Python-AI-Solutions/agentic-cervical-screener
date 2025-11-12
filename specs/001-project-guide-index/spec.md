@@ -14,7 +14,7 @@
 
 ### User Story 1 - Guided Onboarding Path (Priority: P1)
 
-A newly assigned human or AI contributor must be able to open `docs/project_overview.md`, understand the product context, and follow a three-step orientation path that points to README, `docs/AGENT_GUIDE.md`, and `docs/TESTING.md` plus the minimum commands to run (`pixi run dev`, `npm run dev`, `npm test`, `npm run test:e2e:ci`).
+A newly assigned human or AI contributor must be able to open `docs/project_overview.md`, understand the product context, and follow a three-step orientation path that points to README, `AGENTS.md`, and `docs/TESTING.md` plus the minimum commands to run (`pixi run dev`, `npm run dev`, `npm test`, `npm run test:e2e:ci`).
 
 **Why this priority**: Without an authoritative front door, onboarding stalls and downstream specs/plans drift from the actual workflow, violating Principle 5 (documentation stewardship).
 
@@ -77,14 +77,14 @@ Automation agents (Specify, CI checkers) need machine-readable anchors and maint
 ### Functional Requirements
 
 - **FR-001**: `docs/project_overview.md` MUST start with a metadata panel (audience, owners, last-reviewed date, version, updated-on-change triggers) formatted as fenced YAML so automation can parse it.  
-- **FR-002**: The Orientation Path section MUST outline ≤3 sequential steps, each linking to README, `docs/AGENT_GUIDE.md`, and `docs/TESTING.md`, and MUST embed the canonical commands (`pixi run dev`, `npm run dev`, `npm test`, `npm run test:e2e:ci`) with short rationales.  
+- **FR-002**: The Orientation Path section MUST outline ≤3 sequential steps, each linking to README, `AGENTS.md`, and `docs/TESTING.md`, and MUST embed the canonical commands (`pixi run dev`, `npm run dev`, `npm test`, `npm run test:e2e:ci`) with short rationales.  
 - **FR-003**: Provide a “Topic-to-Doc Index” table containing at least eight topics covering architecture, datasets, responsive UX, testing, automation artifacts, deployment, data governance, and troubleshooting; each row MUST include `Topic`, `Use When`, `Primary Doc`, and `Secondary/Artifacts` columns with relative links.  
 - **FR-004**: Add a “Workflow Playbooks” section describing at least three common workflows (new contributor, spec author, release triage) and the ordered document sequence each should follow, explicitly referencing responsive and observability expectations.  
 - **FR-005**: Introduce a “Maintenance & Update Workflow” subsection that declares update triggers, responsible roles, and how to run the markdown + Playwright checks before merging doc edits.  
 - **FR-006**: Embed a machine-readable anchor list (e.g., `## Reference Anchors`) that enumerates slug names other docs/specs can reference; each anchor MUST align with the headings used in the body.  
 - **FR-007**: Create or extend a unit-level markdown validation test (Vitest or pytest) that parses the overview to confirm the metadata block, Orientation Path, table column headers, and minimum link count are present; the test MUST run via `npm test`.  
 - **FR-008**: Add a Playwright journey (`frontend/e2e/docs-overview.spec.ts`) that loads the rendered markdown via the existing documentation preview page, captures desktop/tablet/phone screenshots, stores JSON metadata of extracted anchor links, and asserts safe-area padding prevents overlap with the header per Principle 3.  
-- **FR-009**: Update `docs/AGENT_GUIDE.md` and `README.md` references (if necessary) so they link back to the overview, keeping the cross-reference graph strongly connected.  
+- **FR-009**: Update `AGENTS.md` and `README.md` references (if necessary) so they link back to the overview, keeping the cross-reference graph strongly connected.  
 - **FR-010**: Provide served documentation endpoints: `/docs/project-overview` delivers rendered HTML, and `/docs/project-overview/anchors` returns anchor + orientation metadata JSON as defined in `contracts/docs-overview.openapi.yaml`.  
 - **FR-011**: Ship a lightweight, offline-capable VLM audit pipeline (MLX runtime + `mlx-community/llava-phi-3-mini-4k`) that consumes Playwright screenshots/JSON and emits `vlm-report.md`, failing CI on medium-or-higher UX findings.  
 - **FR-012**: Instrument onboarding and freshness metrics by adding `docs/metrics/onboarding-log.csv` plus scripts (`scripts/docs/onboarding-metrics.ts`, `scripts/docs/check-doc-freshness.ts`) that (a) ensure ≥90% success across the latest 10 onboarding entries and (b) fail builds when the YAML `last_reviewed` date is older than 30 days.
@@ -114,6 +114,6 @@ Automation agents (Specify, CI checkers) need machine-readable anchors and maint
 
 ## Dependencies & Risks
 
-- Updates to `docs/AGENT_GUIDE.md`, `docs/TESTING.md`, or `README.md` may need to happen in parallel so cross-links remain accurate.  
+- Updates to `AGENTS.md`, `docs/TESTING.md`, or `README.md` may need to happen in parallel so cross-links remain accurate.  
 - If the documentation preview route is not yet available, a small wrapper page must be created; otherwise Playwright evidence cannot be collected.  
 - Failing to keep the metadata block in sync with actual owners/versions undermines the automation hooks and could delay governance reviews.

@@ -15,7 +15,7 @@
 
 2. **Update documentation content**
    - Edit `docs/project_overview.md` to add YAML metadata, Orientation Path, Topic-to-Doc index, workflow playbooks, and maintenance anchors.
-   - Cross-link `README.md`, `docs/AGENT_GUIDE.md`, and `docs/TESTING.md` to the overview as required by the spec.
+   - Cross-link `README.md`, `AGENTS.md`, and `docs/TESTING.md` to the overview as required by the spec.
 
 3. **Run markdown validation tests**
    ```bash
@@ -26,11 +26,19 @@
 4. **Execute Playwright doc journey**
    ```bash
    cd frontend
-   npm run test:e2e -- docs-overview.spec.ts
+   npm run docs:e2e -- docs-overview.spec.ts
    ```
    - Captures desktop/tablet/large-phone/small-phone screenshots and emits `frontend/playwright-report/data/docs-overview/anchors.json`.
 
-5. **Run VLM UX audit (Apple Silicon, ≤16 GB RAM)**
+5. **Run Viewer audit (captures actual UI)**
+   ```bash
+   cd frontend
+   npm run docs:e2e -- viewer-responsive.spec.ts
+   npm run docs:vlm-review -- --suite viewer
+   ```
+   - Stores screenshots + layout JSON under `frontend/playwright-report/data/viewer/` and feeds them through the MLX VLM pipeline to catch header/action regressions.
+
+6. **Run VLM UX audit for docs (Apple Silicon, ≤16 GB RAM)**
    ```bash
    cd frontend
    npm run docs:vlm-review \
@@ -39,23 +47,23 @@
    ```
    - Script loads screenshots + JSON artifacts, calls the MLX runtime (`python -m mlx_lm.generate ...` under the hood), and outputs `vlm-report.md` summarizing occlusion/accessibility findings. Fail the build if severity ≥ medium.
 
-6. **Run onboarding + freshness metrics**
+7. **Run onboarding + freshness metrics**
    ```bash
    npm run docs:metrics
    ```
    - Executes `scripts/docs/onboarding-metrics.ts` (ensures ≥90% success across the latest 10 entries in `docs/metrics/onboarding-log.csv`) and `scripts/docs/check-doc-freshness.ts` (fails if YAML `last_reviewed` is >30 days old).
 
-7. **Serve documentation preview (optional sanity check)**
+8. **Serve documentation preview (optional sanity check)**
    ```bash
    pixi run dev
    ```
    - Visit `http://localhost:8000/docs/project-overview` to confirm the rendered page shows metadata callout, Orientation Path, topic index, and safe dismiss controls for drawers.
 
-8. **Update maintenance metadata**
+9. **Update maintenance metadata**
    - Bump `doc_version` and `last_reviewed` in the YAML front matter whenever content changes.
    - Ensure the Orientation Path steps still reference valid commands.
 
-9. **Prepare PR / review evidence**
+10. **Prepare PR / review evidence**
    - Attach the latest Playwright screenshots + anchors JSON.
-   - Include `frontend/playwright-report/data/docs-overview/vlm-report.md` excerpt, onboarding metrics output, and freshness check output.
-   - Note Vitest + Playwright + VLM + metrics run hashes in the PR description.
+   - Include `frontend/playwright-report/data/docs-overview/vlm-report.md`, `frontend/playwright-report/data/viewer/vlm-report.md`, onboarding metrics output, and freshness check output.
+   - Note Vitest + Playwright + VLM + metrics run hashes (docs + viewer suites) in the PR description.

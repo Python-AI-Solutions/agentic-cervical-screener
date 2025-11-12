@@ -45,6 +45,15 @@ function findSectionNodes(title: string) {
   return nodes;
 }
 
+function getSectionMarkdown(title: string) {
+  const marker = `## ${title}`;
+  const start = parsedDoc.content.indexOf(marker);
+  if (start === -1) return '';
+  const rest = parsedDoc.content.slice(start + marker.length);
+  const nextSection = rest.indexOf('\n## ');
+  return (nextSection === -1 ? rest : rest.slice(0, nextSection)).trim();
+}
+
 function getOrientationText(): string {
   const marker = '## Orientation Path';
   const start = parsedDoc.content.indexOf(marker);
@@ -76,7 +85,7 @@ describe('Orientation Path section', () => {
   it('contains exactly three ordered steps with required links', () => {
     const section = getOrientationText();
     expect(section).toContain('README.md');
-    expect(section).toContain('docs/AGENT_GUIDE.md');
+    expect(section).toContain('AGENTS.md');
     expect(section).toContain('docs/TESTING.md');
     const steps = section.match(/^\d+\.\s.+$/gm) ?? [];
     expect(steps.length).toBe(3);
@@ -113,5 +122,33 @@ describe('Workflow playbooks', () => {
     ['New Contributor Playbook', 'Spec Author Playbook', 'Release Triage Playbook'].forEach((title) => {
       expect(subheadings).toContain(title);
     });
+  });
+});
+
+describe('Maintenance workflow', () => {
+  it('lists required commands and logging steps', () => {
+    const section = getSectionMarkdown('Maintenance & Update Workflow');
+    expect(section).not.toEqual('');
+    ['npm run docs:test', 'npm run docs:e2e', 'npm run docs:vlm-review', 'npm run docs:metrics', 'docs/metrics/onboarding-log.csv'].forEach(
+      (token) => {
+        expect(section).toContain(token);
+      },
+    );
+  });
+});
+
+describe('Reference anchors consistency', () => {
+  it('table entries match YAML anchor_slugs', () => {
+    const sectionNodes = findSectionNodes('Reference Anchors');
+    const table = sectionNodes.find((node) => node.type === 'table');
+    expect(table, 'Reference Anchors table missing').toBeDefined();
+    const rows = table!.children?.slice(1) ?? [];
+    const slugsFromTable = rows.map((row: any) => {
+      const cell = row.children?.[0];
+      const text = cell?.children?.map((child: any) => child.value ?? '').join('').trim() ?? '';
+      return text.replace(/`/g, '');
+    });
+    const yamlSlugs = Array.isArray(parsedDoc.data.anchor_slugs) ? (parsedDoc.data.anchor_slugs as string[]) : [];
+    expect(slugsFromTable).toEqual(yamlSlugs);
   });
 });

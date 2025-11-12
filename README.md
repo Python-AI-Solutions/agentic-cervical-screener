@@ -173,7 +173,22 @@ The project now uses a three-tier testing approach:
 
 - **Unit/Integration Tests (Vitest)**: Fast, mocked tests for logic (`frontend/src/**/*.test.ts`, `frontend/src/**/*.integration.test.ts`)
 - **E2E Tests (Playwright)**: Real browser tests for actual functionality (`frontend/e2e/**/*.spec.ts`)
-- **VLM + Documentation Metrics**: Automated MLX visual review (`npm run docs:vlm-review`) plus `npm run docs:metrics` ensures onboarding success ≥90% and freshness <30 days, providing semantic UX evidence beyond deterministic tests.
+- **VLM + Documentation/Viewer Metrics**: Automated MLX visual review (`npm run docs:vlm-review [-- --suite viewer]`) plus `npm run docs:metrics` enforces onboarding success ≥90% and freshness <30 days while producing semantic UX evidence.
+
+Recommended commands:
+
+```bash
+# Documentation audit
+cd frontend
+npm run docs:test
+npm run docs:e2e -- docs-overview.spec.ts
+npm run docs:vlm-review
+npm run docs:metrics
+
+# Viewer responsive audit
+npm run docs:e2e -- viewer-responsive.spec.ts
+npm run docs:vlm-review -- --suite viewer
+```
 
 See `docs/TESTING.md` for detailed testing documentation.
 
@@ -189,7 +204,7 @@ See `docs/TESTING.md` for detailed testing documentation.
 - After every mentor-led onboarding session, append a new row to `docs/metrics/onboarding-log.csv` (date, mentor, contributor, commands ran, `true/false` success flag, optional notes).
 - The documentation metrics command (`cd frontend && npm run docs:metrics`) reads this CSV to enforce the ≥90 % success threshold before merges.
 
-See `docs/AGENT_GUIDE.md` for detailed development guidelines (especially useful for AI coding assistants).
+See `AGENTS.md` for detailed development guidelines (especially useful for AI coding assistants).
 
 ## License
 

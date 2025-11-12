@@ -45,13 +45,13 @@ Follow-up TODOs:
 
 ### Clinical Safety, Data Stewardship, and Documentation
 - Demo data stays in `public/` and is the ONLY dataset agents may ship by default; any new dataset or PHI-like content requires documented provenance and explicit approval.
-- Follow Python typing + Ruff, TypeScript strict mode, and Tailwind conventions documented in `docs/AGENT_GUIDE.md`; deviations must be justified in-plan before work begins.
+- Follow Python typing + Ruff, TypeScript strict mode, and Tailwind conventions documented in `AGENTS.md`; deviations must be justified in-plan before work begins.
 - Every feature update includes documentation touches (`README.md`, `docs/TESTING.md`, or feature-specific guides) so downstream teams and automated agents inherit accurate procedures.
 **Rationale**: Handling medical imagery without disciplined documentation or data controls creates regulatory risk; codifying safety and documentation expectations avoids drift.
 
 ## Operational Constraints & Tooling
 - **Stack**: FastAPI + PyTorch backend under Pixi, TypeScript/Vite frontend with Tailwind CSS Plus Elements, NiiVue viewer, Vitest + Playwright testing. New languages/frameworks require a justification recorded in the implementation plan’s Constitution Check.
-- **Commands**: `pixi run dev/start/test`, `npm run dev/test/test:e2e:ci`, and automation scripts defined in `docs/AGENT_GUIDE.md` are canonical. Scripts must be referenced in specs and PR descriptions so reproduction is trivial.
+- **Commands**: `pixi run dev/start/test`, `npm run dev/test/test:e2e:ci`, and automation scripts defined in `AGENTS.md` are canonical. Scripts must be referenced in specs and PR descriptions so reproduction is trivial.
 - **Assets**: Only use checked-in static assets from `public/` during development and testing. Temporary assets belong in gitignored paths and must not ship in PRs.
 - **Performance**: Niivue interactions must stay responsive (<16 ms frame budget) and backend inference latencies documented in `/model-info`; regressions demand plan-level mitigation before merge.
 
@@ -59,7 +59,7 @@ Follow-up TODOs:
 - Every feature starts with a spec (`.specify/templates/spec-template.md`) that enumerates independent user stories plus deterministic success metrics, followed by a plan that documents Constitution Check outcomes and structure decisions.
 - Tasks (`tasks.md`) stay grouped per user story, explicitly calling out required Vitest + Playwright coverage and the files they touch so reviewers can verify independence and completeness.
 - Code reviews block on: passing dual-layer tests, evidence that responsive requirements remain intact (Playwright screenshots attached, including any full-height panels), updated documentation, and confirmation that observability hooks log the new workflow.
-- Runtime guidance lives in `docs/AGENT_GUIDE.md`, `docs/TESTING.md`, and `docs/project_overview.md`; reviewers ensure every change references or updates these sources when behavior shifts.
+- Runtime guidance lives in `AGENTS.md`, `docs/TESTING.md`, and `docs/project_overview.md`; reviewers ensure every change references or updates these sources when behavior shifts.
 
 ## Governance
 - This constitution supersedes conflicting guidance. Amendments require: (1) opening a PR detailing the motivation, (2) updating all affected templates/guides in `.specify/templates/` and `docs/`, (3) bumping `Version` using semantic rules (MAJOR for breaking/removal, MINOR for new principles/sections, PATCH for clarifications).

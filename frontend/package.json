@@ -19,7 +19,7 @@
     "test:e2e:debug": "playwright test --debug",
     "test:all": "npm test && npm run test:e2e",
     "docs:test": "vitest run ../docs/__tests__/project_overview.index.test.ts",
-    "docs:e2e": "playwright test docs-overview.spec.ts",
+    "docs:e2e": "cross-env PLAYWRIGHT_ARTIFACT_ROOT=$INIT_CWD/playwright-report playwright test",
     "docs:vlm-review": "node scripts/docs-overview-vlm.ts",
     "docs:metrics": "tsx ../scripts/docs/onboarding-metrics.ts && tsx ../scripts/docs/check-doc-freshness.ts"
   },
@@ -44,6 +44,7 @@
     "@playwright/test": "^1.56.1",
     "@types/node": "^24.9.2",
     "autoprefixer": "^10.4.22",
+    "cross-env": "^10.1.0",
     "execa": "^9.6.0",
     "gray-matter": "^4.0.3",
     "jsdom": "^27.0.1",

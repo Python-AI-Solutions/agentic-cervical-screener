@@ -4,6 +4,12 @@ import 'tw-elements';
 import { marked } from 'marked';
 import overviewMarkdown from '@docs/project_overview.md?raw';
 
+declare global {
+  interface Window {
+    __DOC_ANCHORS__?: string[];
+  }
+}
+
 const root = document.getElementById('docs-overview-root');
 
 const shellTemplate = `
@@ -213,6 +219,7 @@ function applyStyles() {
 type RenderedDoc = {
   metadataHtml: string;
   bodyHtml: string;
+  anchorSlugs: string[];
 };
 
 async function loadFromBackend(): Promise<RenderedDoc> {
@@ -228,9 +235,20 @@ async function loadFromBackend(): Promise<RenderedDoc> {
   if (!article) {
     throw new Error('Backend response missing article');
   }
+  let anchorSlugs: string[] = [];
+  try {
+    const anchorRes = await fetch('/docs/project-overview/anchors');
+    if (anchorRes.ok) {
+      const data = await anchorRes.json();
+      anchorSlugs = Array.isArray(data?.anchors) ? data.anchors.map((anchor: any) => anchor.slug) : [];
+    }
+  } catch {
+    // ignore backend anchor failures
+  }
   return {
     metadataHtml: meta?.outerHTML ?? '',
     bodyHtml: article.outerHTML,
+    anchorSlugs,
   };
 }
 
@@ -286,7 +304,8 @@ const staticDoc = (() => {
     </section>
   `;
   const bodyHtml = `<article class="markdown-body">${marked.parse(content)}</article>`;
-  return { metadataHtml, bodyHtml };
+  const anchorSlugs = Array.isArray(data.anchor_slugs) ? (data.anchor_slugs as string[]) : [];
+  return { metadataHtml, bodyHtml, anchorSlugs };
 })();
 
 async function renderDocument() {
@@ -295,6 +314,7 @@ async function renderDocument() {
   container.setAttribute('aria-busy', 'true');
   try {
     container.innerHTML = `${staticDoc.metadataHtml}${staticDoc.bodyHtml}`;
+    window.__DOC_ANCHORS__ = staticDoc.anchorSlugs;
     let rendered: RenderedDoc | null = null;
     try {
       rendered = await loadFromBackend();
@@ -303,6 +323,7 @@ async function renderDocument() {
     }
     if (rendered) {
       container.innerHTML = `${rendered.metadataHtml}${rendered.bodyHtml}`;
+      window.__DOC_ANCHORS__ = rendered.anchorSlugs;
     }
   } catch (error) {
     container.innerHTML = `<p>Failed to load project overview: ${(error as Error).message}</p>`;

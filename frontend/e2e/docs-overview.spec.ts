@@ -1,10 +1,21 @@
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'fs/promises';
 import path from 'path';
-
 const DOCS_PAGE = '/docs-overview.html';
-const REPORT_DIR = path.resolve(process.cwd(), 'playwright-report', 'data', 'docs-overview');
 
+declare global {
+  interface Window {
+    __DOC_ANCHORS__?: string[];
+  }
+}
+const ARTIFACT_ROOT = process.env.PLAYWRIGHT_ARTIFACT_ROOT ?? path.resolve(process.cwd(), 'playwright-report');
+const REPORT_DIR = path.resolve(ARTIFACT_ROOT, 'docs-overview');
+
+if (process.env.DEBUG_ARTIFACTS && !(globalThis as any).__DOCS_ARTIFACT_LOGGED) {
+  // eslint-disable-next-line no-console
+  console.log(`[docs-overview] artifact root: ${REPORT_DIR}`);
+  (globalThis as any).__DOCS_ARTIFACT_LOGGED = true;
+}
 async function ensureReportDir() {
   await fs.mkdir(REPORT_DIR, { recursive: true });
 }
@@ -32,6 +43,20 @@ async function captureViewportMetadata(page: Page) {
 }
 
 test.describe('Docs overview preview shell', () => {
+  test('captures metadata callout and anchor inventory', async ({ page }, testInfo) => {
+    await page.goto(DOCS_PAGE);
+    const metadata = page.locator('.metadata');
+    await expect(metadata).toBeVisible();
+    const metadataShot = await metadata.screenshot();
+    await recordArtifact(testInfo.project.name, 'metadata-callout.png', metadataShot);
+    const anchors = await page.evaluate(() => window.__DOC_ANCHORS__ ?? []);
+    await recordArtifact(
+      testInfo.project.name,
+      'anchors.json',
+      JSON.stringify({ anchors }, null, 2),
+    );
+  });
+
   test('renders header, drawer toggle, and content container without overlap', async ({ page }, testInfo) => {
     await page.goto(DOCS_PAGE);
 

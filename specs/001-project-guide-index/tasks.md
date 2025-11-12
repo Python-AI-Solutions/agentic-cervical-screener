@@ -23,7 +23,7 @@ description: "Task list for Project Overview Guidance Index feature"
 - Deterministic imaging fidelity: Playwright + VLM tasks assert baseline and full-height drawer states with visible dismiss controls.
 - Dual-layer evidence: Each story includes Vitest + Playwright + VLM tasks; metrics scripts act as additional enforcement for onboarding/freshness success criteria.
 - Responsive/accessibility: Tasks explicitly mention breakpoints, ARIA labels, safe-area padding, and breadcrumbs when panels cover imagery.
-- Documentation stewardship: Tasks update README, `docs/AGENT_GUIDE.md`, `docs/TESTING.md`, and metrics CSV/scripts so downstream teams inherit the new workflow.
+- Documentation stewardship: Tasks update README, `AGENTS.md`, `docs/TESTING.md`, and metrics CSV/scripts so downstream teams inherit the new workflow.
 
 ---
 
@@ -31,7 +31,7 @@ description: "Task list for Project Overview Guidance Index feature"
 
  - [X] T001 Update `frontend/package.json` + `package-lock.json` to add `gray-matter`, `remark-parse`, `mdast-util-find`, `yaml`, MLX helpers, and CSV tooling needed by scripts/docs.  
  - [X] T002 Add npm scripts (`docs:test`, `docs:e2e`, `docs:vlm-review`, `docs:metrics`) in `frontend/package.json`, wiring them to Vitest, Playwright, VLM, and metrics scripts respectively.  
- - [X] T003 Document prerequisites (Apple Silicon MLX install, metrics command usage) in `docs/AGENT_GUIDE.md` under the development workflow section.
+ - [X] T003 Document prerequisites (Apple Silicon MLX install, metrics command usage) in `AGENTS.md` under the development workflow section.
 
 ---
 
@@ -71,7 +71,7 @@ description: "Task list for Project Overview Guidance Index feature"
 
 - [X] T016 [US1] Rewrite the Orientation Path section in `docs/project_overview.md` with the three prescribed steps, rationale text, and embedded command blocks.  
 - [X] T017 [US1] Cross-link `README.md` Quick Start entries back to `docs/project_overview.md#orientation-path`.  
-- [X] T018 [US1] Update `docs/AGENT_GUIDE.md` onboarding section with the new Orientation anchors and clarify how to log onboarding outcomes.  
+- [X] T018 [US1] Update `AGENTS.md` onboarding section with the new Orientation anchors and clarify how to log onboarding outcomes.  
 - [X] T019 [US1] Update `docs/TESTING.md` intro to reference the Orientation Path for locating CLI usage and responsive evidence expectations.  
 - [X] T020 [US1] Populate `docs/metrics/onboarding-log.csv` with at least 5 historical sample rows and document the logging procedure inside `docs/project_overview.md` so mentors know how to record success/failure.
 
@@ -115,14 +115,14 @@ description: "Task list for Project Overview Guidance Index feature"
 
 ### Tests for User Story 3
 
-- [ ] T026 [P] [US3] Extend `docs/__tests__/project_overview.index.test.ts` to validate YAML keys (`audience`, `owners`, `doc_version`, `last_reviewed`, `update_triggers`, `anchor_slugs`) plus the Reference Anchors section alignment.  
-- [ ] T027 [P] [US3] Update `frontend/e2e/docs-overview.spec.ts` to capture metadata callout screenshots, confirm safe-area padding while the Case Management drawer is open, and persist anchor inventories to `frontend/playwright-report/data/docs-overview/anchors.json`.
+- [X] T026 [P] [US3] Extend `docs/__tests__/project_overview.index.test.ts` to validate YAML keys (`audience`, `owners`, `doc_version`, `last_reviewed`, `update_triggers`, `anchor_slugs`) plus the Reference Anchors section alignment.  
+- [X] T027 [P] [US3] Update `frontend/e2e/docs-overview.spec.ts` to capture metadata callout screenshots, confirm safe-area padding while the Case Management drawer is open, and persist anchor inventories to `frontend/playwright-report/data/docs-overview/anchors.json`.
 
 ### Implementation for User Story 3
 
-- [ ] T028 [US3] Insert YAML front matter, Maintenance & Update Workflow, and Reference Anchors sections into `docs/project_overview.md`, syncing anchor slugs + `doc_version`/`last_reviewed`.  
-- [ ] T029 [US3] Extend `frontend/scripts/docs-overview-vlm.ts` to merge Vitest/Playwright outputs, annotate findings by severity, and fail the process when metadata/maintenance sections trigger medium-or-higher issues.  
-- [ ] T030 [US3] Update `scripts/docs/check-doc-freshness.ts` to compare `last_reviewed` against the repo’s latest tag (or fallback to 30-day window) and document the behavior in `docs/project_overview.md`.
+- [X] T028 [US3] Insert YAML front matter, Maintenance & Update Workflow, and Reference Anchors sections into `docs/project_overview.md`, syncing anchor slugs + `doc_version`/`last_reviewed`.  
+- [X] T029 [US3] Extend `frontend/scripts/docs-overview-vlm.ts` to merge Vitest/Playwright outputs, annotate findings by severity, and fail the process when metadata/maintenance sections trigger medium-or-higher issues.  
+- [X] T030 [US3] Update `scripts/docs/check-doc-freshness.ts` to compare `last_reviewed` against the repo’s latest tag (or fallback to 30-day window) and document the behavior in `docs/project_overview.md`.
 
 **Checkpoint**: Automation agents consume metadata/anchors, maintenance workflow is codified, and scripts enforce freshness + VLM quality.
 
@@ -130,7 +130,7 @@ description: "Task list for Project Overview Guidance Index feature"
 
 ## Phase N: Polish & Cross-Cutting Concerns
 
-- [ ] T031 Regenerate quickstart guidance (`specs/001-project-guide-index/quickstart.md` and `docs/AGENT_GUIDE.md`) to mention the new `npm run docs:metrics` command and onboarding/freshness scripts.  
+- [ ] T031 Regenerate quickstart guidance (`specs/001-project-guide-index/quickstart.md` and `AGENTS.md`) to mention the new `npm run docs:metrics` command and onboarding/freshness scripts.  
 - [ ] T032 Verify `contracts/docs-overview.openapi.yaml` stays in sync with the implemented FastAPI routes (fields, examples, response schema) and update as needed.  
 - [ ] T033 Update `docs/project_overview.md` metadata (`last_reviewed`, `doc_version`) and attach Playwright screenshots + `vlm-report.md` summary + metrics command outputs to the PR checklist template.
 
@@ -142,15 +142,15 @@ description: "Task list for Project Overview Guidance Index feature"
 
 ### Tests for Viewer Audit
 
-- [ ] T034 [P] Create `frontend/e2e/viewer-responsive.spec.ts` that loads the main viewer (`/`) and captures header/actions/canvas states at desktop/tablet/large-phone/small-phone, storing screenshots/JSON under `frontend/playwright-report/data/viewer/`.  
-- [ ] T035 [P] Update `frontend/playwright.config.ts` to add viewer-specific projects (mirroring docs-overview) and ensure tests only run when backend endpoints are available or stubbed.
+- [X] T034 [P] Create `frontend/e2e/viewer-responsive.spec.ts` that loads the main viewer (`/`) and captures header/actions/canvas states at desktop/tablet/large-phone/small-phone, storing screenshots/JSON under `frontend/playwright-report/data/viewer/`.  
+- [X] T035 [P] Update `frontend/playwright.config.ts` to add viewer-specific projects (mirroring docs-overview) and ensure tests only run when backend endpoints are available or stubbed.
 
 ### Implementation for Viewer Audit
 
-- [ ] T036 Add utilities in `frontend/src/test/viewer-fixtures.ts` (or equivalent) to seed demo cases and expose selectors for header/actions/canvas/drawer so Playwright scripts can assert safe-area padding.  
-- [ ] T037 Extend `frontend/scripts/docs-overview-vlm.ts` (or create `frontend/scripts/viewer-vlm.ts`) to ingest viewer screenshots/JSON, tag findings (e.g., `[Viewer-Desktop]`), and fail CI on medium+ issues.  
-- [ ] T038 Update `README.md`, `docs/AGENT_GUIDE.md`, and `specs/001-project-guide-index/quickstart.md` to mention the new viewer audit commands (`npm run docs:e2e -- viewer-responsive.spec.ts`, `npm run docs:vlm-review -- --suite viewer`).  
-- [ ] T039 Wire the viewer audit into `npm run docs:metrics` summary output (or CI checklist) so reviewers must attach viewer screenshots + VLM notes in addition to documentation evidence.
+- [X] T036 Add utilities in `frontend/src/test/viewer-fixtures.ts` (or equivalent) to seed demo cases and expose selectors for header/actions/canvas/drawer so Playwright scripts can assert safe-area padding.  
+- [X] T037 Extend `frontend/scripts/docs-overview-vlm.ts` (or create `frontend/scripts/viewer-vlm.ts`) to ingest viewer screenshots/JSON, tag findings (e.g., `[Viewer-Desktop]`), and fail CI on medium+ issues.  
+- [X] T038 Update `README.md`, `AGENTS.md`, and `specs/001-project-guide-index/quickstart.md` to mention the new viewer audit commands (`npm run docs:e2e -- viewer-responsive.spec.ts`, `npm run docs:vlm-review -- --suite viewer`).  
+- [X] T039 Wire the viewer audit into `npm run docs:metrics` summary output (or CI checklist) so reviewers must attach viewer screenshots + VLM notes in addition to documentation evidence.
 
 ---
 
@@ -179,7 +179,7 @@ description: "Task list for Project Overview Guidance Index feature"
 npm run docs:test -- --runTestsByPath docs/__tests__/project_overview.index.test.ts
 
 # Terminal 2 – Documentation + metrics updates
-code docs/project_overview.md README.md docs/AGENT_GUIDE.md docs/TESTING.md docs/metrics/onboarding-log.csv
+code docs/project_overview.md README.md AGENTS.md docs/TESTING.md docs/metrics/onboarding-log.csv
 
 # Terminal 3 – Playwright + VLM + metrics scripts
 cd frontend && npm run docs:e2e -- docs-overview.spec.ts && npm run docs:vlm-review

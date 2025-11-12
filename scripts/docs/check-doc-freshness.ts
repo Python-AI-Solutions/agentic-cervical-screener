@@ -1,8 +1,26 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { execSync } from 'node:child_process';
 
 const DOC_PATH = path.resolve(process.cwd(), '..', 'docs', 'project_overview.md');
 const MAX_AGE_DAYS = Number(process.env.DOCS_MAX_AGE_DAYS ?? 30);
+
+function getLatestTagDate(): Date | null {
+  try {
+    const latestTag = execSync('git describe --tags --abbrev=0', { encoding: 'utf-8' }).trim();
+    if (!latestTag) {
+      return null;
+    }
+    const isoDate = execSync(`git log -1 --format=%cI ${latestTag}`, { encoding: 'utf-8' }).trim();
+    if (!isoDate) {
+      return null;
+    }
+    return new Date(isoDate);
+  } catch (error) {
+    console.warn('[docs:metrics] Unable to determine latest git tag:', (error as Error).message);
+    return null;
+  }
+}
 
 function parseFrontMatter(content: string): Record<string, string> {
   const lines = content.split(/\r?\n/);
@@ -43,7 +61,20 @@ async function main() {
       process.exit(1);
       return;
     }
-    const age = daysBetween(reviewedDate, new Date());
+    const now = new Date();
+    const age = daysBetween(reviewedDate, now);
+    const latestTagDate = getLatestTagDate();
+    if (latestTagDate) {
+      console.log(
+        `[docs:metrics] Latest release tag at ${latestTagDate.toISOString()} – doc last reviewed ${reviewedDate.toISOString()}.`,
+      );
+      if (reviewedDate < latestTagDate) {
+        console.error('[docs:metrics] project_overview.md must be reviewed on or after the latest release tag.');
+        process.exit(1);
+      }
+    } else {
+      console.log('[docs:metrics] No git tags found; falling back to rolling freshness window.');
+    }
     console.log(
       `[docs:metrics] project_overview.md last reviewed ${age.toFixed(1)} days ago (limit ${MAX_AGE_DAYS} days).`,
     );

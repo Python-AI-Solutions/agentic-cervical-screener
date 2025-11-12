@@ -7,7 +7,7 @@
 | `order` | Integer | 1–3, sequential with no gaps | Defines the exact order users follow |
 | `title` | String | Required, ≤60 chars | Short action label (e.g., “Read README.md overview”) |
 | `description` | Markdown paragraph | Required | Explains what the contributor learns |
-| `primary_link` | Relative URL | Required, must match existing repo doc | e.g., `README.md`, `docs/AGENT_GUIDE.md` |
+| `primary_link` | Relative URL | Required, must match existing repo doc | e.g., `README.md`, `AGENTS.md` |
 | `commands` | String[] | Optional, but if present command text must match actual CLI snippet | Used to list `pixi run dev`, `npm test`, etc. |
 
 **Relationships / Rules**:

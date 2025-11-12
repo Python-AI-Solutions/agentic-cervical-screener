@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const DOCS_SPEC = /docs-overview\.spec\.ts/;
+const VIEWER_SPEC = /viewer-responsive\.spec\.ts/;
 
 /**
  * Playwright configuration for E2E tests
@@ -30,12 +31,12 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: [DOCS_SPEC],
+      testIgnore: [DOCS_SPEC, VIEWER_SPEC],
       use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'mobile-safari',
-      testIgnore: [DOCS_SPEC],
+      testIgnore: [DOCS_SPEC, VIEWER_SPEC],
       use: { ...devices['iPhone 12'] },
     },
     {
@@ -69,6 +70,43 @@ export default defineConfig({
     {
       name: 'docs-overview-small-phone',
       testMatch: DOCS_SPEC,
+      use: {
+        ...devices['iPhone SE'],
+        screenshot: 'on',
+        video: 'off',
+      },
+    },
+    {
+      name: 'viewer-desktop',
+      testMatch: VIEWER_SPEC,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1400, height: 900 },
+        screenshot: 'on',
+        video: 'off',
+      },
+    },
+    {
+      name: 'viewer-tablet',
+      testMatch: VIEWER_SPEC,
+      use: {
+        ...devices['iPad Pro 11'],
+        screenshot: 'on',
+        video: 'off',
+      },
+    },
+    {
+      name: 'viewer-large-phone',
+      testMatch: VIEWER_SPEC,
+      use: {
+        ...devices['Pixel 5'],
+        screenshot: 'on',
+        video: 'off',
+      },
+    },
+    {
+      name: 'viewer-small-phone',
+      testMatch: VIEWER_SPEC,
       use: {
         ...devices['iPhone SE'],
         screenshot: 'on',
