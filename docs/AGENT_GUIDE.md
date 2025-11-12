@@ -105,6 +105,28 @@ cd frontend && npm run test:all
 
 **Note**: E2E tests start a dev server automatically. Prefer `npm run test:e2e:ci` for headless runs so the browser UI doesn't block the terminal. If you need the interactive UI, use `npm run test:e2e:ui` or `npx playwright test --ui`.
 
+### Documentation Evidence & Metrics
+
+Certain documentation-focused features require extra validation:
+
+```bash
+# Markdown structure checks (Vitest)
+cd frontend && npm run docs:test
+
+# Responsive renders + JSON artifacts
+cd frontend && npm run docs:e2e
+
+# MLX VLM audit (Apple Silicon w/ ≥16 GB RAM)
+cd frontend && npm run docs:vlm-review
+
+# Onboarding + freshness metrics
+cd frontend && npm run docs:metrics
+```
+
+**Prerequisites**
+- Install Apple’s MLX runtime and model once (`pip install mlx-lm` then allow `mlx_lm` to download `mlx-community/llava-phi-3-mini-4k`).
+- Maintain `docs/metrics/onboarding-log.csv` after each mentor session so the metrics script can compute the ≥90 % success threshold.
+
 ### Building
 
 ```bash

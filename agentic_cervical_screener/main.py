@@ -1,11 +1,16 @@
 import base64
 import json
 import os
+import re
+from datetime import datetime, timezone
+from pathlib import Path
 
+import yaml
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from markdown import markdown
 from pydantic import BaseModel
 
 from .model_loader import initialize_model
@@ -34,6 +39,91 @@ app.mount("/niivue", StaticFiles(directory=os.path.join(public_dir, "niivue")), 
 frontend_dist = os.path.join(os.getcwd(), "frontend", "dist")
 if os.path.exists(frontend_dist):
     app.mount("/assets", StaticFiles(directory=os.path.join(frontend_dist, "assets")), name="assets")
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_OVERVIEW_MD = REPO_ROOT / "docs" / "project_overview.md"
+
+
+def _slugify(value: str) -> str:
+    slug = re.sub(r"[^\w\s-]", "", value).strip().lower()
+    return re.sub(r"[\s]+", "-", slug)
+
+
+def _split_front_matter(raw: str) -> tuple[dict, str]:
+    lines = raw.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}, raw
+
+    closing_idx = None
+    for idx, line in enumerate(lines[1:], start=1):
+        if line.strip() == "---":
+            closing_idx = idx
+            break
+
+    if closing_idx is None:
+        return {}, raw
+
+    front_matter = "\n".join(lines[1:closing_idx])
+    body = "\n".join(lines[closing_idx + 1 :])
+    metadata = yaml.safe_load(front_matter) or {}
+    return metadata, body
+
+
+def _load_project_overview() -> tuple[dict, str]:
+    if not PROJECT_OVERVIEW_MD.exists():
+        raise HTTPException(status_code=404, detail="Project overview markdown not found")
+    raw_text = PROJECT_OVERVIEW_MD.read_text(encoding="utf-8")
+    return _split_front_matter(raw_text)
+
+
+def _extract_anchors(markdown_body: str) -> list[dict]:
+    anchors: list[dict] = []
+    for line in markdown_body.splitlines():
+        match = re.match(r"^(#{1,6})\s+(.*)", line.strip())
+        if not match:
+            continue
+        heading = match.group(2).strip()
+        anchors.append(
+            {
+                "slug": _slugify(heading),
+                "heading": heading,
+                "breadcrumbs": "",
+                "dismissControls": [],
+            }
+        )
+    return anchors
+
+
+def _extract_orientation_steps(markdown_body: str) -> list[dict]:
+    lines = markdown_body.splitlines()
+    steps: list[dict] = []
+    capture = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.lower().startswith("## orientation path"):
+            capture = True
+            continue
+        if capture and stripped.startswith("## "):
+            break
+        if capture and re.match(r"^\d+\.\s+", stripped):
+            order_match = re.match(r"^(\d+)\.\s+(.*)", stripped)
+            if not order_match:
+                continue
+            order = int(order_match.group(1))
+            content = order_match.group(2)
+            link_match = re.search(r"\[([^\]]+)\]\(([^)]+)\)", content)
+            title = link_match.group(1) if link_match else content
+            primary_link = link_match.group(2) if link_match else ""
+            commands = re.findall(r"`([^`]+)`", content)
+            steps.append(
+                {
+                    "order": order,
+                    "title": title.strip(),
+                    "primaryLink": primary_link,
+                    "commands": commands,
+                }
+            )
+    return steps
 
 
 # Initialize model on startup
@@ -136,6 +226,55 @@ def model_info():
         "class_names": model_inference.class_names,
         "device": model_inference.device,
         "conf_threshold": model_inference.conf_threshold,
+    }
+
+
+@app.get("/docs/project-overview", response_class=HTMLResponse)
+def serve_project_overview():
+    metadata, body = _load_project_overview()
+    html_body = markdown(body, extensions=["fenced_code", "tables"])
+    meta_rows = "".join(
+        f"<li><strong>{key.replace('_', ' ').title()}</strong>: {value}</li>"
+        for key, value in metadata.items()
+    )
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Project Overview</title>
+    <style>
+      body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 24px; }}
+      .metadata {{ border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 24px; background: #f8fafc; }}
+      .metadata h2 {{ margin-top: 0; }}
+      .markdown-body h1 {{ font-size: 2rem; }}
+      .markdown-body h2 {{ font-size: 1.5rem; margin-top: 1.5rem; }}
+      .markdown-body table {{ border-collapse: collapse; width: 100%; margin-bottom: 16px; }}
+      .markdown-body table, .markdown-body th, .markdown-body td {{ border: 1px solid #cbd5f5; }}
+      .markdown-body th, .markdown-body td {{ padding: 8px; text-align: left; }}
+      code {{ background: #edf2f7; padding: 2px 4px; border-radius: 4px; }}
+    </style>
+  </head>
+  <body>
+    <section class="metadata" aria-label="Document metadata">
+      <h2>Document Metadata</h2>
+      <ul>{meta_rows}</ul>
+    </section>
+    <article class="markdown-body">
+      {html_body}
+    </article>
+  </body>
+</html>"""
+    return HTMLResponse(content=html)
+
+
+@app.get("/docs/project-overview/anchors")
+def project_overview_anchors():
+    metadata, body = _load_project_overview()
+    return {
+        "docVersion": metadata.get("doc_version", "unknown"),
+        "generatedAt": datetime.now(timezone.utc).isoformat(),
+        "anchors": _extract_anchors(body),
+        "orientationSteps": _extract_orientation_steps(body),
     }
 
 

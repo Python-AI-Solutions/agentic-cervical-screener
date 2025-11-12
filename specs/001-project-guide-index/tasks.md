@@ -37,7 +37,7 @@ description: "Task list for Project Overview Guidance Index feature"
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-- [ ] T004 Implement FastAPI endpoints in `agentic_cervical_screener/main.py` to serve `/docs/project-overview` HTML and `/docs/project-overview/anchors` JSON per `contracts/docs-overview.openapi.yaml`.  
+- [X] T004 Implement FastAPI endpoints in `agentic_cervical_screener/main.py` to serve `/docs/project-overview` HTML and `/docs/project-overview/anchors` JSON per `contracts/docs-overview.openapi.yaml`.  
 - [ ] T005 Create `frontend/src/routes/docs/OverviewPreview.tsx` (and register it) so Playwright/VLM render the markdown within the standard header + Case Management drawer shell.  
 - [ ] T006 Update `frontend/playwright.config.ts` with a dedicated `docs-overview` project, device profiles (desktop/tablet/large-phone/small-phone), screenshot/JSON output path `frontend/playwright-report/data/docs-overview/`, and retry/timeout settings.  
 - [ ] T007 Scaffold `docs/__tests__/project_overview.index.test.ts` with shared helpers (gray-matter + remark) to read YAML front matter, lists, and tables.  
