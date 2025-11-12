@@ -92,7 +92,7 @@ pixi run start
 2. **Classify Images**: Click "Classify" to run AI analysis on the current image
 3. **Navigate ROIs**: Use the ROI navigation buttons to move between regions of interest
 4. **Upload Images**: Drag and drop new images for analysis
-5. **Toggle Overlays**: Switch between ground truth and AI predictions
+5. **Toggle Overlays**: Switch between ground truth, AI predictions, and user-drawn ROIs
 6. **Zoom/Pan**: Use mouse wheel to zoom, drag to pan
 7. **Draw ROIs**: Click and drag on the canvas to create regions of interest
 

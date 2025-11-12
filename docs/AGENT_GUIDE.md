@@ -205,18 +205,6 @@ pixi run build
 - Vitest: Unit/integration testing
 - Playwright: E2E testing
 
-## Migration Status
-
-The project has been migrated from a monolithic single-page app to a modular structure:
-- ✅ Python code moved to `agentic_cervical_screener/` package
-- ✅ Frontend moved to `frontend/` directory
-- ✅ Tailwind CSS Plus integrated
-- ✅ Module refactoring (viewer split into modules)
-- ✅ Testing framework set up (Vitest + Playwright)
-- ✅ Component wrapper pattern established
-
-See `docs/MIGRATION_PLAN.md` for historical context (can be removed after migration complete).
-
 ## Getting Help
 
 - Check `README.md` for user-facing documentation

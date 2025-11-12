@@ -49,7 +49,7 @@ This project uses a two-tier testing approach:
 - Cross-browser compatibility
 
 **Run**: 
-- `npm run test:e2e:ci` - Run all E2E tests headlessly (recommended for local/CI automation)
+- `npm run test:e2e:ci` - Run all E2E tests headlessly (recommended for local/CI automation). Produces responsive header screenshots + JSON metrics under `frontend/playwright-report/data/`.
 - `npm run test:e2e` - Run all E2E tests
 - `npm run test:e2e:ui` - Run with Playwright UI
 - `npm run test:e2e:debug` - Debug mode
@@ -88,10 +88,11 @@ setConsoleSuppression(false);
 
 1. **Unit/Integration Tests**: Mock everything, test logic
 2. **E2E Tests**: Use real browser, test actual functionality
-3. **Keep tests fast**: Unit tests should run in milliseconds
-4. **Keep tests isolated**: Each test should be independent
-5. **Suppress noise**: Use setup.ts to filter expected warnings
-6. **Test user workflows**: Use E2E for complete user journeys
+3. **Responsive QA**: The Playwright “Mobile Responsiveness” suite enforces the header layout across desktop/tablet/large-phone/small-phone and emits cropped screenshots for review.
+4. **Keep tests fast**: Unit tests should run in milliseconds
+5. **Keep tests isolated**: Each test should be independent
+6. **Suppress noise**: Use setup.ts to filter expected warnings
+7. **Test user workflows**: Use E2E for complete user journeys
 
 ## Running Tests
 
