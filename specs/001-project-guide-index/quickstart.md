@@ -39,17 +39,23 @@
    ```
    - Script loads screenshots + JSON artifacts, calls the MLX runtime (`python -m mlx_lm.generate ...` under the hood), and outputs `vlm-report.md` summarizing occlusion/accessibility findings. Fail the build if severity ≥ medium.
 
-6. **Serve documentation preview (optional sanity check)**
+6. **Run onboarding + freshness metrics**
+   ```bash
+   npm run docs:metrics
+   ```
+   - Executes `scripts/docs/onboarding-metrics.ts` (ensures ≥90% success across the latest 10 entries in `docs/metrics/onboarding-log.csv`) and `scripts/docs/check-doc-freshness.ts` (fails if YAML `last_reviewed` is >30 days old).
+
+7. **Serve documentation preview (optional sanity check)**
    ```bash
    pixi run dev
    ```
    - Visit `http://localhost:8000/docs/project-overview` to confirm the rendered page shows metadata callout, Orientation Path, topic index, and safe dismiss controls for drawers.
 
-7. **Update maintenance metadata**
+8. **Update maintenance metadata**
    - Bump `doc_version` and `last_reviewed` in the YAML front matter whenever content changes.
    - Ensure the Orientation Path steps still reference valid commands.
 
-8. **Prepare PR / review evidence**
+9. **Prepare PR / review evidence**
    - Attach the latest Playwright screenshots + anchors JSON.
-   - Include `docs/playwright-report/data/docs-overview/vlm-report.md` excerpt or failing notes.
-   - Note Vitest + Playwright + VLM run hashes in the PR description.
+   - Include `frontend/playwright-report/data/docs-overview/vlm-report.md` excerpt, onboarding metrics output, and freshness check output.
+   - Note Vitest + Playwright + VLM + metrics run hashes in the PR description.

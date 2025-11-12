@@ -20,7 +20,8 @@ A newly assigned human or AI contributor must be able to open `docs/project_over
 
 **Independent Test**:  
 - Deterministic check: add a markdown-parsing Vitest script (`docs/__tests__/project_overview.index.test.ts`) that fails if the Orientation Path section or mandatory command snippets are missing.  
-- Playwright evidence: extend the documentation showcase journey to render the markdown inside the existing Vite sandbox page, capture desktop/tablet/phone screenshots, and verify the Orientation Path callouts remain above the fold and never overlap header elements.
+- Playwright evidence: extend the documentation showcase journey to render the markdown inside the existing Vite sandbox page, capture desktop/tablet/phone screenshots, and verify the Orientation Path callouts remain above the fold and never overlap header elements.  
+- VLM audit: run the MLX-hosted `llava-phi-3-mini-4k` review script on the Orientation screenshots + JSON metadata; PRs must include the generated `vlm-report.md` with no medium-or-higher issues.
 
 **Acceptance Scenarios**:
 
@@ -37,7 +38,8 @@ A maintainer planning work or writing specs must see a labeled index that maps e
 
 **Independent Test**:  
 - Deterministic check: the markdown parser asserts the Reference Index table contains at least eight rows and the required columns (`Topic`, `Use When`, `Primary Doc`, `Secondary/Artifacts`).  
-- Playwright evidence: the doc showcase journey scrolls through the Reference Index, verifying each link is visible at the expected breakpoints and capturing JSON metadata of the extracted href targets.
+- Playwright evidence: the doc showcase journey scrolls through the Reference Index, verifying each link is visible at the expected breakpoints and capturing JSON metadata of the extracted href targets.  
+- VLM audit: the same MLX script inspects the table/playbook screenshots to ensure readability, proper breadcrumbs, and visible dismiss controls.
 
 **Acceptance Scenarios**:
 
@@ -54,7 +56,8 @@ Automation agents (Specify, CI checkers) need machine-readable anchors and maint
 
 **Independent Test**:  
 - Deterministic check: the markdown test extracts a front-matter metadata block (audience, owners, last-reviewed, doc-version, related specs) and fails if any required key or anchor slug is missing.  
-- Playwright evidence: the doc showcase run validates that the metadata callout appears consistently at the top of the rendered page across breakpoints, ensuring accessibility (≥44 px tap targets, WCAG-compliant contrast).
+- Playwright evidence: the doc showcase run validates that the metadata callout appears consistently at the top of the rendered page across breakpoints, ensuring accessibility (≥44 px tap targets, WCAG-compliant contrast).  
+- VLM audit: the MLX review script inspects metadata + maintenance sections, scoring safe-area padding and readability; merges require zero medium/high regressions.
 
 **Acceptance Scenarios**:
 
@@ -81,7 +84,10 @@ Automation agents (Specify, CI checkers) need machine-readable anchors and maint
 - **FR-006**: Embed a machine-readable anchor list (e.g., `## Reference Anchors`) that enumerates slug names other docs/specs can reference; each anchor MUST align with the headings used in the body.  
 - **FR-007**: Create or extend a unit-level markdown validation test (Vitest or pytest) that parses the overview to confirm the metadata block, Orientation Path, table column headers, and minimum link count are present; the test MUST run via `npm test`.  
 - **FR-008**: Add a Playwright journey (`frontend/e2e/docs-overview.spec.ts`) that loads the rendered markdown via the existing documentation preview page, captures desktop/tablet/phone screenshots, stores JSON metadata of extracted anchor links, and asserts safe-area padding prevents overlap with the header per Principle 3.  
-- **FR-009**: Update `docs/AGENT_GUIDE.md` and `README.md` references (if necessary) so they link back to the overview, keeping the cross-reference graph strongly connected.
+- **FR-009**: Update `docs/AGENT_GUIDE.md` and `README.md` references (if necessary) so they link back to the overview, keeping the cross-reference graph strongly connected.  
+- **FR-010**: Provide served documentation endpoints: `/docs/project-overview` delivers rendered HTML, and `/docs/project-overview/anchors` returns anchor + orientation metadata JSON as defined in `contracts/docs-overview.openapi.yaml`.  
+- **FR-011**: Ship a lightweight, offline-capable VLM audit pipeline (MLX runtime + `mlx-community/llava-phi-3-mini-4k`) that consumes Playwright screenshots/JSON and emits `vlm-report.md`, failing CI on medium-or-higher UX findings.  
+- **FR-012**: Instrument onboarding and freshness metrics by adding `docs/metrics/onboarding-log.csv` plus scripts (`scripts/docs/onboarding-metrics.ts`, `scripts/docs/check-doc-freshness.ts`) that (a) ensure ≥90% success across the latest 10 onboarding entries and (b) fail builds when the YAML `last_reviewed` date is older than 30 days.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -94,16 +100,17 @@ Automation agents (Specify, CI checkers) need machine-readable anchors and maint
 ### Measurable Outcomes
 
 - **SC-001**: Reviewers can locate the correct downstream document for a given topic within 30 seconds using the Topic-to-Doc Index (validated through doc review checklist sign-off).  
-- **SC-002**: Orientation Path enables at least 90% of surveyed contributors to run the core commands without mentor assistance, measured during onboarding debriefs.  
-- **SC-003**: Every maintenance cycle logs the latest review date in the metadata block, ensuring the overview is never more than one release out of date.  
-- **SC-004**: Automated documentation previews capture cross-device screenshots and link inventories with zero accessibility violations reported in CI.  
+- **SC-002**: The onboarding metrics script confirms that ≥90% of the last 10 rows in `docs/metrics/onboarding-log.csv` report successful command execution.  
+- **SC-003**: The freshness check script fails when the YAML `last_reviewed` value is more than 30 days old, ensuring the document stays within one release of reality.  
+- **SC-004**: Automated documentation previews capture cross-device screenshots and link inventories with zero accessibility violations reported in CI, and the VLM audit emits a clean `vlm-report.md`.  
 - **SC-005**: Fast documentation checks fail whenever required sections or links are missing, preventing incomplete updates from merging.
 
 ## Assumptions
 
 - Contributors continue to rely on GitHub-rendered markdown; no external docs site is required for this update.  
-- A lightweight documentation preview page already exists (or will be introduced) so Playwright can render the overview without hitting external services.  
+- A lightweight documentation preview page plus FastAPI proxy endpoints will be introduced so both Playwright and automation agents can render/fetch the overview without hitting external services.  
 - Owners listed in the metadata block agree to refresh the document whenever referenced assets (commands, doc paths, responsive guidance) change.
+- Apple Silicon (M-series) laptops with 16 GB unified memory are available for running the MLX VLM pipeline locally; CI jobs can leverage the same model via GitHub-hosted runners with MLX support.
 
 ## Dependencies & Risks
 

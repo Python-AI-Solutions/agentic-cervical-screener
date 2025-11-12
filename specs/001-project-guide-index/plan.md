@@ -7,7 +7,7 @@
 
 ## Summary
 
-Refresh `docs/project_overview.md` so it becomes the canonical orientation hub: add YAML metadata, a three-step onboarding path with required commands, a topic-to-doc index table, workflow playbooks, explicit maintenance rules, and machine-readable anchors. Back the document with automation—markdown validation tests, a Playwright journey that captures desktop/tablet/phone renders (including full-height drawers), and a lightweight VLM pass over the resulting screenshots/JSON—to prove every edit keeps the new guidance accurate and accessible.
+Refresh `docs/project_overview.md` so it becomes the canonical orientation hub: add YAML metadata, a three-step onboarding path with required commands, a topic-to-doc index table, workflow playbooks, explicit maintenance rules, and machine-readable anchors. Back the document with automation—markdown validation tests, a Playwright journey that captures desktop/tablet/phone renders (including full-height drawers), an MLX-based VLM audit over the resulting screenshots/JSON, and metric scripts that verify onboarding success rates plus document freshness—to prove every edit keeps the new guidance accurate and accessible.
 
 ## Technical Context
 
@@ -18,13 +18,13 @@ Refresh `docs/project_overview.md` so it becomes the canonical orientation hub: 
 -->
 
 **Language/Version**: Markdown + TypeScript (Node 18 / Vite toolchain)  
-**Primary Dependencies**: Existing docs under `docs/`, Vitest, Playwright, Niivue viewer context for screenshots, Apple MLX runtime with `mlx-community/llava-phi-3-mini-4k` VLM for artifact review  
-**Storage**: N/A (static markdown + git-tracked assets)  
+**Primary Dependencies**: Existing docs under `docs/`, Vitest, Playwright, Niivue viewer context for screenshots, Apple MLX runtime with `mlx-community/llava-phi-3-mini-4k` VLM for artifact review, Node scripts under `scripts/docs/` for metrics  
+**Storage**: Git-tracked CSV metrics in `docs/metrics/onboarding-log.csv` + YAML front matter freshness timestamps  
 **Testing**: Vitest for markdown validation, Playwright for documentation render checks (desktop/tablet/phone)  
 **Target Platform**: Web (GitHub-rendered docs + internal doc preview route in frontend)  
 **Project Type**: Web/monorepo (FastAPI backend + Vite frontend; this feature touches docs + frontend test harness)  
 **Performance Goals**: Documentation checks must run in <60s locally/CI; Playwright doc journey adds ≤10% to existing e2e runtime  
-**Constraints**: Adhere to Constitution v2.0.0 (deterministic imaging fidelity, responsive occlusion rules, dual-layer evidence); no new datasets outside `public/`; tests must be headless-friendly; VLM evaluation must run on Apple Silicon with ≤16 GB RAM (hence the MLX-based 4 B parameter model)  
+**Constraints**: Adhere to Constitution v2.0.0 (deterministic imaging fidelity, responsive occlusion rules, dual-layer evidence); no new datasets outside `public/`; tests must be headless-friendly; VLM evaluation must run on Apple Silicon with ≤16 GB RAM (hence the MLX-based 4 B parameter model); onboarding/freshness metrics scripts must run via `npm run docs:metrics` and fail CI when thresholds are unmet  
 **Scale/Scope**: One markdown file + associated automation artifacts (1 Vitest suite, 1 Playwright spec, metadata consumed by future agents)
 
 ## Constitution Check
@@ -39,9 +39,9 @@ Document the status of each constitutional guardrail (Pass / Mitigation Plan / B
    - Status: Pass (automated scripts documented in Quickstart).  
 3. **Responsive & Accessible Header-First UX** – Plan includes mapping each user story to breakpoints, specifying when the Orientation Path or Index sections trigger drawers, and asserting safe-area padding + dismissal controls via Playwright snapshots (desktop/tablet/large-phone/small-phone).  
    - Status: Pass (tests provide evidence; doc text describes occlusion rationale).  
-4. **Inspectable Automation & Observability** – Markdown validation logs missing anchors; Playwright exports JSON metadata under `frontend/playwright-report/data/docs-overview/*.json`. CI docs detail where artifacts live for audits.  
+4. **Inspectable Automation & Observability** – Markdown validation logs missing anchors; Playwright exports JSON metadata under `frontend/playwright-report/data/docs-overview/*.json`; onboarding/freshness scripts emit machine-readable reports to `docs/metrics/`. CI docs detail where artifacts live for audits.  
    - Status: Pass.  
-5. **Clinical Safety, Data Stewardship, and Documentation** – All edits are to checked-in markdown; spec already requires cross-link updates to README / AGENT_GUIDE / TESTING. No new data introduced.  
+5. **Clinical Safety, Data Stewardship, and Documentation** – All edits are to checked-in markdown; spec already requires cross-link updates to README / AGENT_GUIDE / TESTING; metrics CSVs contain no PHI.  
    - Status: Pass.
 
 If any guardrail cannot be satisfied, capture the mitigation and secure approval before proceeding.
@@ -73,8 +73,15 @@ docs/
 ├── project_overview.md
 ├── AGENT_GUIDE.md
 ├── TESTING.md
+├── metrics/
+│   └── onboarding-log.csv
 └── __tests__/
     └── project_overview.index.test.ts   # new Vitest suite (Principle 2)
+
+scripts/
+└── docs/
+    ├── onboarding-metrics.ts            # enforces ≥90% success rate
+    └── check-doc-freshness.ts           # enforces YAML freshness window
 
 frontend/
 ├── src/
@@ -106,4 +113,4 @@ frontend/playwright-report/
 2. **Dual-Layer Evidence** – Vitest markdown parser test plus Playwright screenshots/JSON provide the two evidence layers; both are mandatory pre-merge steps outlined in `quickstart.md`.  
 3. **Responsive & Accessible Header-First UX** – Orientation + Topic index reference breakpoint behavior from `docs/project_overview.md §5`; Playwright assertions include safe-area padding, dismissal controls, and ARIA labeling for the mock drawer.  
 4. **Inspectable Automation & Observability** – Anchor JSON export records doc version + generation timestamp; research doc defines how logs/artifacts are stored for CI review.  
-5. **Clinical Safety / Documentation** – All work remains within checked-in markdown and frontend test harness; Quickstart documents cross-link obligations so downstream guidance stays synchronized.
+5. **Clinical Safety / Documentation** – All work remains within checked-in markdown and frontend test harness; Quickstart documents cross-link obligations so downstream guidance stays synchronized; metrics CSV/scripts live in-repo with no sensitive data.
