@@ -1,6 +1,6 @@
 # Testing Strategy
 
-This project uses a two-tier testing approach. Before running any suite, complete the Orientation Path in [`docs/project_overview.md`](project_overview.md#orientation-path) so you gather the canonical commands and logging steps.
+This project uses a three-tier testing approach. Before running any suite, complete the Orientation Path in [`docs/project_overview.md`](project_overview.md#orientation-path) so you gather the canonical commands and logging steps.
 
 ## 1. Unit/Integration Tests (Vitest)
 
@@ -69,6 +69,11 @@ frontend/
 ├── vitest.config.ts               # Vitest configuration
 └── playwright.config.ts          # Playwright configuration
 ```
+
+## VLM & Metrics
+
+- `npm run docs:vlm-review`: Runs the MLX `llava-phi-3-mini-4k` review against the latest Playwright screenshots/JSON and fails on medium+ issues.
+- `npm run docs:metrics`: Verifies onboarding success rate (≥90% over last 10 log rows) and documentation freshness (<30 days since `last_reviewed`).
 
 ## Console Suppression
 

@@ -169,10 +169,11 @@ agentic-cervical-screener/
 
 ## Testing
 
-The project uses a two-tier testing approach:
+The project now uses a three-tier testing approach:
 
 - **Unit/Integration Tests (Vitest)**: Fast, mocked tests for logic (`frontend/src/**/*.test.ts`, `frontend/src/**/*.integration.test.ts`)
 - **E2E Tests (Playwright)**: Real browser tests for actual functionality (`frontend/e2e/**/*.spec.ts`)
+- **VLM + Documentation Metrics**: Automated MLX visual review (`npm run docs:vlm-review`) plus `npm run docs:metrics` ensures onboarding success ≥90% and freshness <30 days, providing semantic UX evidence beyond deterministic tests.
 
 See `docs/TESTING.md` for detailed testing documentation.
 

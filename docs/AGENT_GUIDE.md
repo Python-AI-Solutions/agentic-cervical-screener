@@ -49,9 +49,10 @@ agentic-cervical-screener/
 
 ### Testing Strategy
 
-**Two-tier approach**:
+**Three-tier approach**:
 - **Unit/Integration (Vitest)**: Fast, mocked tests for logic (`src/**/*.test.ts`, `src/**/*.integration.test.ts`)
 - **E2E (Playwright)**: Real browser tests for actual functionality (`e2e/**/*.spec.ts`)
+- **VLM/Documentation Metrics**: MLX-based review of Playwright artifacts (`npm run docs:vlm-review`) plus onboarding/freshness scripts (`npm run docs:metrics`) provide semantic UX validation and governance evidence.
 
 **Key principles**:
 - Mock DOM/canvas/browser APIs in unit tests
