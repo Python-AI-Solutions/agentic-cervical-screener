@@ -70,7 +70,7 @@ This document captures the current product vision, architecture, and the primary
 - **Frontend tasks**:
   - `npm run dev` – Vite dev server
   - `npm test` – Vitest suite (headless)
-  - `npm run test:e2e:ci` – Playwright (Chromium + Mobile Safari). Produces screenshots + metrics under `frontend/playwright-report/data`.
+ - `npm run test:e2e:ci` – Playwright (Chromium + Mobile Safari). Produces screenshots + metrics under `frontend/playwright-artifacts`.
 - **Backend tasks**: see `AGENT_GUIDE` for `pixi run dev`, `pixi run test`, etc.
 
 ## Topic-to-Doc Index
@@ -80,7 +80,7 @@ This document captures the current product vision, architecture, and the primary
 | Architecture & Stack | Need repo layout and backend/frontend boundaries | [`README.md`](../README.md) | [`docs/project_overview.md#2-architecture-what-where`](#2-architecture-what--where) |
 | Datasets & Demo Content | Need demo slides or static assets | [`public/`](../public) README | [`AGENTS.md`](AGENT_GUIDE.md#project-structure) |
 | Responsive UX Rules | Implement or verify breakpoints, safe areas | [`docs/project_overview.md#5-responsive-ux-expectations`](#5-responsive-ux-expectations-best-practices) | [`frontend/docs/ZOOM_ISSUES_AND_FIXES.md`](../frontend/docs/ZOOM_ISSUES_AND_FIXES.md) |
-| Testing & Evidence | Run Vitest/Playwright suites and log evidence | [`docs/TESTING.md`](TESTING.md) | `frontend/playwright-report/data/`, `npm run docs:test` scripts |
+| Testing & Evidence | Run Vitest/Playwright suites and log evidence | [`docs/TESTING.md`](TESTING.md) | `frontend/playwright-artifacts/`, `npm run docs:test` scripts |
 | Automation & CI | Understand metrics, VLM audits, automation outputs | [`docs/project_overview.md#orientation-path`](#orientation-path) | `frontend/scripts/docs-overview-vlm.ts`, `docs/metrics/onboarding-log.csv` |
 | Deployment | Update backend services or Docker images | [`Dockerfile`](../Dockerfile), [`deploy/`](../deploy) | `pixi run start`, `.dockerignore` guidelines |
 | Data Governance | Reference update triggers, metadata owners | [`docs/project_overview.md#maintenance--update-workflow`](#maintenance--update-workflow) | YAML front matter (`audience`, `owners`, `update_triggers`) |
@@ -101,7 +101,7 @@ This document captures the current product vision, architecture, and the primary
 ### Release Triage Playbook
 1. Run `pixi run test` and `npm run test:e2e:ci` to ensure core pipelines pass.
 2. Execute `npm run docs:metrics`; if onboarding success <90 % or `last_reviewed` is stale (>30 days), block the release and trigger documentation updates.
-3. Capture the latest Playwright screenshots (`frontend/playwright-report/data/docs-overview/*.png`) and VLM report to attach to the release notes.
+3. Capture the latest Playwright screenshots (`frontend/playwright-artifacts/docs-overview/*.png`) and VLM report to attach to the release notes.
 
 ## 5. Responsive UX Expectations (best practices)
 
@@ -122,7 +122,7 @@ These rules must be encoded in the Playwright “Mobile Responsiveness” suite;
 
 ## 6. Next Steps / Specify Integration
 
-The cropped header screenshots emitted by Playwright (`frontend/playwright-report/data/*.png`) are an example of how the UI/UX evaluation might work in conjunction with testing and assessment by small VLMs. Once Specify owns the canonical layout tokens, we can import those measurements into the Playwright suite to tighten the assertions even further.
+The cropped header screenshots emitted by Playwright (`frontend/playwright-artifacts/*.png`) are an example of how the UI/UX evaluation might work in conjunction with testing and assessment by small VLMs. Once Specify owns the canonical layout tokens, we can import those measurements into the Playwright suite to tighten the assertions even further.
 
 ---
 
@@ -133,7 +133,7 @@ Questions or discrepancies? Open an issue referencing this overview so we can up
 1. **Run the full evidence stack** – `npm run docs:test`, `npm run docs:e2e -- docs-overview.spec.ts`, `npm run docs:vlm-review`, and `npm run docs:metrics`. These commands must pass (and artifacts uploaded) before any documentation PR merges.
 2. **Update metadata + anchors** – bump `doc_version`, refresh `last_reviewed` (ISO format), and ensure `anchor_slugs` reflects every section enumerated in this file. If you add/remove headings, also update the Reference Anchors table below.
 3. **Append onboarding log entry** – mentors record outcomes in `docs/metrics/onboarding-log.csv` immediately after each session so the ≥90% success window remains truthful.
-4. **Attach artifacts to PRs** – include the latest Playwright screenshots (`frontend/playwright-report/data/docs-overview/*.png`), JSON metadata, `vlm-report.md`, and the console output from `npm run docs:metrics`.
+4. **Attach artifacts to PRs** – include the latest Playwright screenshots (`frontend/playwright-artifacts/docs-overview/*.png`), JSON metadata, `vlm-report.md`, and the console output from `npm run docs:metrics`.
 
 ## Reference Anchors
 

@@ -102,6 +102,9 @@ cd frontend && npm run test:e2e
 # Headless CI-friendly E2E run (preferred for automation)
 cd frontend && npm run test:e2e:ci
 
+# Documentation + viewer evidence stack
+cd frontend && npm run test:docs
+
 # All tests
 cd frontend && npm run test:all
 ```
@@ -208,7 +211,7 @@ pixi run build
 
 ## Common Pitfalls
 
-1. **Don't commit build artifacts**: `frontend/dist/`, `frontend/playwright-report/`, `frontend/test-results/` are gitignored
+1. **Don't commit build artifacts**: `frontend/dist/`, `frontend/playwright-report/`, `frontend/playwright-artifacts/`, `frontend/test-results/` are gitignored
 2. **Don't modify `src/` directory**: It's the old location, code is now in `agentic_cervical_screener/`
 3. **E2E tests need dev server**: They start automatically, don't run manually
 4. **Mock everything in unit tests**: Don't use real DOM/canvas unless testing actual rendering

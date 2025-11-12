@@ -39,7 +39,7 @@ Document the status of each constitutional guardrail (Pass / Mitigation Plan / B
    - Status: Pass (automated scripts documented in Quickstart).  
 3. **Responsive & Accessible Header-First UX** – Plan includes mapping each user story to breakpoints, specifying when the Orientation Path or Index sections trigger drawers, and asserting safe-area padding + dismissal controls via Playwright snapshots (desktop/tablet/large-phone/small-phone).  
    - Status: Pass (tests provide evidence; doc text describes occlusion rationale).  
-4. **Inspectable Automation & Observability** – Markdown validation logs missing anchors; Playwright exports JSON metadata under `frontend/playwright-report/data/docs-overview/*.json`; onboarding/freshness scripts emit machine-readable reports to `docs/metrics/`. CI docs detail where artifacts live for audits.  
+4. **Inspectable Automation & Observability** – Markdown validation logs missing anchors; Playwright exports JSON metadata under `frontend/playwright-artifacts/docs-overview/*.json`; onboarding/freshness scripts emit machine-readable reports to `docs/metrics/`. CI docs detail where artifacts live for audits.  
    - Status: Pass.  
 5. **Clinical Safety, Data Stewardship, and Documentation** – All edits are to checked-in markdown; spec already requires cross-link updates to README / AGENT_GUIDE / TESTING; metrics CSVs contain no PHI.  
    - Status: Pass.
@@ -93,8 +93,9 @@ frontend/
 │   └── docs-overview-vlm.ts             # Node script that calls MLX llava-phi-3-mini-4k to score screenshots
 └── playwright.config.ts                 # ensure doc journey + VLM artifacts run in CI
 
-frontend/playwright-report/
-└── data/docs-overview/                  # JSON + screenshots + VLM findings (gitignored)
+frontend/playwright-artifacts/
+├── docs-overview/                       # JSON + screenshots + VLM findings (gitignored)
+└── viewer/                              # Responsive audit screenshots + layout JSON
 ```
 
 **Structure Decision**: Edit `docs/` markdown + tests, extend the frontend documentation preview route, and add a dedicated Playwright spec so both code and artifacts live beside existing viewer tests.

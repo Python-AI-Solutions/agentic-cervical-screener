@@ -28,7 +28,7 @@
    cd frontend
    npm run docs:e2e -- docs-overview.spec.ts
    ```
-   - Captures desktop/tablet/large-phone/small-phone screenshots and emits `frontend/playwright-report/data/docs-overview/anchors.json`.
+   - Captures desktop/tablet/large-phone/small-phone screenshots and emits `frontend/playwright-artifacts/docs-overview/anchors.json`.
 
 5. **Run Viewer audit (captures actual UI)**
    ```bash
@@ -36,14 +36,14 @@
    npm run docs:e2e -- viewer-responsive.spec.ts
    npm run docs:vlm-review -- --suite viewer
    ```
-   - Stores screenshots + layout JSON under `frontend/playwright-report/data/viewer/` and feeds them through the MLX VLM pipeline to catch header/action regressions.
+   - Stores screenshots + layout JSON under `frontend/playwright-artifacts/viewer/` and feeds them through the MLX VLM pipeline to catch header/action regressions.
 
 6. **Run VLM UX audit for docs (Apple Silicon, ≤16 GB RAM)**
    ```bash
    cd frontend
    npm run docs:vlm-review \
      -- --model mlx-community/llava-phi-3-mini-4k \
-     --screenshots ./playwright-report/data/docs-overview
+     --screenshots ./playwright-artifacts/docs-overview
    ```
    - Script loads screenshots + JSON artifacts, calls the MLX runtime (`python -m mlx_lm.generate ...` under the hood), and outputs `vlm-report.md` summarizing occlusion/accessibility findings. Fail the build if severity ≥ medium.
 
@@ -65,5 +65,5 @@
 
 10. **Prepare PR / review evidence**
    - Attach the latest Playwright screenshots + anchors JSON.
-   - Include `frontend/playwright-report/data/docs-overview/vlm-report.md`, `frontend/playwright-report/data/viewer/vlm-report.md`, onboarding metrics output, and freshness check output.
+   - Include `frontend/playwright-artifacts/docs-overview/vlm-report.md`, `frontend/playwright-artifacts/viewer/vlm-report.md`, onboarding metrics output, and freshness check output.
    - Note Vitest + Playwright + VLM + metrics run hashes (docs + viewer suites) in the PR description.

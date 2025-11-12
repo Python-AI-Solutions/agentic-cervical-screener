@@ -39,10 +39,10 @@ description: "Task list for Project Overview Guidance Index feature"
 
 - [X] T004 Implement FastAPI endpoints in `agentic_cervical_screener/main.py` to serve `/docs/project-overview` HTML and `/docs/project-overview/anchors` JSON per `contracts/docs-overview.openapi.yaml`.  
  - [X] T005 Create `frontend/src/routes/docs/OverviewPreview.tsx` (and register it) so Playwright/VLM render the markdown within the standard header + Case Management drawer shell.  
- - [X] T006 Update `frontend/playwright.config.ts` with a dedicated `docs-overview` project, device profiles (desktop/tablet/large-phone/small-phone), screenshot/JSON output path `frontend/playwright-report/data/docs-overview/`, and retry/timeout settings.  
+ - [X] T006 Update `frontend/playwright.config.ts` with a dedicated `docs-overview` project, device profiles (desktop/tablet/large-phone/small-phone), screenshot/JSON output path `frontend/playwright-artifacts/docs-overview/`, and retry/timeout settings.  
  - [X] T007 Scaffold `docs/__tests__/project_overview.index.test.ts` with shared helpers (gray-matter + remark) to read YAML front matter, lists, and tables.  
  - [X] T008 Scaffold `frontend/e2e/docs-overview.spec.ts` to visit the preview route, toggle the mock Case Management drawer, and persist baseline screenshots + DOM snapshots for each breakpoint.  
- - [X] T009 Implement `frontend/scripts/docs-overview-vlm.ts` (TypeScript) that shells out to `python -m mlx_lm.generate --model mlx-community/llava-phi-3-mini-4k`, feeds Playwright artifacts, and emits `frontend/playwright-report/data/docs-overview/vlm-report.md`.  
+ - [X] T009 Implement `frontend/scripts/docs-overview-vlm.ts` (TypeScript) that shells out to `python -m mlx_lm.generate --model mlx-community/llava-phi-3-mini-4k`, feeds Playwright artifacts, and emits `frontend/playwright-artifacts/docs-overview/vlm-report.md`.  
  - [X] T010 Implement `scripts/docs/onboarding-metrics.ts` to parse `docs/metrics/onboarding-log.csv`, compute success ratio for the most recent 10 entries, and exit non-zero if <90%.  
  - [X] T011 Implement `scripts/docs/check-doc-freshness.ts` to parse `docs/project_overview.md` YAML front matter and fail when `last_reviewed` is older than 30 days; ensure `npm run docs:metrics` runs both metrics scripts.  
  - [X] T012 Create `docs/metrics/onboarding-log.csv` with headers (`date,mentor,contributor,commands_ran,success,notes`) and add README instructions describing how to append entries after each onboarding session.
@@ -116,7 +116,7 @@ description: "Task list for Project Overview Guidance Index feature"
 ### Tests for User Story 3
 
 - [X] T026 [P] [US3] Extend `docs/__tests__/project_overview.index.test.ts` to validate YAML keys (`audience`, `owners`, `doc_version`, `last_reviewed`, `update_triggers`, `anchor_slugs`) plus the Reference Anchors section alignment.  
-- [X] T027 [P] [US3] Update `frontend/e2e/docs-overview.spec.ts` to capture metadata callout screenshots, confirm safe-area padding while the Case Management drawer is open, and persist anchor inventories to `frontend/playwright-report/data/docs-overview/anchors.json`.
+- [X] T027 [P] [US3] Update `frontend/e2e/docs-overview.spec.ts` to capture metadata callout screenshots, confirm safe-area padding while the Case Management drawer is open, and persist anchor inventories to `frontend/playwright-artifacts/docs-overview/anchors.json`.
 
 ### Implementation for User Story 3
 
@@ -142,7 +142,7 @@ description: "Task list for Project Overview Guidance Index feature"
 
 ### Tests for Viewer Audit
 
-- [X] T034 [P] Create `frontend/e2e/viewer-responsive.spec.ts` that loads the main viewer (`/`) and captures header/actions/canvas states at desktop/tablet/large-phone/small-phone, storing screenshots/JSON under `frontend/playwright-report/data/viewer/`.  
+- [X] T034 [P] Create `frontend/e2e/viewer-responsive.spec.ts` that loads the main viewer (`/`) and captures header/actions/canvas states at desktop/tablet/large-phone/small-phone, storing screenshots/JSON under `frontend/playwright-artifacts/viewer/`.  
 - [X] T035 [P] Update `frontend/playwright.config.ts` to add viewer-specific projects (mirroring docs-overview) and ensure tests only run when backend endpoints are available or stubbed.
 
 ### Implementation for Viewer Audit

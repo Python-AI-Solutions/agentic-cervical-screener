@@ -8,7 +8,18 @@ declare global {
     __DOC_ANCHORS__?: string[];
   }
 }
-const ARTIFACT_ROOT = process.env.PLAYWRIGHT_ARTIFACT_ROOT ?? path.resolve(process.cwd(), 'playwright-report');
+
+function resolveArtifactRoot() {
+  const configuredRoot = process.env.PLAYWRIGHT_ARTIFACT_ROOT;
+  if (configuredRoot) {
+    return path.isAbsolute(configuredRoot)
+      ? configuredRoot
+      : path.resolve(process.cwd(), configuredRoot);
+  }
+  return path.resolve(process.cwd(), 'playwright-artifacts');
+}
+
+const ARTIFACT_ROOT = resolveArtifactRoot();
 const REPORT_DIR = path.resolve(ARTIFACT_ROOT, 'docs-overview');
 
 if (process.env.DEBUG_ARTIFACTS && !(globalThis as any).__DOCS_ARTIFACT_LOGGED) {

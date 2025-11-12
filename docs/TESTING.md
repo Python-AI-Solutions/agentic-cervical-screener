@@ -49,11 +49,12 @@ This project uses a three-tier testing approach. Before running any suite, compl
 - Cross-browser compatibility
 
 **Run**: 
-- `npm run test:e2e:ci` - Run all E2E tests headlessly (recommended for local/CI automation). Produces responsive header screenshots + JSON metrics under `frontend/playwright-report/data/`.
+- `npm run test:e2e:ci` - Run all E2E tests headlessly (recommended for local/CI automation). Produces responsive header screenshots + JSON metrics under `frontend/playwright-artifacts/`.
 - `npm run test:e2e` - Run all E2E tests
 - `npm run test:e2e:ui` - Run with Playwright UI
 - `npm run test:e2e:debug` - Debug mode
-- `npm run test:all` - Run both unit and E2E tests
+- `npm run test:docs` - Run the full documentation + viewer evidence stack (Vitest + Playwright + VLM + metrics)
+- `npm run test:all` - Run all three stacks (unit/integration, application E2E, docs evidence)
 
 ## Test Organization
 
@@ -74,6 +75,7 @@ frontend/
 
 - `npm run docs:vlm-review`: Runs the MLX `llava-phi-3-mini-4k` review against the latest Playwright screenshots/JSON and fails on medium+ issues.
 - `npm run docs:metrics`: Verifies onboarding success rate (≥90% over last 10 log rows) and documentation freshness (<30 days since `last_reviewed`).
+- Playwright artifacts are written to `frontend/playwright-artifacts/<suite>` by default. Override the location with `PLAYWRIGHT_ARTIFACT_ROOT` (for the Playwright run) or `npm run docs:vlm-review -- --screenshots <dir>` when you need to analyze a custom directory.
 
 ## Console Suppression
 
@@ -112,7 +114,10 @@ npm run test:e2e
 # Headless CI-friendly E2E run (preferred for automation)
 npm run test:e2e:ci
 
-# All tests
+# Documentation evidence stack
+npm run test:docs
+
+# All tests (unit + app E2E + docs evidence)
 npm run test:all
 
 # Watch mode for development

@@ -1,10 +1,12 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { execa } from 'execa';
+import type { ExecaError } from 'execa';
 
 type Options = {
   suite: string;
   model: string;
+  screenshotsDir?: string;
 };
 
 function parseOptions(): Options {
@@ -12,6 +14,7 @@ function parseOptions(): Options {
   const opts: Options = {
     suite: process.env.DOCS_VLM_SUITE ?? 'docs-overview',
     model: process.env.DOCS_VLM_MODEL ?? 'mlx-community/llava-phi-3-mini-4k',
+    screenshotsDir: process.env.DOCS_VLM_SCREENSHOTS,
   };
   for (let i = 0; i < args.length; i += 1) {
     const arg = args[i];
@@ -21,13 +24,23 @@ function parseOptions(): Options {
     } else if (arg === '--model' && args[i + 1]) {
       opts.model = args[i + 1];
       i += 1;
+    } else if (arg === '--screenshots' && args[i + 1]) {
+      opts.screenshotsDir = args[i + 1];
+      i += 1;
     }
   }
   return opts;
 }
 
-const { suite, model } = parseOptions();
-const REPORT_ROOT = path.resolve(process.cwd(), 'playwright-report', suite);
+function resolveScreenshotsDir(suite: string, dir?: string) {
+  if (dir) {
+    return path.isAbsolute(dir) ? dir : path.resolve(process.cwd(), dir);
+  }
+  return path.resolve(process.cwd(), 'playwright-artifacts', suite);
+}
+
+const { suite, model, screenshotsDir } = parseOptions();
+const REPORT_ROOT = resolveScreenshotsDir(suite, screenshotsDir);
 const MODEL = model;
 
 interface Finding {
@@ -35,12 +48,16 @@ interface Finding {
   summary: string;
 }
 
-async function ensureOutputDir() {
-  await fs.mkdir(REPORT_ROOT, { recursive: true });
-}
-
 async function listScreenshots(): Promise<string[]> {
-  const entries = await fs.readdir(REPORT_ROOT, { withFileTypes: true });
+  let entries: import('fs').Dirent[];
+  try {
+    entries = await fs.readdir(REPORT_ROOT, { withFileTypes: true });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return [];
+    }
+    throw error;
+  }
   const images: string[] = [];
   for (const entry of entries) {
     const fullPath = path.join(REPORT_ROOT, entry.name);
@@ -94,6 +111,7 @@ async function runVlm(imagePath: string) {
 }
 
 async function writeReport(findings: Finding[]) {
+  await fs.mkdir(REPORT_ROOT, { recursive: true });
   const reportPath = path.join(REPORT_ROOT, 'vlm-report.md');
   const lines = [
     '# VLM UX Audit',
@@ -115,10 +133,12 @@ async function writeReport(findings: Finding[]) {
 }
 
 async function main() {
-  await ensureOutputDir();
   const images = await listScreenshots();
   if (!images.length) {
-    console.warn(`No screenshots found in ${REPORT_ROOT}. Run Playwright docs-overview spec first.`);
+    console.error(
+      `No screenshots found in ${REPORT_ROOT}. Run the Playwright suite (e.g. docs-overview or viewer) before invoking the VLM audit.`,
+    );
+    process.exitCode = 1;
     return;
   }
   const findings: Finding[] = [];
@@ -134,6 +154,17 @@ async function main() {
         process.exitCode = 1;
       }
     } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'stderr' in error &&
+        typeof (error as ExecaError).stderr === 'string' &&
+        (error as ExecaError).stderr.includes("No module named 'mlx_lm'")
+      ) {
+        console.error(
+          'mlx_lm is not installed. Install it with `pip install mlx-lm` and ensure the MLX runtime is available before running docs:vlm-review.',
+        );
+      }
       console.error(`Failed to evaluate ${image}:`, error);
       process.exitCode = 1;
     }

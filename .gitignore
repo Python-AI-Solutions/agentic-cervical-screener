@@ -1,12 +1,17 @@
 mlruns
 node_modules/
+dist/
+build/
 frontend/dist/
 frontend/playwright-report/
+frontend/playwright-artifacts/
 frontend/test-results/
 .venv/
 venv/
 *.pyc
 *.pyo
+*.egg-info/
+*.log
 .env
 .env.*
 .ipynb_checkpoints

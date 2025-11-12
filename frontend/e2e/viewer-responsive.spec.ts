@@ -3,7 +3,17 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import { ensureViewerReady } from '../src/test/viewer-fixtures';
 
-const ARTIFACT_ROOT = process.env.PLAYWRIGHT_ARTIFACT_ROOT ?? path.resolve(process.cwd(), 'playwright-report');
+function resolveArtifactRoot() {
+  const configuredRoot = process.env.PLAYWRIGHT_ARTIFACT_ROOT;
+  if (configuredRoot) {
+    return path.isAbsolute(configuredRoot)
+      ? configuredRoot
+      : path.resolve(process.cwd(), configuredRoot);
+  }
+  return path.resolve(process.cwd(), 'playwright-artifacts');
+}
+
+const ARTIFACT_ROOT = resolveArtifactRoot();
 const REPORT_ROOT = path.resolve(ARTIFACT_ROOT, 'viewer');
 
 async function ensureReportDir() {

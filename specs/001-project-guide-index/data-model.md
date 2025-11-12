@@ -53,5 +53,5 @@
 | `dismiss_controls` | String[] | Optional; names of buttons/gestures to close overlays | Ensures Constitution compliance |
 
 **Rules**:
-- Generated during Playwright run and written to `frontend/playwright-report/data/docs-overview/anchors.json`.
+- Generated during Playwright run and written to `frontend/playwright-artifacts/docs-overview/anchors.json`.
 - Serves as downstream machine-readable index for automation agents.

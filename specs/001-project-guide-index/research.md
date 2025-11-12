@@ -15,7 +15,7 @@
   2. **Custom markdown parser** – unnecessary maintenance overhead compared to using remark’s mature ecosystem.
 
 ## Decision 3: Documentation Preview Route + Playwright Journey
-- **Decision**: Add `frontend/src/routes/docs/OverviewPreview.tsx` that fetches the markdown at build time (via Vite `?raw` import) and renders it using the same typography tokens as the viewer header. Playwright spec `frontend/e2e/docs-overview.spec.ts` will: load this route, toggle a mock “Case Management” drawer overlay, capture screenshots at desktop/tablet/large-phone/small-phone widths, and dump link metadata plus anchor text to JSON under `frontend/playwright-report/data/docs-overview/`.
+- **Decision**: Add `frontend/src/routes/docs/OverviewPreview.tsx` that fetches the markdown at build time (via Vite `?raw` import) and renders it using the same typography tokens as the viewer header. Playwright spec `frontend/e2e/docs-overview.spec.ts` will: load this route, toggle a mock “Case Management” drawer overlay, capture screenshots at desktop/tablet/large-phone/small-phone widths, and dump link metadata plus anchor text to JSON under `frontend/playwright-artifacts/docs-overview/`.
 - **Rationale**: Rendering within the app guarantees the documentation is styled consistently with production headers and ensures responsive padding (safe areas, drawers) match real behavior. Playwright already runs for viewer journeys, so extending the suite minimizes new tooling.
 - **Alternatives Considered**:
   1. **Testing GitHub-rendered markdown** – brittle (external dependency, rate limits, DOM structure outside our control).
