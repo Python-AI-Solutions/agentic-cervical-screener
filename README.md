@@ -23,6 +23,8 @@ A web-based cervical screening tool that uses AI to classify and detect abnormal
 
 ## Quick Start
 
+> New contributors should first complete the [Orientation Path](docs/project_overview.md#orientation-path) to run the canonical commands and record onboarding metrics.
+
 ### Prerequisites
 
 - [Pixi](https://pixi.sh) package manager installed
@@ -181,11 +183,20 @@ See `docs/TESTING.md` for detailed testing documentation.
 3. Run tests before committing (`npm test` and `pixi run test`)
 4. Update documentation as needed
 
+### Onboarding Metrics Logging
+
+- After every mentor-led onboarding session, append a new row to `docs/metrics/onboarding-log.csv` (date, mentor, contributor, commands ran, `true/false` success flag, optional notes).
+- The documentation metrics command (`cd frontend && npm run docs:metrics`) reads this CSV to enforce the ≥90 % success threshold before merges.
+
 See `docs/AGENT_GUIDE.md` for detailed development guidelines (especially useful for AI coding assistants).
 
 ## License
 
-[Add your license here]
+Copyright (c) 2025 [Your Company Name].  
+All rights reserved.  
+This software is proprietary and confidential.  
+Unauthorized copying or distribution is strictly prohibited.  
+Use is permitted only with explicit, written permission from the copyright holder.
 
 ## Support
 

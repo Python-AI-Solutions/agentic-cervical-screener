@@ -1,0 +1,11 @@
+date,mentor,contributor,commands_ran,success,notes
+2025-10-01,Alice,Agent-01,"pixi run dev;npm run dev",true,First dry run
+2025-10-05,Bob,Agent-02,"pixi run dev;npm run dev;npm test",true,Completed after guidance
+2025-10-12,Claire,Agent-03,"pixi run dev;npm run docs:test",false,Missed docs:e2e step
+2025-10-20,Alice,Agent-04,"pixi run dev;npm run docs:e2e;npm run docs:vlm-review",true,All good
+2025-10-28,Bob,Agent-05,"pixi run dev;npm run test:e2e:ci",true,Followed orientation steps
+2025-11-02,Claire,Agent-06,"pixi run dev;npm run docs:metrics",true,Logged metrics live
+2025-11-04,Bob,Agent-07,"pixi run dev;npm run docs:test;npm run docs:e2e",true,Followed full orientation
+2025-11-05,Alice,Agent-08,"pixi run dev;npm run test:e2e:ci;npm run docs:metrics",true,No issues
+2025-11-06,Claire,Agent-09,"pixi run dev;npm run docs:vlm-review",true,Captured evidence
+2025-11-07,Bob,Agent-10,"pixi run dev;npm run docs:test;npm run docs:e2e",true,Documented links

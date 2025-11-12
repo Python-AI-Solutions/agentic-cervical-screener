@@ -1,6 +1,6 @@
 # Testing Strategy
 
-This project uses a two-tier testing approach:
+This project uses a two-tier testing approach. Before running any suite, complete the Orientation Path in [`docs/project_overview.md`](project_overview.md#orientation-path) so you gather the canonical commands and logging steps.
 
 ## 1. Unit/Integration Tests (Vitest)
 

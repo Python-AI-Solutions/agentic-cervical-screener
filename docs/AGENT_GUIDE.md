@@ -74,6 +74,8 @@ agentic-cervical-screener/
 
 ## Development Workflow
 
+> **Start Here**: Follow the Orientation Path in [`docs/project_overview.md`](project_overview.md#orientation-path) before touching code so you run the canonical commands and log onboarding success.
+
 ### Running the Application
 
 ```bash

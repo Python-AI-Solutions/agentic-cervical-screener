@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const DOCS_SPEC = /docs-overview\.spec\.ts/;
+
 /**
  * Playwright configuration for E2E tests
  * These tests run in a real browser and test actual functionality
@@ -28,26 +30,51 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: [DOCS_SPEC],
       use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'mobile-safari',
+      testIgnore: [DOCS_SPEC],
       use: { ...devices['iPhone 12'] },
     },
-    // Uncomment for multi-browser testing
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
-    // Mobile testing
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
+    {
+      name: 'docs-overview-desktop',
+      testMatch: DOCS_SPEC,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1400, height: 900 },
+        screenshot: 'on',
+        video: 'off',
+      },
+    },
+    {
+      name: 'docs-overview-tablet',
+      testMatch: DOCS_SPEC,
+      use: {
+        ...devices['iPad Pro 11'],
+        screenshot: 'on',
+        video: 'off',
+      },
+    },
+    {
+      name: 'docs-overview-large-phone',
+      testMatch: DOCS_SPEC,
+      use: {
+        ...devices['Pixel 5'],
+        screenshot: 'on',
+        video: 'off',
+      },
+    },
+    {
+      name: 'docs-overview-small-phone',
+      testMatch: DOCS_SPEC,
+      use: {
+        ...devices['iPhone SE'],
+        screenshot: 'on',
+        video: 'off',
+      },
+    },
   ],
 
   webServer: {

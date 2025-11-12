@@ -7,6 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
+      '@docs': path.resolve(__dirname, '..', 'docs'),
     },
   },
   build: {
@@ -16,6 +17,9 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    fs: {
+      allow: [path.resolve(__dirname), path.resolve(__dirname, '..')],
+    },
     // Proxy API requests to FastAPI backend if running
     proxy: {
       '/cases': {

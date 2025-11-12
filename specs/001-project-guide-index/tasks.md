@@ -38,14 +38,14 @@ description: "Task list for Project Overview Guidance Index feature"
 ## Phase 2: Foundational (Blocking Prerequisites)
 
 - [X] T004 Implement FastAPI endpoints in `agentic_cervical_screener/main.py` to serve `/docs/project-overview` HTML and `/docs/project-overview/anchors` JSON per `contracts/docs-overview.openapi.yaml`.  
-- [ ] T005 Create `frontend/src/routes/docs/OverviewPreview.tsx` (and register it) so Playwright/VLM render the markdown within the standard header + Case Management drawer shell.  
-- [ ] T006 Update `frontend/playwright.config.ts` with a dedicated `docs-overview` project, device profiles (desktop/tablet/large-phone/small-phone), screenshot/JSON output path `frontend/playwright-report/data/docs-overview/`, and retry/timeout settings.  
-- [ ] T007 Scaffold `docs/__tests__/project_overview.index.test.ts` with shared helpers (gray-matter + remark) to read YAML front matter, lists, and tables.  
-- [ ] T008 Scaffold `frontend/e2e/docs-overview.spec.ts` to visit the preview route, toggle the mock Case Management drawer, and persist baseline screenshots + DOM snapshots for each breakpoint.  
-- [ ] T009 Implement `frontend/scripts/docs-overview-vlm.ts` (TypeScript) that shells out to `python -m mlx_lm.generate --model mlx-community/llava-phi-3-mini-4k`, feeds Playwright artifacts, and emits `frontend/playwright-report/data/docs-overview/vlm-report.md`.  
-- [ ] T010 Implement `scripts/docs/onboarding-metrics.ts` to parse `docs/metrics/onboarding-log.csv`, compute success ratio for the most recent 10 entries, and exit non-zero if <90%.  
-- [ ] T011 Implement `scripts/docs/check-doc-freshness.ts` to parse `docs/project_overview.md` YAML front matter and fail when `last_reviewed` is older than 30 days; ensure `npm run docs:metrics` runs both metrics scripts.  
-- [ ] T012 Create `docs/metrics/onboarding-log.csv` with headers (`date,mentor,contributor,commands_ran,success,notes`) and add README instructions describing how to append entries after each onboarding session.
+ - [X] T005 Create `frontend/src/routes/docs/OverviewPreview.tsx` (and register it) so Playwright/VLM render the markdown within the standard header + Case Management drawer shell.  
+ - [X] T006 Update `frontend/playwright.config.ts` with a dedicated `docs-overview` project, device profiles (desktop/tablet/large-phone/small-phone), screenshot/JSON output path `frontend/playwright-report/data/docs-overview/`, and retry/timeout settings.  
+ - [X] T007 Scaffold `docs/__tests__/project_overview.index.test.ts` with shared helpers (gray-matter + remark) to read YAML front matter, lists, and tables.  
+ - [X] T008 Scaffold `frontend/e2e/docs-overview.spec.ts` to visit the preview route, toggle the mock Case Management drawer, and persist baseline screenshots + DOM snapshots for each breakpoint.  
+ - [X] T009 Implement `frontend/scripts/docs-overview-vlm.ts` (TypeScript) that shells out to `python -m mlx_lm.generate --model mlx-community/llava-phi-3-mini-4k`, feeds Playwright artifacts, and emits `frontend/playwright-report/data/docs-overview/vlm-report.md`.  
+ - [X] T010 Implement `scripts/docs/onboarding-metrics.ts` to parse `docs/metrics/onboarding-log.csv`, compute success ratio for the most recent 10 entries, and exit non-zero if <90%.  
+ - [X] T011 Implement `scripts/docs/check-doc-freshness.ts` to parse `docs/project_overview.md` YAML front matter and fail when `last_reviewed` is older than 30 days; ensure `npm run docs:metrics` runs both metrics scripts.  
+ - [X] T012 Create `docs/metrics/onboarding-log.csv` with headers (`date,mentor,contributor,commands_ran,success,notes`) and add README instructions describing how to append entries after each onboarding session.
 
 **Checkpoint**: Backend preview endpoints, frontend route/config, Vitest/Playwright harnesses, VLM pipeline, and metrics scripts/log templates exist—user stories can start.
 
@@ -63,17 +63,17 @@ description: "Task list for Project Overview Guidance Index feature"
 
 ### Tests for User Story 1
 
-- [ ] T013 [P] [US1] Extend `docs/__tests__/project_overview.index.test.ts` to assert exactly three Orientation steps, presence of command snippets, and valid relative links (README, AGENT_GUIDE, TESTING).  
-- [ ] T014 [P] [US1] Enhance `frontend/e2e/docs-overview.spec.ts` to pin Orientation callouts above the fold across all breakpoints and export `orientation.json` with bounding boxes + breadcrumb metadata.  
-- [ ] T015 [P] [US1] Update `frontend/scripts/docs-overview-vlm.ts` to tag Orientation findings and fail on any medium-plus occlusion/readability issue.
+- [X] T013 [P] [US1] Extend `docs/__tests__/project_overview.index.test.ts` to assert exactly three Orientation steps, presence of command snippets, and valid relative links (README, AGENT_GUIDE, TESTING).  
+- [X] T014 [P] [US1] Enhance `frontend/e2e/docs-overview.spec.ts` to pin Orientation callouts above the fold across all breakpoints and export `orientation.json` with bounding boxes + breadcrumb metadata.  
+- [X] T015 [P] [US1] Update `frontend/scripts/docs-overview-vlm.ts` to tag Orientation findings and fail on any medium-plus occlusion/readability issue.
 
 ### Implementation for User Story 1
 
-- [ ] T016 [US1] Rewrite the Orientation Path section in `docs/project_overview.md` with the three prescribed steps, rationale text, and embedded command blocks.  
-- [ ] T017 [US1] Cross-link `README.md` Quick Start entries back to `docs/project_overview.md#orientation-path`.  
-- [ ] T018 [US1] Update `docs/AGENT_GUIDE.md` onboarding section with the new Orientation anchors and clarify how to log onboarding outcomes.  
-- [ ] T019 [US1] Update `docs/TESTING.md` intro to reference the Orientation Path for locating CLI usage and responsive evidence expectations.  
-- [ ] T020 [US1] Populate `docs/metrics/onboarding-log.csv` with at least 5 historical sample rows and document the logging procedure inside `docs/project_overview.md` so mentors know how to record success/failure.
+- [X] T016 [US1] Rewrite the Orientation Path section in `docs/project_overview.md` with the three prescribed steps, rationale text, and embedded command blocks.  
+- [X] T017 [US1] Cross-link `README.md` Quick Start entries back to `docs/project_overview.md#orientation-path`.  
+- [X] T018 [US1] Update `docs/AGENT_GUIDE.md` onboarding section with the new Orientation anchors and clarify how to log onboarding outcomes.  
+- [X] T019 [US1] Update `docs/TESTING.md` intro to reference the Orientation Path for locating CLI usage and responsive evidence expectations.  
+- [X] T020 [US1] Populate `docs/metrics/onboarding-log.csv` with at least 5 historical sample rows and document the logging procedure inside `docs/project_overview.md` so mentors know how to record success/failure.
 
 **Checkpoint**: Orientation Path documented, linked, logged, and validated via Vitest + Playwright + VLM + metrics scripts.
 
@@ -90,14 +90,14 @@ description: "Task list for Project Overview Guidance Index feature"
 
 ### Tests for User Story 2
 
-- [ ] T021 [P] [US2] Extend `docs/__tests__/project_overview.index.test.ts` to require the Topic-to-Doc table (≥8 rows, required columns) and verify at least three workflow playbooks exist.  
-- [ ] T022 [P] [US2] Enhance `frontend/e2e/docs-overview.spec.ts` to scroll through the table/playbooks, assert dismiss controls remain visible on mobile, and emit `reference-index.json` with all href targets.
+- [X] T021 [P] [US2] Extend `docs/__tests__/project_overview.index.test.ts` to require the Topic-to-Doc table (≥8 rows, required columns) and verify at least three workflow playbooks exist.  
+- [X] T022 [P] [US2] Enhance `frontend/e2e/docs-overview.spec.ts` to scroll through the table/playbooks, assert dismiss controls remain visible on mobile, and emit `reference-index.json` with all href targets.
 
 ### Implementation for User Story 2
 
-- [ ] T023 [US2] Author the Topic-to-Doc index table in `docs/project_overview.md`, covering architecture, datasets, responsive UX, testing, automation, deployment, data governance, and troubleshooting.  
-- [ ] T024 [US2] Add “Workflow Playbooks” (new contributor, spec author, release triage) describing document sequences and referencing responsive/observability checkpoints.  
-- [ ] T025 [US2] Update the Playwright JSON exporter/scroll helper (`frontend/e2e/docs-overview.spec.ts`) to capture breadcrumbs when the Case Management drawer overlays content while the index is in view.
+- [X] T023 [US2] Author the Topic-to-Doc index table in `docs/project_overview.md`, covering architecture, datasets, responsive UX, testing, automation, deployment, data governance, and troubleshooting.  
+- [X] T024 [US2] Add “Workflow Playbooks” (new contributor, spec author, release triage) describing document sequences and referencing responsive/observability checkpoints.  
+- [X] T025 [US2] Update the Playwright JSON exporter/scroll helper (`frontend/e2e/docs-overview.spec.ts`) to capture breadcrumbs when the Case Management drawer overlays content while the index is in view.
 
 **Checkpoint**: Maintainers can locate any topic/doc within 30 seconds using the validated table/playbooks; artifacts capture responsive states.
 
