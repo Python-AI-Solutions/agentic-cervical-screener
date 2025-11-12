@@ -15,7 +15,7 @@ A web-based cervical screening tool that uses AI to classify and detect abnormal
 
 ## Tech Stack
 
-- **Backend**: FastAPI with Python 3.11
+- **Backend**: FastAPI with Python 3.14
 - **Frontend**: TypeScript/Vite with Tailwind CSS Plus, NiiVue viewer
 - **AI Model**: PyTorch YOLO for cell detection and classification
 - **Package Management**: Pixi (conda-forge ecosystem) for Python, npm for frontend
@@ -26,7 +26,7 @@ A web-based cervical screening tool that uses AI to classify and detect abnormal
 ### Prerequisites
 
 - [Pixi](https://pixi.sh) package manager installed
-- Python 3.11+ (managed by Pixi)
+- Python 3.14+ (managed by Pixi)
 - Node.js 18+ and npm (for frontend development)
 
 ### Installation

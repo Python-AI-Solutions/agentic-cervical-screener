@@ -1,13 +1,13 @@
-# Implementation Plan: [FEATURE]
+# Implementation Plan: Project Overview Guidance Index
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+**Branch**: `001-project-guide-index` | **Date**: 2025-11-12 | **Spec**: [`specs/001-project-guide-index/spec.md`](./spec.md)
+**Input**: Feature specification from `/specs/001-project-guide-index/spec.md`
 
 **Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+Refresh `docs/project_overview.md` so it becomes the canonical orientation hub: add YAML metadata, a three-step onboarding path with required commands, a topic-to-doc index table, workflow playbooks, explicit maintenance rules, and machine-readable anchors. Back the document with automation—markdown validation tests, a Playwright journey that captures desktop/tablet/phone renders (including full-height drawers), and a lightweight VLM pass over the resulting screenshots/JSON—to prove every edit keeps the new guidance accurate and accessible.
 
 ## Technical Context
 
@@ -17,15 +17,15 @@
   the iteration process.
 -->
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: Markdown + TypeScript (Node 18 / Vite toolchain)  
+**Primary Dependencies**: Existing docs under `docs/`, Vitest, Playwright, Niivue viewer context for screenshots, Apple MLX runtime with `mlx-community/llava-phi-3-mini-4k` VLM for artifact review  
+**Storage**: N/A (static markdown + git-tracked assets)  
+**Testing**: Vitest for markdown validation, Playwright for documentation render checks (desktop/tablet/phone)  
+**Target Platform**: Web (GitHub-rendered docs + internal doc preview route in frontend)  
+**Project Type**: Web/monorepo (FastAPI backend + Vite frontend; this feature touches docs + frontend test harness)  
+**Performance Goals**: Documentation checks must run in <60s locally/CI; Playwright doc journey adds ≤10% to existing e2e runtime  
+**Constraints**: Adhere to Constitution v2.0.0 (deterministic imaging fidelity, responsive occlusion rules, dual-layer evidence); no new datasets outside `public/`; tests must be headless-friendly; VLM evaluation must run on Apple Silicon with ≤16 GB RAM (hence the MLX-based 4 B parameter model)  
+**Scale/Scope**: One markdown file + associated automation artifacts (1 Vitest suite, 1 Playwright spec, metadata consumed by future agents)
 
 ## Constitution Check
 
@@ -33,11 +33,16 @@
 
 Document the status of each constitutional guardrail (Pass / Mitigation Plan / Blocker) and reference the files or tests that prove compliance:
 
-1. **Deterministic Imaging Fidelity** – List the transforms, canvases, or layout elements touched and how Niivue alignment plus header non-occlusion will be preserved/tested.
-2. **Dual-Layer Evidence** – Identify the Vitest (or Python) specs and Playwright journeys that will fail before implementation and what artifacts (screenshots + JSON) they will emit.
-3. **Responsive & Accessible Header-First UX** – Map user stories to the breakpoints in `docs/project_overview.md §5`, explain when/why panels will cover the imagery, and show how escape controls + accessibility/tap-target guarantees will be asserted (screenshots for both baseline and full-height panel states).
-4. **Inspectable Automation & Observability** – Describe the structured logging, telemetry, or health endpoints affected and how new metrics will surface in CI artifacts.
-5. **Clinical Safety, Data Stewardship, and Documentation** – Specify documentation updates plus any data-handling considerations (e.g., demo datasets only) required by the feature.
+1. **Deterministic Imaging Fidelity** – Documentation references Niivue behavior; we will add markdown validation ensuring every orientation step links to responsive guidance (e.g., `docs/project_overview.md §5`) and update Playwright to capture baseline + full-height panel screenshots so state restoration (dismiss controls, breadcrumbs) is visually verified.  
+   - Status: Pass. Evidence: new Vitest `docs/__tests__/project_overview.index.test.ts`; Playwright `frontend/e2e/docs-overview.spec.ts` capturing before/after panel states.  
+2. **Dual-Layer Evidence** – Fast tests (Vitest) validate structure/links; Playwright run records screenshots + JSON link inventory; MLX-hosted VLM (`llava-phi-3-mini-4k`) analyzes the artifacts for higher-level UX regressions (e.g., occlusion, readability) and emits a Markdown report that reviewers attach to PRs. All three scripts fail CI if mandatory sections, visuals, or VLM findings regress.  
+   - Status: Pass (automated scripts documented in Quickstart).  
+3. **Responsive & Accessible Header-First UX** – Plan includes mapping each user story to breakpoints, specifying when the Orientation Path or Index sections trigger drawers, and asserting safe-area padding + dismissal controls via Playwright snapshots (desktop/tablet/large-phone/small-phone).  
+   - Status: Pass (tests provide evidence; doc text describes occlusion rationale).  
+4. **Inspectable Automation & Observability** – Markdown validation logs missing anchors; Playwright exports JSON metadata under `frontend/playwright-report/data/docs-overview/*.json`. CI docs detail where artifacts live for audits.  
+   - Status: Pass.  
+5. **Clinical Safety, Data Stewardship, and Documentation** – All edits are to checked-in markdown; spec already requires cross-link updates to README / AGENT_GUIDE / TESTING. No new data introduced.  
+   - Status: Pass.
 
 If any guardrail cannot be satisfied, capture the mitigation and secure approval before proceeding.
 
@@ -64,43 +69,28 @@ specs/[###-feature]/
 -->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
-
-tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
+docs/
+├── project_overview.md
+├── AGENT_GUIDE.md
+├── TESTING.md
+└── __tests__/
+    └── project_overview.index.test.ts   # new Vitest suite (Principle 2)
 
 frontend/
 ├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
+│   └── routes/docs/
+│       └── OverviewPreview.tsx          # lightweight page to render markdown in Playwright
+├── e2e/
+│   └── docs-overview.spec.ts            # new Playwright journey
+├── scripts/
+│   └── docs-overview-vlm.ts             # Node script that calls MLX llava-phi-3-mini-4k to score screenshots
+└── playwright.config.ts                 # ensure doc journey + VLM artifacts run in CI
 
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+frontend/playwright-report/
+└── data/docs-overview/                  # JSON + screenshots + VLM findings (gitignored)
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Edit `docs/` markdown + tests, extend the frontend documentation preview route, and add a dedicated Playwright spec so both code and artifacts live beside existing viewer tests.
 
 ## Complexity Tracking
 
@@ -108,5 +98,12 @@ directories captured above]
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+| None | – | – |
+
+## Constitution Check (Post-Design)
+
+1. **Deterministic Imaging Fidelity** – Research + data model lock anchors/breadcrumbs; Playwright doc journey (to be added at `frontend/e2e/docs-overview.spec.ts`) captures both unobstructed and full-height drawer states, ensuring Niivue context is recoverable.  
+2. **Dual-Layer Evidence** – Vitest markdown parser test plus Playwright screenshots/JSON provide the two evidence layers; both are mandatory pre-merge steps outlined in `quickstart.md`.  
+3. **Responsive & Accessible Header-First UX** – Orientation + Topic index reference breakpoint behavior from `docs/project_overview.md §5`; Playwright assertions include safe-area padding, dismissal controls, and ARIA labeling for the mock drawer.  
+4. **Inspectable Automation & Observability** – Anchor JSON export records doc version + generation timestamp; research doc defines how logs/artifacts are stored for CI review.  
+5. **Clinical Safety / Documentation** – All work remains within checked-in markdown and frontend test harness; Quickstart documents cross-link obligations so downstream guidance stays synchronized.
