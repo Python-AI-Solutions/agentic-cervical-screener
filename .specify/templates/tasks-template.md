@@ -22,7 +22,7 @@ description: "Task list template for feature implementation"
 
 - Flag tasks that prove deterministic imaging or layout fidelity (Principle 1) and cite the Niivue transforms or responsive breakpoints involved.
 - For each user story, include paired test tasks: Vitest/pytest (logic) + Playwright (e2e) referencing expected artifacts (screenshots + JSON).
-- Add tasks that verify responsive + accessibility requirements (header behavior, tap targets, ARIA labels) when UI changes occur.
+- Add tasks that verify responsive + accessibility requirements (header behavior, tap targets, ARIA labels) when UI changes occur, including scenarios where drawers/panels cover the canvas and must provide dismissal controls.
 - Include observability/telemetry updates and documentation edits so Principle 4 & 5 are satisfied before calling a story complete.
 
 ## Path Conventions

@@ -9,7 +9,7 @@ This document captures the current product vision, architecture, and the primary
 | Goal | Description |
 | --- | --- |
 | Accurate Cytology Review | Provide a browser-based experience for exploring cervical cytology slides, overlaying AI detections/ground truth, and collecting human-labelled ROIs. |
-| Consistent Multi-Device UX | The viewer must feel native on desktop, tablets, and narrow phones. Header actions, status messaging, and mobile panels can never occlude core imagery. |
+| Consistent Multi-Device UX | The viewer must feel native on desktop, tablets, and narrow phones. Header actions and panels prefer to keep imagery visible, but when workflows demand full attention they may cover the canvas provided they offer obvious dismiss controls and instantly restore the prior view. |
 | Deterministic Rendering | Coordinate transforms account for browser zoom, DPR, and Niivue canvas specifics so that images, overlays, and user-drawn ROIs align regardless of environment. |
 | Inspectable Automation | Every critical workflow (image load, sidebar toggles, drawing, responsive header layout) is exercised by Playwright; the run produces cropped screenshots + JSON metrics so regressions are visible before deployment and assessment by small VLMs is incorporated into the test suite. |
 
@@ -42,9 +42,9 @@ This document captures the current product vision, architecture, and the primary
 ## 5. Responsive UX Expectations (best practices)
 
 **Global rules**
-- Header height clamps between 56–64 px and remains sticky so gestures never occlude the canvas. Use CSS custom properties so Specify can sync token values.
+- Header height clamps between 56–64 px. Use CSS custom properties so Specify can sync token values, and ensure any full-height drawer leaves safe-area padding plus a visible close/back affordance so users can return to the canvas immediately.
 - Tap targets and icon buttons respect a 44 px square hit area with 12 px gutter; focus outlines must meet WCAG 2.1 AA contrast.
-- Brand lockup stays left-aligned, status pill anchors center, critical actions align right but never cover the Niivue canvas. Content respects safe-area insets.
+- Brand lockup stays left-aligned, status pill anchors center, and critical actions align right; when drawers or panels expand over the Niivue canvas they must retain visible breadcrumbs (e.g., case id) and keep content clear of safe-area insets.
 - When space is constrained, collapse labels before icons; show tooltip text on hover/focus, and provide ARIA labels for screen readers.
 
 | Breakpoint | Expected Behavior |

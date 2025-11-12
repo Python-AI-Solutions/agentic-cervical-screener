@@ -1,15 +1,11 @@
 <!--
 Sync Impact Report
-Version change: N/A → 1.0.0
+Version change: 1.0.0 → 2.0.0
 Modified principles:
-- [PRINCIPLE_1_NAME] → Deterministic Imaging Fidelity (Non-Negotiable)
-- [PRINCIPLE_2_NAME] → Dual-Layer Evidence for Every Change
-- [PRINCIPLE_3_NAME] → Responsive & Accessible Header-First UX
-- [PRINCIPLE_4_NAME] → Inspectable Automation & Observability
-- [PRINCIPLE_5_NAME] → Clinical Safety, Data Stewardship, and Documentation
+- Deterministic Imaging Fidelity (clarified overlay allowance + recovery expectations)
+- Responsive & Accessible Header-First UX (expanded to cover full-height panels)
 Added sections:
-- Operational Constraints & Tooling
-- Workflow & Review Process
+- None
 Removed sections:
 - None
 Templates requiring updates:
@@ -25,9 +21,9 @@ Follow-up TODOs:
 
 ### Deterministic Imaging Fidelity (Non-Negotiable)
 - Viewer, backend overlays, and ROI workflows MUST remain pixel-aligned across DPRs, browser zoom levels, and Niivue canvas states per `docs/project_overview.md` responsiveness table and `frontend/docs/ZOOM_ISSUES_AND_FIXES.md`.
-- Header, status, and action controls can never occlude diagnostic imagery; safe-area insets and 44 px tap targets are mandatory at every breakpoint.
+- High-focus panels (drawers, command centers, annotation editors) MAY occupy most or all of the viewport when the task warrants it, but they MUST: clearly indicate the underlying slide state, provide an obvious dismiss/back action, restore the previous zoom/pan within 200 ms after closing, and expose shortcuts for jumping back to the imagery.
 - Any transform, interpolation, or rendering change MUST ship with deterministic acceptance criteria (Vitest for math utilities, Playwright for rendered diffs) and linked documentation explaining how alignment is preserved.
-**Rationale**: Clinicians cannot review cytology confidently unless geometry is stable and reproducible; this principle makes fidelity a release gate rather than a best effort.
+**Rationale**: Clinicians cannot review cytology confidently unless geometry is stable and reproducible; allowing intentional occlusion keeps complex workflows possible while guaranteeing rapid, lossless recovery of the imaging context.
 
 ### Dual-Layer Evidence for Every Change
 - Every user-visible change MUST include fast unit/integration coverage (`npm test`) for the logic path AND an automated Playwright journey that captures screenshots + JSON metrics (stored under `frontend/playwright-report/data`).
@@ -37,9 +33,9 @@ Follow-up TODOs:
 
 ### Responsive & Accessible Header-First UX
 - Apply the breakpoint rules in `docs/project_overview.md §5` exactly: header height clamp, single-row desktop layout, hamburger behavior on tablet, stacked actions on phones <400 px, and mandatory ARIA labels.
-- Mobile gestures must never obscure the Niivue canvas; status pills and brand lockup positions are fixed per breakpoint, and action labels degrade gracefully (labels → icons) only when documented.
-- Accessibility gates (WCAG 2.1 AA contrast, 44 px hit targets, focus outlines) are blocking; Playwright tests must assert header layout plus safe padding for desktop, tablet, large-phone, and small-phone runs.
-**Rationale**: Screenings happen on a variety of devices in clinical settings; enforcing a predictable header-first layout guarantees usability and regulatory-ready accessibility evidence.
+- When panels/actions extend over the imagery, they must retain visible close affordances, maintain safe-area padding for gesture bars, and communicate context (e.g., “Case Management for DEMO-004”) so users always know what is hidden.
+- Accessibility gates (WCAG 2.1 AA contrast, 44 px hit targets, focus outlines) are blocking; Playwright tests must assert header layout plus safe padding for desktop, tablet, large-phone, and small-phone runs, including screenshots of full-height panels.
+**Rationale**: Screenings happen on a variety of devices in clinical settings; enforcing predictable layouts and escape hatches guarantees usability—even when high-density panels temporarily take over the screen.
 
 ### Inspectable Automation & Observability
 - Backend endpoints emit structured logs (request id, model version, inference latency, ROI counts) and expose `/healthz` plus `/model-info`; logs never include PHI but are detailed enough for audits.
@@ -62,7 +58,7 @@ Follow-up TODOs:
 ## Workflow & Review Process
 - Every feature starts with a spec (`.specify/templates/spec-template.md`) that enumerates independent user stories plus deterministic success metrics, followed by a plan that documents Constitution Check outcomes and structure decisions.
 - Tasks (`tasks.md`) stay grouped per user story, explicitly calling out required Vitest + Playwright coverage and the files they touch so reviewers can verify independence and completeness.
-- Code reviews block on: passing dual-layer tests, evidence that responsive requirements remain intact (Playwright screenshots attached), updated documentation, and confirmation that observability hooks log the new workflow.
+- Code reviews block on: passing dual-layer tests, evidence that responsive requirements remain intact (Playwright screenshots attached, including any full-height panels), updated documentation, and confirmation that observability hooks log the new workflow.
 - Runtime guidance lives in `docs/AGENT_GUIDE.md`, `docs/TESTING.md`, and `docs/project_overview.md`; reviewers ensure every change references or updates these sources when behavior shifts.
 
 ## Governance
@@ -71,4 +67,4 @@ Follow-up TODOs:
 - Compliance reviews: Every `/speckit.plan`, `/speckit.spec`, and code review must cite Constitution Check outcomes. Release managers spot-audit the Playwright artifact folder and recent docs to confirm observability + responsive evidence exists.
 - Violations pause delivery until rectified or a documented waiver with mitigation is filed; waivers expire after one release unless renewed with a new plan.
 
-**Version**: 1.0.0 | **Ratified**: 2025-11-12 | **Last Amended**: 2025-11-12
+**Version**: 2.0.0 | **Ratified**: 2025-11-12 | **Last Amended**: 2025-11-12

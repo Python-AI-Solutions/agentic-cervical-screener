@@ -22,8 +22,9 @@
 
 > **Constitution Hooks**  
 > - Each user story MUST trace to (a) a deterministic-fidelity acceptance check (math/unit tests or documented transforms) and (b) a Playwright journey that captures screenshots + JSON metrics.  
-> - Responsive + accessibility expectations from `docs/project_overview.md §5` must be listed explicitly in the Acceptance Scenarios for any UI change.  
+> - Responsive + accessibility expectations from `docs/project_overview.md §5` must be listed explicitly in the Acceptance Scenarios for any UI change, including states where panels/drawers intentionally cover the imagery.  
 > - Note which observability/logging signals or documentation pages will be updated to satisfy Principles 4 and 5.
+> - When overlays/panels obscure the canvas, document the exit controls, context breadcrumbs, and how the prior zoom/pan state is restored.
 
 ### User Story 1 - [Brief Title] (Priority: P1)
 
@@ -75,7 +76,7 @@
 Capture edge cases that defend the constitutional guardrails:
 
 - How do transforms behave when device pixel ratio or zoom changes mid-interaction (Principle 1)?
-- What happens to header/actions when viewport shrinks below 400 px or grows beyond desktop clamp (Principle 3)?
+- What happens to header/actions (or full-height panels) when viewport shrinks below 400 px or grows beyond desktop clamp, and how do users dismiss overlays (Principle 3)?
 - How are telemetry/log files protected from PHI while still referencing the new workflow (Principle 4/5)?
 
 ## Requirements *(mandatory)*
@@ -94,11 +95,12 @@ Capture edge cases that defend the constitutional guardrails:
 - **FR-005**: System MUST [behavior, e.g., "log all security events"]
 - **FR-006**: Tests MUST include both Vitest/pytest coverage and a Playwright scenario with screenshot + JSON artifact references (Principle 2).
 - **FR-007**: UI requirements MUST cite breakpoint-specific behavior plus accessibility constraints sourced from `docs/project_overview.md` (Principle 3).
+- **FR-008**: Any workflow that intentionally occludes imagery MUST specify dismissal controls, context breadcrumbs, and recovery expectations for returning to the prior imaging state (Principles 1 & 3).
 
 *Example of marking unclear requirements:*
 
-- **FR-008**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
-- **FR-009**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
+- **FR-009**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
+- **FR-010**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
 
 ### Key Entities *(include if feature involves data)*
 
