@@ -1,0 +1,20 @@
+[project]
+name = "llm-mlx-vlm"
+version = "0.1.0"
+description = "LLM plugin for running vision language models using MLX on Apple Silicon"
+authors = ["John Lee <john@example.com>"]
+channels = ["conda-forge"]
+platforms = ["osx-arm64"]
+
+[dependencies]
+python = "3.12.*"
+pip = "*"
+
+[pypi-dependencies]
+llm = "*"
+mlx-vlm = "*"
+pytest = "*"
+
+[tasks]
+install-dev = "pip install -e ."
+test = "pytest tests/"
