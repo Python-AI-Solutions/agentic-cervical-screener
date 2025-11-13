@@ -22,8 +22,8 @@
     "test:all": "npm run test:unit && npm run test:e2e && npm run test:vlm",
     "docs:test": "vitest run ../docs/__tests__/project_overview.index.test.ts",
     "docs:e2e": "cross-env PLAYWRIGHT_ARTIFACT_ROOT=./playwright-artifacts playwright test",
-    "vlm:docs": "tsx scripts/docs-overview-vlm.ts --suite docs-overview",
-    "vlm:viewer": "tsx scripts/docs-overview-vlm.ts --suite viewer",
+    "vlm:docs": "cross-env DOCS_VLM_SUITE=docs-overview tsx scripts/docs-overview-vlm.ts",
+    "vlm:viewer": "cross-env DOCS_VLM_SUITE=viewer tsx scripts/docs-overview-vlm.ts",
     "docs:vlm-review": "npm run test:vlm",
     "docs:metrics": "tsx ../scripts/docs/onboarding-metrics.ts && tsx ../scripts/docs/check-doc-freshness.ts"
   },

@@ -13,6 +13,7 @@ nodejs = "20.*"
 # Python for VLM testing
 python = "3.12.*"
 torchvision = ">=0.24.0,<0.25"
+numpy = "<2.3.0"
 
 [target.osx-arm64.pypi-dependencies]
 # MLX-VLM plugin - only on Apple Silicon

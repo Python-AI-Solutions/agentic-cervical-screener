@@ -185,7 +185,21 @@ pip install mlx-vlm
 
 ### Model download is slow
 
-First run will download the model from HuggingFace (~1-2GB). Subsequent runs are fast.
+First run will download the model from HuggingFace (~1-2GB). Subsequent runs are fast because the model is cached locally.
+
+**Cache Location:**
+- By default, models are cached in `~/.cache/huggingface/hub/`
+- You can override this with the `HF_HOME` environment variable: `export HF_HOME=/path/to/cache`
+- The plugin automatically sets `HF_HOME` to `~/.cache/huggingface` if not already set
+
+**Cache Management:**
+```bash
+# View cache size
+du -sh ~/.cache/huggingface/
+
+# Clear all cached models (be careful!)
+rm -rf ~/.cache/huggingface/
+```
 
 ## Related Projects
 

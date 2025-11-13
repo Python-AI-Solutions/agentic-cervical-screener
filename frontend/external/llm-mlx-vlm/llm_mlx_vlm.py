@@ -19,9 +19,11 @@ When calling from Node.js/subprocess:
     const proc = spawn('llm', [...]);
     proc.stdin?.end();  // Close stdin immediately
 """
-import llm
-from typing import Optional
+import os
 import subprocess
+from typing import Optional
+
+import llm
 
 
 @llm.hookimpl
@@ -31,6 +33,8 @@ def register_models(register):
     register(MlxVlmModel("SmolVLM-256M", "HuggingfaceTB/SmolVLM-256M-Instruct"))
     register(MlxVlmModel("SmolVLM-500M", "HuggingfaceTB/SmolVLM-500M-Instruct"))
     register(MlxVlmModel("Qwen2-VL-2B", "Qwen/Qwen2-VL-2B-Instruct"))
+    register(MlxVlmModel("Qwen3-VL-4B-Instruct-4bit", "mlx-community/Qwen3-VL-4B-Instruct-4bit"))
+    register(MlxVlmModel("Qwen2.5-VL-3B", "mlx-community/Qwen2.5-VL-3B-Instruct-8bit"))
     # Note: LLaVA-1.6 models use llava_next architecture which is not yet supported by mlx-vlm
 
 
@@ -84,22 +88,34 @@ class MlxVlmModel(llm.Model):
         # Build command for mlx_vlm
         cmd = [
             'python3',
-            '-m', 'mlx_vlm.generate',
+            '-m', 'mlx_vlm',
+            'generate',
             '--model', self.hf_model_path,
             '--max-tokens', str(prompt.options.max_tokens),
-            '--temp', str(prompt.options.temperature),
+            '--temperature', str(prompt.options.temperature),
             '--image', str(image_path),
             '--prompt', prompt_text,
         ]
+        timeout_seconds = int(os.environ.get("MLX_VLM_TIMEOUT", "240"))
 
+        # Set up environment with HuggingFace cache for model reuse
+        env = os.environ.copy()
+        hf_home = os.path.expanduser('~/.cache/huggingface')
+        env['HF_HOME'] = env.get('HF_HOME', hf_home)
+        # Also set HF_HUB_CACHE - this is where models are actually cached
+        env['HF_HUB_CACHE'] = env.get('HF_HUB_CACHE', os.path.join(env['HF_HOME'], 'hub'))
+        # Set offline mode to False to allow downloads but use cache when available
+        env['HF_HUB_OFFLINE'] = env.get('HF_HUB_OFFLINE', '0')
+        
         try:
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
                 stdin=subprocess.DEVNULL,  # Explicitly close stdin to avoid blocking
-                timeout=60,  # 60 second timeout
+                timeout=timeout_seconds,
                 check=True,
+                env=env,
             )
 
             output = result.stdout.strip()
@@ -108,7 +124,7 @@ class MlxVlmModel(llm.Model):
             yield output
 
         except subprocess.TimeoutExpired:
-            raise RuntimeError(f"MLX-VLM timed out after 60 seconds")
+            raise RuntimeError(f"MLX-VLM timed out after {timeout_seconds} seconds")
         except subprocess.CalledProcessError as e:
             error_msg = e.stderr if e.stderr else str(e)
             if "No module named 'mlx_vlm'" in error_msg:

@@ -87,7 +87,7 @@ function resolveModelName(opts: Options) {
     opts.modelOverride ??
     process.env[envKeyForSuite(opts.suite, 'VLM_MODEL')] ??
     process.env.VLM_MODEL ??
-    'SmolVLM-500M'
+    'Qwen2-VL-2B'
   );
 }
 
@@ -213,48 +213,64 @@ async function writeReport(root: string, suite: string, model: string, findings:
   await fs.writeFile(reportPath, lines.join('\n'), 'utf-8');
 }
 
-async function checkModelAvailable(llmBin: string, modelName: string): Promise<boolean> {
-  try {
-    // Try a quick test run to see if model is cached
-    // This will trigger download if needed (which is what we want!)
-    console.log(`[VLM] [INIT] Testing model availability: ${modelName}...`);
+const MODEL_READY_CACHE = new Map<string, boolean>();
 
+async function isModelCached(llmBin: string, modelName: string): Promise<boolean> {
+  // Quick test: if model is cached, it responds in ~1-2 seconds
+  // If it takes longer, model is downloading or not available
+  try {
     const testStart = Date.now();
-    const result = await execa(
+    await execa(
       llmBin,
       ['-m', modelName, '--no-stream', '--no-log', 'test'],
       {
-        timeout: 15000,  // 15 second check timeout
-        reject: false,
+        timeout: 5000,  // 5 second timeout
+        reject: false,  // Don't reject on non-zero exit
         input: '',
       }
     );
-    const testDuration = Date.now() - testStart;
-
-    // Check if we see download/fetch indicators in output
-    const combined = result.stdout + result.stderr;
-    const isDownloading = combined.includes('Fetching') ||
-                          combined.includes('Downloading') ||
-                          combined.includes('download');
-
-    if (isDownloading) {
-      console.log(`[VLM] [INIT] Model is downloading or needs setup (detected in ${testDuration}ms)`);
-      return false;
-    }
-
-    // If test completed quickly without download messages, model is cached
-    if (testDuration < 10000 && result.exitCode === 0) {
-      console.log(`[VLM] [INIT] Model responded in ${testDuration}ms - appears cached`);
-      return true;
-    }
-
-    // If it failed or took too long, assume it needs downloading
-    console.log(`[VLM] [INIT] Model check inconclusive (${testDuration}ms, exit: ${result.exitCode}) - assuming needs download`);
+    const elapsed = Date.now() - testStart;
+    // Cached models respond quickly (< 2 seconds), downloading takes much longer
+    return elapsed < 2000;
+  } catch {
+    // Timeout or error means model is not cached
     return false;
+  }
+}
+
+async function listAvailableMlxModels(llmBin: string): Promise<string[]> {
+  const { stdout } = await execa(llmBin, ['models'], { timeout: 15000 });
+  return stdout
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith('MLX-VLM:'))
+    .map((line) => line.replace('MLX-VLM:', '').trim().split(' ')[0])
+    .filter(Boolean);
+}
+
+async function assertModelRegistered(llmBin: string, modelName: string) {
+  console.log('[VLM] [INIT] Enumerating MLX-VLM models via `llm models`...');
+  let models: string[] = [];
+  try {
+    models = await listAvailableMlxModels(llmBin);
   } catch (error) {
-    // Timeout or error means model likely needs downloading or setup
-    console.log(`[VLM] [INIT] Model check failed - assuming needs download`);
-    return false;
+    throw new Error(
+      `[VLM] Unable to read MLX-VLM models from '${llmBin} models'. Verify the llm CLI is installed (pixi run llm models).`,
+      { cause: error instanceof Error ? error : undefined },
+    );
+  }
+
+  if (!models.length) {
+    throw new Error(
+      '[VLM] No MLX-VLM models detected. Install the llm-mlx-vlm plugin (see external/llm-mlx-vlm/README.md) and re-run the audit.',
+    );
+  }
+
+  console.log(`[VLM] [INIT] MLX-VLM models available: ${models.join(', ')}`);
+  if (!models.includes(modelName)) {
+    throw new Error(
+      `[VLM] Model '${modelName}' is not registered with llm. Choose one from \`${models.join(', ')}\` or run \`pixi run llm models | grep MLX-VLM\` to inspect the list.`,
+    );
   }
 }
 
@@ -264,30 +280,19 @@ async function runLlmOnImage(params: {
   model: string;
   extraArgs: string[];
   suite: string;
+  llmBin: string;
 }) {
-  // Use 'llm' from PATH (pixi sets this up)
-  const llmBin = 'llm';
-
-  // Check if model is available (cached locally)
-  const modelAvailable = await checkModelAvailable(llmBin, params.model);
-
-  // Adjust timeout based on whether model needs downloading
+  // Use the cached value from main() initialization
+  const modelCached = MODEL_READY_CACHE.get(params.model) ?? false;
+  
   let timeoutMs: number;
   if (process.env.VLM_TIMEOUT_MS) {
-    // User explicitly set timeout
     timeoutMs = parseInt(process.env.VLM_TIMEOUT_MS, 10);
-  } else if (!modelAvailable) {
-    // First run - model needs downloading (~1GB)
-    timeoutMs = 180000; // 3 minutes for download + inference
-    console.log(`[${params.suite}] [INFO] Model '${params.model}' not cached locally - will download on first use`);
-    console.log(`[${params.suite}] [INFO] Using extended timeout: ${timeoutMs}ms (3 minutes) for model download`);
-    console.log(`[${params.suite}] [INFO] Subsequent runs will be much faster (5-15 seconds)`);
   } else {
-    // Model cached - use normal timeout
-    timeoutMs = 30000; // 30 seconds
+    timeoutMs = 180000;
   }
 
-  const heartbeatInterval = parseInt(process.env.VLM_HEARTBEAT_MS ?? '5000', 10); // Log every 5s
+  const heartbeatInterval = parseInt(process.env.VLM_HEARTBEAT_MS ?? '5000', 10);
   const args = [
     '-m',
     params.model,
@@ -299,123 +304,102 @@ async function runLlmOnImage(params: {
     params.prompt,
   ];
   const prefix = `[${params.suite}]`;
-  
+
   console.log(`${prefix} [STEP 1] Starting processing for ${path.basename(params.imagePath)}`);
   console.log(`${prefix} [STEP 1] Model: ${params.model}`);
-  console.log(`${prefix} [STEP 1] LLM binary: ${llmBin}`);
+  console.log(`${prefix} [STEP 1] LLM binary: ${params.llmBin}`);
   console.log(`${prefix} [STEP 1] Image path: ${params.imagePath}`);
   console.log(`${prefix} [STEP 1] Timeout: ${timeoutMs}ms`);
-  console.log(`${prefix} [STEP 1] Full command: ${llmBin} ${args.slice(0, 3).join(' ')} ... ${args.slice(-1)[0].substring(0, 50)}...`);
-  
+  console.log(`${prefix} [STEP 1] Full command: ${params.llmBin} ${args.slice(0, 3).join(' ')} ... ${args.slice(-1)[0].substring(0, 50)}...`);
+
   const startTime = Date.now();
   let heartbeatTimer: NodeJS.Timeout | null = null;
-  
-  try {
-    console.log(`${prefix} [STEP 2] Setting up timeout promise (${timeoutMs}ms)...`);
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        console.log(`${prefix} [STEP 2] Timeout promise fired after ${timeoutMs}ms`);
-        reject(new Error(`LLM call timed out after ${timeoutMs}ms`));
-      }, timeoutMs);
-    });
-    
-    console.log(`${prefix} [STEP 3] Starting execa process...`);
-
-    // Get the pixi environment's PATH and PYTHONPATH
-    const pixiEnv = { ...process.env };
-    if (llmBin !== 'llm') {
-      // If using absolute path, ensure Python env vars are set
-      const binDir = path.dirname(llmBin);
-      const envDir = path.dirname(binDir);
-      pixiEnv.PYTHONPATH = envDir;
-      if (!pixiEnv.PATH?.includes(binDir)) {
-        pixiEnv.PATH = `${binDir}:${pixiEnv.PATH}`;
-      }
+  const pixiEnv = { ...process.env };
+  if (params.llmBin !== 'llm') {
+    const binDir = path.dirname(params.llmBin);
+    const envDir = path.dirname(binDir);
+    pixiEnv.PYTHONPATH = envDir;
+    if (!pixiEnv.PATH?.includes(binDir)) {
+      pixiEnv.PATH = `${binDir}:${pixiEnv.PATH}`;
     }
+  }
 
-    const execaPromise = execa(llmBin, args, {
+  try {
+    console.log(`${prefix} [STEP 2] Starting execa process...`);
+    // Ensure HuggingFace cache is set for model reuse
+    const homeDir = process.env.HOME || process.env.USERPROFILE || '/root';
+    const hfHome = pixiEnv.HF_HOME || `${homeDir}/.cache/huggingface`;
+    pixiEnv.HF_HOME = hfHome;
+    // Also set HF_HUB_CACHE where models are actually cached
+    pixiEnv.HF_HUB_CACHE = pixiEnv.HF_HUB_CACHE || `${hfHome}/hub`;
+    // Ensure we're not in offline mode
+    pixiEnv.HF_HUB_OFFLINE = '0';
+    console.log(`${prefix} [STEP 2] HF_HOME set to: ${pixiEnv.HF_HOME}`);
+    console.log(`${prefix} [STEP 2] HF_HUB_CACHE set to: ${pixiEnv.HF_HUB_CACHE}`);
+    
+    const execaPromise = execa(params.llmBin, args, {
       env: pixiEnv,
       timeout: timeoutMs,
-      input: '', // Close stdin immediately (MLX-VLM waits for stdin to close)
+      input: '',
     });
-    
-    console.log(`${prefix} [STEP 3] Process started, PID should be available`);
-    console.log(`${prefix} [STEP 4] Setting up heartbeat logging (every ${heartbeatInterval}ms)...`);
-    
-    // Set up heartbeat logging
+
+    console.log(`${prefix} [STEP 2] Process started, PID should be available`);
+    console.log(`${prefix} [STEP 3] Setting up heartbeat logging (every ${heartbeatInterval}ms)...`);
+    const waitingForDownload = !modelCached;
     heartbeatTimer = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const remaining = Math.round((timeoutMs - elapsed) / 1000);
 
-      if (!modelAvailable && elapsed < 60000) {
-        // First minute - likely downloading
+      if (waitingForDownload && elapsed < 60000) {
         console.log(`${prefix} [HEARTBEAT] Downloading model... (${Math.round(elapsed / 1000)}s elapsed, may take 1-3 minutes)`);
-      } else if (!modelAvailable && elapsed < 120000) {
-        // 1-2 minutes - still downloading or loading
+      } else if (waitingForDownload && elapsed < 120000) {
         console.log(`${prefix} [HEARTBEAT] Model download continuing... (${Math.round(elapsed / 1000)}s elapsed)`);
       } else {
-        // Normal inference or subsequent run
         console.log(`${prefix} [HEARTBEAT] Processing... (${Math.round(elapsed / 1000)}s elapsed, ${remaining}s remaining)`);
       }
     }, heartbeatInterval);
-    
-    console.log(`${prefix} [STEP 5] Waiting for Promise.race (execa vs timeout)...`);
-    const { stdout } = await Promise.race([execaPromise, timeoutPromise]);
-    
-    if (heartbeatTimer) {
-      clearInterval(heartbeatTimer);
-      heartbeatTimer = null;
-    }
-    
-    const elapsed = Date.now() - startTime;
-    console.log(`${prefix} [STEP 6] Promise resolved successfully`);
-    console.log(`${prefix} [STEP 6] Received stdout (${stdout.length} chars)`);
-    console.log(`${prefix} [STEP 6] Total time: ${elapsed}ms`);
 
-    // Extract the answer from MLX-VLM output format:
-    // The output contains debug info, then "Assistant:\n<answer>\n=========="
-    // We need to extract just the <answer> part
+    console.log(`${prefix} [STEP 4] Awaiting llm output...`);
+    const { stdout } = await execaPromise;
+
+    MODEL_READY_CACHE.set(params.model, true);
+    const elapsed = Date.now() - startTime;
+    console.log(`${prefix} [STEP 5] Promise resolved successfully`);
+    console.log(`${prefix} [STEP 5] Received stdout (${stdout.length} chars)`);
+    console.log(`${prefix} [STEP 5] Total time: ${elapsed}ms`);
+
     const assistantMatch = stdout.match(/Assistant:\s*\n\s*(.+?)(?=\n==========)/s);
     if (assistantMatch) {
       const answer = assistantMatch[1].trim();
-      console.log(`${prefix} [STEP 7] Extracted answer (${answer.length} chars)`);
+      console.log(`${prefix} [STEP 6] Extracted answer (${answer.length} chars)`);
       return answer;
     } else {
-      // Fallback to returning everything if we can't parse it
-      console.log(`${prefix} [STEP 7] Could not parse Assistant format, returning full output`);
+      console.log(`${prefix} [STEP 6] Could not parse Assistant format, returning full output`);
       return stdout.trim();
     }
   } catch (error) {
-    if (heartbeatTimer) {
-      clearInterval(heartbeatTimer);
-      heartbeatTimer = null;
-    }
-    
     const elapsed = Date.now() - startTime;
     const stderr = typeof error === 'object' && error && 'stderr' in error ? (error as any).stderr : '';
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorCode = (error as NodeJS.ErrnoException).code;
-    
+
     console.error(`${prefix} [ERROR] LLM call failed after ${elapsed}ms`);
     console.error(`${prefix} [ERROR] Error message: ${errorMessage}`);
     console.error(`${prefix} [ERROR] Error code: ${errorCode ?? '(none)'}`);
-    
+
     if (stderr) {
       console.error(`${prefix} [ERROR] stderr output:`);
       console.error(stderr);
     }
-    
+
     if (errorCode === 'ENOENT') {
-      console.error(`${prefix} [ERROR] Unable to find the '${llmBin}' CLI. Ensure it's installed and in PATH.`);
+      console.error(`${prefix} [ERROR] Unable to find the '${params.llmBin}' CLI. Ensure it's installed and in PATH.`);
       console.error(`${prefix} [ERROR] For MLX-VLM plugin: Install llm-mlx-vlm from external/llm-mlx-vlm/`);
     } else if (typeof stderr === 'string' && (/no such model/i.test(stderr) || /unknown model/i.test(stderr) || /Model not found/i.test(stderr))) {
       console.error(
         `${prefix} [ERROR] LLM reported that model '${params.model}' is unavailable.`,
       );
-      console.error(`${prefix} [ERROR] For MLX-VLM models (SmolVLM-500M, SmolVLM-256M, Qwen2-VL-2B):`);
-      console.error(`${prefix} [ERROR]   1. cd external/llm-mlx-vlm`);
-      console.error(`${prefix} [ERROR]   2. pixi install && pixi run install-dev`);
-      console.error(`${prefix} [ERROR]   3. Verify with: pixi run llm models | grep MLX-VLM`);
+      console.error(`${prefix} [ERROR] Make sure you pick from 'pixi run llm models | grep MLX-VLM'.`);
     } else if (typeof stderr === 'string' && /mlx.*not.*installed/i.test(stderr)) {
       console.error(`${prefix} [ERROR] MLX-VLM dependencies not installed.`);
       console.error(`${prefix} [ERROR] Install from: external/llm-mlx-vlm/`);
@@ -424,9 +408,16 @@ async function runLlmOnImage(params: {
       console.error(`${prefix} [ERROR] MLX-VLM typically responds in 5-15 seconds. This may indicate:`);
       console.error(`${prefix} [ERROR]   - First run (model downloading from HuggingFace)`);
       console.error(`${prefix} [ERROR]   - System under heavy load`);
-      console.error(`${prefix} [ERROR] Try increasing VLM_TIMEOUT_MS=60000 for first run`);
+      console.error(`${prefix} [ERROR] Try increasing VLM_TIMEOUT_MS=180000 for first run`);
     }
-    throw error;
+    throw new Error(
+      `${prefix} Failed to process ${path.basename(params.imagePath)} with ${params.model}`,
+      { cause: error instanceof Error ? error : undefined },
+    );
+  } finally {
+    if (heartbeatTimer) {
+      clearInterval(heartbeatTimer);
+    }
   }
 }
 
@@ -447,17 +438,19 @@ async function main() {
   const model = resolveModelName(options);
   console.log(`[VLM] [INIT] Model: ${model}`);
 
-  console.log('[VLM] [INIT] Step 3a: Checking model availability...');
   const llmBin = process.env.LLM_BIN ?? 'llm';
-  const modelCached = await checkModelAvailable(llmBin, model);
-  if (modelCached) {
-    console.log(`[VLM] [INIT] ✓ Model '${model}' is cached locally`);
-    console.log(`[VLM] [INIT] Expected response time: 5-15 seconds per image`);
+  console.log(`[VLM] [INIT] LLM binary: ${llmBin}`);
+  await assertModelRegistered(llmBin, model);
+  console.log('[VLM] [INIT] Model is registered. First inference will download weights if they are missing.');
+  
+  // Check if model is cached before processing images
+  console.log(`[VLM] [INIT] Step 3.5: Testing if model '${model}' is cached...`);
+  const cached = await isModelCached(llmBin, model);
+  MODEL_READY_CACHE.set(model, cached);
+  if (cached) {
+    console.log(`[VLM] [INIT] ✓ Model is cached locally. Inference will be fast (5-15 seconds per image).`);
   } else {
-    console.log(`[VLM] [INIT] ⚠ Model '${model}' not cached - will download on first use`);
-    console.log(`[VLM] [INIT] Model size: ~1GB, download time: 1-3 minutes (one-time only)`);
-    console.log(`[VLM] [INIT] Subsequent runs will be fast (5-15 seconds)`);
-    console.log(`[VLM] [INIT] Using extended timeout: 3 minutes for first image`);
+    console.log(`[VLM] [INIT] ⚠ Model is not cached. First image will download it (1-3 minutes), then subsequent images will be fast.`);
   }
   
   console.log('[VLM] [INIT] Step 4: Resolving extra args...');
@@ -499,48 +492,21 @@ async function main() {
     console.log(`[VLM] [LOOP] Full path: ${image}`);
     console.log(`[VLM] [LOOP] ========================================`);
     
+    console.log(`[VLM] [LOOP] Generating prompt for ${path.basename(image)}...`);
+    const prompt = promptFor(path.basename(image), options.suite);
+    console.log(`[VLM] [LOOP] Prompt length: ${prompt.length} chars`);
+
+    console.log(`[VLM] [LOOP] Calling runLlmOnImage...`);
+    let raw: string;
     try {
-      console.log(`[VLM] [LOOP] Generating prompt for ${path.basename(image)}...`);
-      const prompt = promptFor(path.basename(image), options.suite);
-      console.log(`[VLM] [LOOP] Prompt length: ${prompt.length} chars`);
-      
-      console.log(`[VLM] [LOOP] Calling runLlmOnImage...`);
-      const raw = await runLlmOnImage({
+      raw = await runLlmOnImage({
         imagePath: image,
         prompt,
         model,
         extraArgs,
         suite: options.suite,
+        llmBin,
       });
-      
-      console.log(`[VLM] [LOOP] Received response, length: ${raw.length} chars`);
-      console.log(`[VLM] [LOOP] Response preview: ${raw.substring(0, 100)}...`);
-      
-      console.log(`[VLM] [LOOP] Parsing response...`);
-      const parsed = parseSummary(raw);
-      console.log(`[VLM] [LOOP] Parsed severity: ${parsed.severity}`);
-      console.log(`[VLM] [LOOP] Parsed notes: ${parsed.notes}`);
-      
-      const severity = (parsed.severity ?? 'unknown').toLowerCase();
-      const tag = tagFor(image, options.suite);
-      console.log(`[VLM] [LOOP] Tag: ${tag || '(none)'}`);
-      
-      const summaryJson = JSON.stringify(
-        { severity, notes: parsed.notes, tag: tag || undefined },
-        null,
-        2,
-      );
-      findings.push({
-        image,
-        summary: summaryJson,
-        severity,
-      });
-      console.log(`[VLM] [LOOP] ✓ Successfully processed ${path.basename(image)}: ${severity} severity`);
-      
-      if (['medium', 'high'].includes(severity)) {
-        console.error(`[VLM] [LOOP] ⚠ VLM flagged ${severity} issue in ${path.basename(image)}: ${parsed.notes}`);
-        process.exitCode = 1;
-      }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       console.error(`[VLM] [LOOP] ✗ Failed to evaluate ${path.basename(image)}`);
@@ -548,6 +514,35 @@ async function main() {
       if (error instanceof Error && error.stack) {
         console.error(`[VLM] [LOOP] Stack trace:`, error.stack);
       }
+      throw error;
+    }
+    
+    console.log(`[VLM] [LOOP] Received response, length: ${raw.length} chars`);
+    console.log(`[VLM] [LOOP] Response preview: ${raw.substring(0, 100)}...`);
+    
+    console.log(`[VLM] [LOOP] Parsing response...`);
+    const parsed = parseSummary(raw);
+    console.log(`[VLM] [LOOP] Parsed severity: ${parsed.severity}`);
+    console.log(`[VLM] [LOOP] Parsed notes: ${parsed.notes}`);
+    
+    const severity = (parsed.severity ?? 'unknown').toLowerCase();
+    const tag = tagFor(image, options.suite);
+    console.log(`[VLM] [LOOP] Tag: ${tag || '(none)'}`);
+    
+    const summaryJson = JSON.stringify(
+      { severity, notes: parsed.notes, tag: tag || undefined },
+      null,
+      2,
+    );
+    findings.push({
+      image,
+      summary: summaryJson,
+      severity,
+    });
+    console.log(`[VLM] [LOOP] ✓ Successfully processed ${path.basename(image)}: ${severity} severity`);
+    
+    if (['medium', 'high'].includes(severity)) {
+      console.error(`[VLM] [LOOP] ⚠ VLM flagged ${severity} issue in ${path.basename(image)}: ${parsed.notes}`);
       process.exitCode = 1;
     }
     
@@ -562,9 +557,20 @@ async function main() {
   console.log(`[VLM] [REPORT] Writing report to ${screenshotsDir}/vlm-report.md...`);
   await writeReport(screenshotsDir, options.suite, model, findings);
   console.log(`[VLM] [REPORT] ✓ Report written successfully`);
-  console.log('[VLM] ========================================');
-  console.log('[VLM] Script completed');
-  console.log('[VLM] ========================================');
+console.log('[VLM] ========================================');
+console.log('[VLM] Script completed');
+console.log('[VLM] ========================================');
 }
 
-void main();
+void (async () => {
+  try {
+    await main();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[VLM] [FATAL]', message);
+    if (error instanceof Error && error.stack) {
+      console.error(error.stack);
+    }
+    process.exitCode = 1;
+  }
+})();
