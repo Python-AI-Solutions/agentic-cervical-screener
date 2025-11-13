@@ -29,22 +29,22 @@ llm = "*"
 llm-ollama = "*"
 
 [tasks]
-# npm passthrough tasks
+# npm passthrough tasks - use pixi's llm in PATH
 install = "npm install"
 dev = "npm run dev"
 build = "npm run build"
 preview = "npm run preview"
 
-# Testing tasks
-test = "npm test"
+# Testing tasks - use 'llm' (available in pixi PATH)
+test = { cmd = "npm test", env = { LLM_BIN = "llm" } }
 test-unit = "npm run test:unit"
 test-e2e = "npm run test:e2e"
-test-vlm = "npm run test:vlm"
-test-all = "npm run test:all"
+test-vlm = { cmd = "npm run test:vlm", env = { LLM_BIN = "llm" } }
+test-all = { cmd = "npm run test:all", env = { LLM_BIN = "llm" } }
 
-# VLM-specific tasks
-vlm-viewer = "npm run vlm:viewer"
-vlm-docs = "npm run vlm:docs"
+# VLM-specific tasks (use 'llm' available in pixi PATH)
+vlm-viewer = { cmd = "npm run vlm:viewer", env = { LLM_BIN = "llm" } }
+vlm-docs = { cmd = "npm run vlm:docs", env = { LLM_BIN = "llm" } }
 
 # Setup task
 setup = { cmd = "npm install", depends-on = ["install-vlm-plugin"] }
@@ -52,3 +52,6 @@ install-vlm-plugin = "echo 'VLM plugin installed via pypi-dependencies'"
 
 # Playwright browser installation
 install-browsers = "npx playwright install chromium"
+
+# Direct llm command (for testing)
+llm-test = "llm -m SmolVLM-500M 'test'"

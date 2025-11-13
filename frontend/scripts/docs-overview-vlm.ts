@@ -223,7 +223,8 @@ async function runLlmOnImage(params: {
   extraArgs: string[];
   suite: string;
 }) {
-  const llmBin = process.env.LLM_BIN ?? 'llm';
+  // Use 'llm' from PATH (pixi sets this up)
+  const llmBin = 'llm';
 
   // Check if model is available (cached locally)
   const modelAvailable = await checkModelAvailable(llmBin, params.model);
@@ -277,9 +278,23 @@ async function runLlmOnImage(params: {
     });
     
     console.log(`${prefix} [STEP 3] Starting execa process...`);
-    const execaPromise = execa(llmBin, args, { 
-      env: { ...process.env },
+
+    // Get the pixi environment's PATH and PYTHONPATH
+    const pixiEnv = { ...process.env };
+    if (llmBin !== 'llm') {
+      // If using absolute path, ensure Python env vars are set
+      const binDir = path.dirname(llmBin);
+      const envDir = path.dirname(binDir);
+      pixiEnv.PYTHONPATH = envDir;
+      if (!pixiEnv.PATH?.includes(binDir)) {
+        pixiEnv.PATH = `${binDir}:${pixiEnv.PATH}`;
+      }
+    }
+
+    const execaPromise = execa(llmBin, args, {
+      env: pixiEnv,
       timeout: timeoutMs,
+      input: '', // Close stdin immediately (MLX-VLM waits for stdin to close)
     });
     
     console.log(`${prefix} [STEP 3] Process started, PID should be available`);
@@ -314,10 +329,20 @@ async function runLlmOnImage(params: {
     console.log(`${prefix} [STEP 6] Promise resolved successfully`);
     console.log(`${prefix} [STEP 6] Received stdout (${stdout.length} chars)`);
     console.log(`${prefix} [STEP 6] Total time: ${elapsed}ms`);
-    
-    const trimmed = stdout.trim();
-    console.log(`${prefix} [STEP 7] Trimmed stdout (${trimmed.length} chars)`);
-    return trimmed;
+
+    // Extract the answer from MLX-VLM output format:
+    // The output contains debug info, then "Assistant:\n<answer>\n=========="
+    // We need to extract just the <answer> part
+    const assistantMatch = stdout.match(/Assistant:\s*\n\s*(.+?)(?=\n==========)/s);
+    if (assistantMatch) {
+      const answer = assistantMatch[1].trim();
+      console.log(`${prefix} [STEP 7] Extracted answer (${answer.length} chars)`);
+      return answer;
+    } else {
+      // Fallback to returning everything if we can't parse it
+      console.log(`${prefix} [STEP 7] Could not parse Assistant format, returning full output`);
+      return stdout.trim();
+    }
   } catch (error) {
     if (heartbeatTimer) {
       clearInterval(heartbeatTimer);
