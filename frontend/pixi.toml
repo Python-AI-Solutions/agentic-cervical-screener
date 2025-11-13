@@ -1,0 +1,54 @@
+[project]
+name = "agentic-cervical-screener-frontend"
+version = "0.1.0"
+description = "Frontend for Agentic Cervical Screener with VLM testing support"
+authors = ["Python-AI-Solutions"]
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "osx-64", "linux-64"]
+
+[dependencies]
+# Node.js (includes npm)
+nodejs = "20.*"
+
+# Python for VLM testing
+python = "3.12.*"
+
+[target.osx-arm64.pypi-dependencies]
+# MLX-VLM plugin - only on Apple Silicon
+llm = "*"
+llm-mlx-vlm = { path = "external/llm-mlx-vlm", editable = true }
+
+[target.osx-64.pypi-dependencies]
+# Intel Mac - use Ollama instead
+llm = "*"
+llm-ollama = "*"
+
+[target.linux-64.pypi-dependencies]
+# Linux - use Ollama
+llm = "*"
+llm-ollama = "*"
+
+[tasks]
+# npm passthrough tasks
+install = "npm install"
+dev = "npm run dev"
+build = "npm run build"
+preview = "npm run preview"
+
+# Testing tasks
+test = "npm test"
+test-unit = "npm run test:unit"
+test-e2e = "npm run test:e2e"
+test-vlm = "npm run test:vlm"
+test-all = "npm run test:all"
+
+# VLM-specific tasks
+vlm-viewer = "npm run vlm:viewer"
+vlm-docs = "npm run vlm:docs"
+
+# Setup task
+setup = { cmd = "npm install", depends-on = ["install-vlm-plugin"] }
+install-vlm-plugin = "echo 'VLM plugin installed via pypi-dependencies'"
+
+# Playwright browser installation
+install-browsers = "npx playwright install chromium"
