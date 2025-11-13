@@ -1,0 +1,16 @@
+Analyze this medical documentation UI screenshot for visual quality and usability issues.
+
+Pay close attention to:
+- Orientation instructions and path visibility - are the steps clear?
+- Drawer/menu positioning and safe-area padding - do menus have proper dismiss controls?
+- Metadata displays, tables, and workflow notes - is all text readable and properly formatted?
+- Whether any overlays or popups obscure the Niivue 3D viewer or important buttons
+- Text sizing and contrast - can information be read easily at this screen size?
+- Proper layout of documentation elements without crowding or overlap
+
+Common issues to flag:
+- HIGH severity: Instructions completely hidden, critical workflow information unreadable, major overlays blocking viewer
+- MEDIUM severity: Text partially cut off, menus difficult to dismiss, metadata tables cramped or hard to read
+- LOW severity: Minor spacing issues, slight overlap that doesn't block key information
+
+Describe any problems you see in 1-2 clear sentences, or say "No major issues" if the UI looks good.

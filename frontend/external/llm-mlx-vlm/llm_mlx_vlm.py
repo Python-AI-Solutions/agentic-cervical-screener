@@ -31,6 +31,7 @@ def register_models(register):
     register(MlxVlmModel("SmolVLM-256M", "HuggingfaceTB/SmolVLM-256M-Instruct"))
     register(MlxVlmModel("SmolVLM-500M", "HuggingfaceTB/SmolVLM-500M-Instruct"))
     register(MlxVlmModel("Qwen2-VL-2B", "Qwen/Qwen2-VL-2B-Instruct"))
+    # Note: LLaVA-1.6 models use llava_next architecture which is not yet supported by mlx-vlm
 
 
 class MlxVlmModel(llm.Model):

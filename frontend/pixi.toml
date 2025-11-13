@@ -12,6 +12,7 @@ nodejs = "20.*"
 
 # Python for VLM testing
 python = "3.12.*"
+torchvision = ">=0.24.0,<0.25"
 
 [target.osx-arm64.pypi-dependencies]
 # MLX-VLM plugin - only on Apple Silicon
@@ -45,6 +46,11 @@ test-all = { cmd = "npm run test:all", env = { LLM_BIN = "llm" } }
 # VLM-specific tasks (use 'llm' available in pixi PATH)
 vlm-viewer = { cmd = "npm run vlm:viewer", env = { LLM_BIN = "llm" } }
 vlm-docs = { cmd = "npm run vlm:docs", env = { LLM_BIN = "llm" } }
+
+# Model management tasks
+add-model = "bash scripts/add-vlm-model.sh $MODEL_NAME $HF_PATH"
+download-model = "python -m mlx_vlm.download --model $HF_PATH"
+test-model = "llm -m $MODEL_NAME 'What do you see?' -a playwright-artifacts/viewer/viewer-desktop-viewer-context.png"
 
 # Setup task
 setup = { cmd = "npm install", depends-on = ["install-vlm-plugin"] }

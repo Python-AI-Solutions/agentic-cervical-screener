@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs';
+import { promises as fs, readFileSync } from 'fs';
 import path from 'path';
 import { execa } from 'execa';
 
@@ -97,35 +97,41 @@ function resolveExtraArgs(opts: Options) {
   );
 }
 
-function promptFor(imageName: string, suite: string) {
-  const footer = `
-Respond with a single \\\`\\\`\\\`json code block containing:
-{"severity":"low|medium|high","notes":"short sentence describing any issues"}
-`.trim();
+function promptFor(imageName: string, suite: string): string {
+  const promptsDir = path.resolve(process.cwd(), 'prompts', 'vlm');
+  const promptFile = suite === 'viewer' ? 'viewer-audit.txt' : 'docs-audit.txt';
+  const promptPath = path.join(promptsDir, promptFile);
 
-  if (suite === 'viewer') {
+  try {
+    // Try to load prompt from file
+    const promptContent = readFileSync(promptPath, 'utf-8');
+    return promptContent.trim();
+  } catch (error) {
+    // Fallback to inline prompts if files don't exist
+    console.warn(`[VLM] [WARN] Could not load prompt from ${promptPath}, using fallback`);
+
+    if (suite === 'viewer') {
+      return `
+Analyze this medical viewer UI screenshot. Look for visual issues:
+- Poor alignment or spacing
+- Text that's hard to read
+- Buttons or controls that overlap
+- Elements that look broken or misaligned
+
+Describe any problems you see in one sentence, or say "No major issues" if it looks good.
+      `.trim();
+    }
+
     return `
-You are a UI QA assistant reviewing a responsive viewer screenshot (${imageName}) from the Agentic Cervical Screener.
-Focus on:
-- Header/button alignment across breakpoints
-- Drawer/drawer-toggle safe-area padding
-- Canvas visibility (no occlusion by drawers or floating buttons)
-- Legible labels for classification buttons and toolbars
+Analyze this medical documentation UI screenshot. Look for visual issues:
+- Instructions that are hard to see
+- Text that's cut off or overlapping
+- Menus or buttons that look misplaced
+- Any elements that appear broken
 
-${footer}
+Describe any problems you see in one sentence, or say "No major issues" if it looks good.
     `.trim();
   }
-
-  return `
-You are a UI QA assistant reviewing a documentation screenshot (${imageName}) from the Agentic Cervical Screener.
-Focus on:
-- Orientation Path visibility and clear instructions
-- Drawer/menu safe-area padding plus dismiss controls
-- Readability of metadata callouts, tables, and workflow notes
-- Whether overlays obscure the Niivue viewer or buttons
-
-${footer}
-  `.trim();
 }
 
 function tagFor(imagePath: string, suite: string) {
@@ -143,22 +149,22 @@ function tagFor(imagePath: string, suite: string) {
 }
 
 function parseSummary(raw: string): ParsedSummary {
-  const trimmed = raw.trim();
-  const candidate = trimmed.startsWith('{') ? trimmed : trimmed.match(/\{[\s\S]*\}/)?.[0];
-  if (candidate) {
-    try {
-      const parsed = JSON.parse(candidate);
-      if (typeof parsed.severity === 'string' && typeof parsed.notes === 'string') {
-        return { severity: parsed.severity.toLowerCase(), notes: parsed.notes.trim() };
-      }
-    } catch {
-      // Fall through to default return below
-    }
+  const trimmed = raw.trim().toLowerCase();
+
+  // Simple heuristic: if response says "no issues" or "looks good", it's low severity
+  // Otherwise, check for severity keywords
+  let severity = 'low';
+  const notes = raw.trim();
+
+  if (trimmed.includes('no major issues') || trimmed.includes('looks good') || trimmed.includes('no issues')) {
+    severity = 'low';
+  } else if (trimmed.includes('broken') || trimmed.includes('unreadable') || trimmed.includes('critical') || trimmed.includes('major problem')) {
+    severity = 'high';
+  } else if (trimmed.includes('problem') || trimmed.includes('issue') || trimmed.includes('difficult') || trimmed.includes('hard to')) {
+    severity = 'medium';
   }
-  return {
-    severity: 'medium',
-    notes: `Unable to parse JSON response: ${trimmed}`,
-  };
+
+  return { severity, notes };
 }
 
 async function listScreenshots(root: string): Promise<string[]> {
@@ -209,9 +215,45 @@ async function writeReport(root: string, suite: string, model: string, findings:
 
 async function checkModelAvailable(llmBin: string, modelName: string): Promise<boolean> {
   try {
-    const { stdout } = await execa(llmBin, ['models'], { timeout: 5000 });
-    return stdout.includes(modelName);
-  } catch {
+    // Try a quick test run to see if model is cached
+    // This will trigger download if needed (which is what we want!)
+    console.log(`[VLM] [INIT] Testing model availability: ${modelName}...`);
+
+    const testStart = Date.now();
+    const result = await execa(
+      llmBin,
+      ['-m', modelName, '--no-stream', '--no-log', 'test'],
+      {
+        timeout: 15000,  // 15 second check timeout
+        reject: false,
+        input: '',
+      }
+    );
+    const testDuration = Date.now() - testStart;
+
+    // Check if we see download/fetch indicators in output
+    const combined = result.stdout + result.stderr;
+    const isDownloading = combined.includes('Fetching') ||
+                          combined.includes('Downloading') ||
+                          combined.includes('download');
+
+    if (isDownloading) {
+      console.log(`[VLM] [INIT] Model is downloading or needs setup (detected in ${testDuration}ms)`);
+      return false;
+    }
+
+    // If test completed quickly without download messages, model is cached
+    if (testDuration < 10000 && result.exitCode === 0) {
+      console.log(`[VLM] [INIT] Model responded in ${testDuration}ms - appears cached`);
+      return true;
+    }
+
+    // If it failed or took too long, assume it needs downloading
+    console.log(`[VLM] [INIT] Model check inconclusive (${testDuration}ms, exit: ${result.exitCode}) - assuming needs download`);
+    return false;
+  } catch (error) {
+    // Timeout or error means model likely needs downloading or setup
+    console.log(`[VLM] [INIT] Model check failed - assuming needs download`);
     return false;
   }
 }

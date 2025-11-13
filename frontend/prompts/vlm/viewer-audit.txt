@@ -1,0 +1,24 @@
+Analyze this medical viewer UI screenshot for visual quality and usability issues.
+
+CRITICAL CHECKS - Look carefully for these specific problems:
+
+1. **Buttons cut off at screen edges** - Check if ANY buttons are partially visible or truncated:
+   - Classification buttons (Classify, Clear ROIs, Download)
+   - Navigation or control buttons
+   - Action buttons at top or bottom of screen
+   Example: If you see only the top half of a "Download" button, that's a MEDIUM severity issue.
+
+2. **Canvas/viewer visibility** - Is the medical image clearly visible and not obscured?
+
+3. **Header and toolbar alignment** - Are all controls properly aligned and accessible?
+
+4. **Text legibility** - Can all labels and button text be read clearly?
+
+5. **Mobile space usage** - On small screens, is space used efficiently without wasting viewport?
+
+SEVERITY GUIDE:
+- HIGH: Critical buttons completely hidden, unreadable text, major layout collapse
+- MEDIUM: Buttons partially cut off (even 10-20%), important controls hard to reach, poor spacing impacts usability
+- LOW: Minor cosmetic issues that don't affect functionality
+
+Respond in 1-2 clear sentences describing what you observe, or "No major issues" if everything looks properly laid out.
