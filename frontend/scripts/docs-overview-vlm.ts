@@ -358,9 +358,13 @@ async function main() {
   console.log('[VLM] ========================================');
   console.log('[VLM] Starting image processing loop');
   console.log('[VLM] ========================================');
+  console.log(`[VLM] [LOOP] About to start loop with ${images.length} images`);
   
   const findings: Finding[] = [];
+  console.log(`[VLM] [LOOP] Initialized findings array`);
+  
   for (let i = 0; i < images.length; i++) {
+    console.log(`[VLM] [LOOP] Loop iteration ${i + 1} starting...`);
     const image = images[i];
     console.log(`[VLM] [LOOP] ========================================`);
     console.log(`[VLM] [LOOP] Image ${i + 1}/${images.length}: ${path.basename(image)}`);
