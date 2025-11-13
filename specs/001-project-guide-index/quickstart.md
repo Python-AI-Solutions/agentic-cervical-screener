@@ -34,18 +34,16 @@
    ```bash
    cd frontend
    npm run docs:e2e -- viewer-responsive.spec.ts
-   npm run docs:vlm-review -- --suite viewer
    ```
-   - Stores screenshots + layout JSON under `frontend/playwright-artifacts/viewer/` and feeds them through the MLX VLM pipeline to catch header/action regressions.
+   - Stores screenshots + layout JSON under `frontend/playwright-artifacts/viewer/`. The next step feeds them through the local VLM audit to catch header/action regressions.
 
-6. **Run VLM UX audit for docs (Apple Silicon, ≤16 GB RAM)**
+6. **Run VLM UX audit for docs/viewer (Apple Silicon, ≥16 GB RAM recommended)**
    ```bash
    cd frontend
-   npm run docs:vlm-review \
-     -- --model mlx-community/llava-phi-3-mini-4k \
-     --screenshots ./playwright-artifacts/docs-overview
+   pixi run npm run vlm:docs
+   pixi run npm run vlm:viewer
    ```
-   - Script loads screenshots + JSON artifacts, calls the MLX runtime (`python -m mlx_lm.generate ...` under the hood), and outputs `vlm-report.md` summarizing occlusion/accessibility findings. Fail the build if severity ≥ medium.
+   - Scripts load screenshots + JSON artifacts, call the `llm` CLI (backed by Ollama + LLava), and output `vlm-report.md` summarizing occlusion/accessibility findings. Ensure `ollama serve` is running and that you have pulled a multimodal model such as `ollama pull llava`. Override the default by exporting `VLM_MODEL`, `DOCS_VLM_MODEL`, or `VIEWER_VLM_MODEL`. Run `pixi run npm run test:vlm` to execute both commands sequentially. Fail the build if severity ≥ medium.
 
 7. **Run onboarding + freshness metrics**
    ```bash

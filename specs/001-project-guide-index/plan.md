@@ -7,7 +7,7 @@
 
 ## Summary
 
-Refresh `docs/project_overview.md` so it becomes the canonical orientation hub: add YAML metadata, a three-step onboarding path with required commands, a topic-to-doc index table, workflow playbooks, explicit maintenance rules, and machine-readable anchors. Back the document with automation—markdown validation tests, a Playwright journey that captures desktop/tablet/phone renders (including full-height drawers), an MLX-based VLM audit over the resulting screenshots/JSON, and metric scripts that verify onboarding success rates plus document freshness—to prove every edit keeps the new guidance accurate and accessible.
+Refresh `docs/project_overview.md` so it becomes the canonical orientation hub: add YAML metadata, a three-step onboarding path with required commands, a topic-to-doc index table, workflow playbooks, explicit maintenance rules, and machine-readable anchors. Back the document with automation—markdown validation tests, a Playwright journey that captures desktop/tablet/phone renders (including full-height drawers), a local LLava/Ollama VLM audit over the resulting screenshots/JSON, and metric scripts that verify onboarding success rates plus document freshness—to prove every edit keeps the new guidance accurate and accessible.
 
 ## Technical Context
 
@@ -18,13 +18,13 @@ Refresh `docs/project_overview.md` so it becomes the canonical orientation hub: 
 -->
 
 **Language/Version**: Markdown + TypeScript (Node 18 / Vite toolchain)  
-**Primary Dependencies**: Existing docs under `docs/`, Vitest, Playwright, Niivue viewer context for screenshots, Apple MLX runtime with `mlx-community/llava-phi-3-mini-4k` VLM for artifact review, Node scripts under `scripts/docs/` for metrics  
+**Primary Dependencies**: Existing docs under `docs/`, Vitest, Playwright, Niivue viewer context for screenshots, [Ollama](https://ollama.com) running a LLava-class model (invoked via the `llm` CLI) for artifact review, Node scripts under `scripts/docs/` for metrics  
 **Storage**: Git-tracked CSV metrics in `docs/metrics/onboarding-log.csv` + YAML front matter freshness timestamps  
 **Testing**: Vitest for markdown validation, Playwright for documentation render checks (desktop/tablet/phone)  
 **Target Platform**: Web (GitHub-rendered docs + internal doc preview route in frontend)  
 **Project Type**: Web/monorepo (FastAPI backend + Vite frontend; this feature touches docs + frontend test harness)  
 **Performance Goals**: Documentation checks must run in <60s locally/CI; Playwright doc journey adds ≤10% to existing e2e runtime  
-**Constraints**: Adhere to Constitution v2.0.0 (deterministic imaging fidelity, responsive occlusion rules, dual-layer evidence); no new datasets outside `public/`; tests must be headless-friendly; VLM evaluation must run on Apple Silicon with ≤16 GB RAM (hence the MLX-based 4 B parameter model); onboarding/freshness metrics scripts must run via `npm run docs:metrics` and fail CI when thresholds are unmet  
+**Constraints**: Adhere to Constitution v2.0.0 (deterministic imaging fidelity, responsive occlusion rules, dual-layer evidence); no new datasets outside `public/`; tests must be headless-friendly; VLM evaluation must run on Apple Silicon with ≥16 GB RAM (Ollama + LLava); onboarding/freshness metrics scripts must run via `npm run docs:metrics` and fail CI when thresholds are unmet  
 **Scale/Scope**: One markdown file + associated automation artifacts (1 Vitest suite, 1 Playwright spec, metadata consumed by future agents)
 
 ## Constitution Check
@@ -35,7 +35,7 @@ Document the status of each constitutional guardrail (Pass / Mitigation Plan / B
 
 1. **Deterministic Imaging Fidelity** – Documentation references Niivue behavior; we will add markdown validation ensuring every orientation step links to responsive guidance (e.g., `docs/project_overview.md §5`) and update Playwright to capture baseline + full-height panel screenshots so state restoration (dismiss controls, breadcrumbs) is visually verified.  
    - Status: Pass. Evidence: new Vitest `docs/__tests__/project_overview.index.test.ts`; Playwright `frontend/e2e/docs-overview.spec.ts` capturing before/after panel states.  
-2. **Dual-Layer Evidence** – Fast tests (Vitest) validate structure/links; Playwright run records screenshots + JSON link inventory; MLX-hosted VLM (`llava-phi-3-mini-4k`) analyzes the artifacts for higher-level UX regressions (e.g., occlusion, readability) and emits a Markdown report that reviewers attach to PRs. All three scripts fail CI if mandatory sections, visuals, or VLM findings regress.  
+2. **Dual-Layer Evidence** – Fast tests (Vitest) validate structure/links; Playwright run records screenshots + JSON link inventory; the llm/Ollama pipeline (default `llava`) analyzes the artifacts for higher-level UX regressions (e.g., occlusion, readability) and emits a Markdown report that reviewers attach to PRs. All three scripts fail CI if mandatory sections, visuals, or VLM findings regress.  
    - Status: Pass (automated scripts documented in Quickstart).  
 3. **Responsive & Accessible Header-First UX** – Plan includes mapping each user story to breakpoints, specifying when the Orientation Path or Index sections trigger drawers, and asserting safe-area padding + dismissal controls via Playwright snapshots (desktop/tablet/large-phone/small-phone).  
    - Status: Pass (tests provide evidence; doc text describes occlusion rationale).  
@@ -90,7 +90,7 @@ frontend/
 ├── e2e/
 │   └── docs-overview.spec.ts            # new Playwright journey
 ├── scripts/
-│   └── docs-overview-vlm.ts             # Node script that calls MLX llava-phi-3-mini-4k to score screenshots
+│   └── docs-overview-vlm.ts             # Node script that calls the llm CLI (Ollama/LLava) to score screenshots
 └── playwright.config.ts                 # ensure doc journey + VLM artifacts run in CI
 
 frontend/playwright-artifacts/

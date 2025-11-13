@@ -231,3 +231,7 @@ pre-commit = ">=3.0.0"
 ruff = ">=0.1.0"
 mypy = ">=1.0.0"
 pip = ">=25.3,<26"
+llm = ">=0.27.1,<0.28"
+
+[tool.pixi.pypi-dependencies]
+llm-ollama = "*"

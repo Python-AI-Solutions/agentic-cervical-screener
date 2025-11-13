@@ -129,7 +129,7 @@ describe('Maintenance workflow', () => {
   it('lists required commands and logging steps', () => {
     const section = getSectionMarkdown('Maintenance & Update Workflow');
     expect(section).not.toEqual('');
-    ['npm run docs:test', 'npm run docs:e2e', 'npm run docs:vlm-review', 'npm run docs:metrics', 'docs/metrics/onboarding-log.csv'].forEach(
+    ['npm run docs:test', 'npm run docs:e2e', 'npm run test:vlm', 'npm run docs:metrics', 'docs/metrics/onboarding-log.csv'].forEach(
       (token) => {
         expect(section).toContain(token);
       },

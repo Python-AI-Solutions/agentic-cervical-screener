@@ -140,8 +140,8 @@ npm run test:watch    # Run tests in watch mode
 npm run test:e2e      # Run E2E tests (Playwright)
 npm run test:e2e:ci   # Run headless E2E suite (no browser UI, CI-safe)
 npm run test:e2e:ui   # Run E2E tests with UI
-npm run test:docs     # Run documentation + viewer evidence stack (Vitest + Playwright + VLM + metrics)
-npm run test:all      # Run all three test stacks (unit, app E2E, docs evidence)
+npm run test:vlm      # Run VLM audits (docs + viewer) against the latest screenshots
+npm run test:all      # Run all three test stacks (unit, app E2E, VLM)
 ```
 
 ## Project Structure
@@ -174,7 +174,7 @@ The project now uses a three-tier testing approach:
 
 - **Unit/Integration Tests (Vitest)**: Fast, mocked tests for logic (`frontend/src/**/*.test.ts`, `frontend/src/**/*.integration.test.ts`)
 - **E2E Tests (Playwright)**: Real browser tests for actual functionality (`frontend/e2e/**/*.spec.ts`)
-- **VLM + Documentation/Viewer Metrics**: Automated MLX visual review (`npm run docs:vlm-review [-- --suite viewer]`) plus `npm run docs:metrics` enforces onboarding success ≥90% and freshness <30 days while producing semantic UX evidence.
+- **VLM + Documentation/Viewer Metrics**: Local LLava/Ollama reviews driven through the `llm` CLI (`pixi run npm run test:vlm`) plus `npm run docs:metrics` enforce onboarding success ≥90% and freshness <30 days while producing semantic UX evidence. Install [Ollama](https://ollama.com/download) and pull `llava` (or set `VLM_MODEL`) before running these commands.
 
 Recommended commands:
 
@@ -183,12 +183,12 @@ Recommended commands:
 cd frontend
 npm run docs:test
 npm run docs:e2e -- docs-overview.spec.ts
-npm run docs:vlm-review
+pixi run npm run vlm:docs
 npm run docs:metrics
 
 # Viewer responsive audit
 npm run docs:e2e -- viewer-responsive.spec.ts
-npm run docs:vlm-review -- --suite viewer
+pixi run npm run vlm:viewer
 ```
 
 See `docs/TESTING.md` for detailed testing documentation.

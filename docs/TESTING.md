@@ -53,8 +53,8 @@ This project uses a three-tier testing approach. Before running any suite, compl
 - `npm run test:e2e` - Run all E2E tests
 - `npm run test:e2e:ui` - Run with Playwright UI
 - `npm run test:e2e:debug` - Debug mode
-- `npm run test:docs` - Run the full documentation + viewer evidence stack (Vitest + Playwright + VLM + metrics)
-- `npm run test:all` - Run all three stacks (unit/integration, application E2E, docs evidence)
+- `pixi run npm run test:vlm` - Run the local LLava/Ollama audits for docs + viewer screenshots (requires Apple Silicon with ≥16 GB RAM)
+- `npm run test:all` - Run all three stacks (unit/integration, application E2E, local VLM)
 
 ## Test Organization
 
@@ -73,9 +73,10 @@ frontend/
 
 ## VLM & Metrics
 
-- `npm run docs:vlm-review`: Runs the MLX `llava-phi-3-mini-4k` review against the latest Playwright screenshots/JSON and fails on medium+ issues.
+- `pixi run npm run test:vlm`: Runs the LLava/Ollama review (via the `llm` CLI) against the latest Playwright screenshots/JSON and fails on medium+ issues.
 - `npm run docs:metrics`: Verifies onboarding success rate (≥90% over last 10 log rows) and documentation freshness (<30 days since `last_reviewed`).
-- Playwright artifacts are written to `frontend/playwright-artifacts/<suite>` by default. Override the location with `PLAYWRIGHT_ARTIFACT_ROOT` (for the Playwright run) or `npm run docs:vlm-review -- --screenshots <dir>` when you need to analyze a custom directory.
+- Install [Ollama](https://ollama.com/download) locally and pull at least one multimodal model (for example `ollama pull llava`). You can override the default model by setting `VLM_MODEL`, `DOCS_VLM_MODEL`, or `VIEWER_VLM_MODEL`.
+- Playwright artifacts are written to `frontend/playwright-artifacts/<suite>` by default. Override the location with `PLAYWRIGHT_ARTIFACT_ROOT` (for the Playwright run) or run `pixi run npm run vlm:docs -- --screenshots <dir>` when you need to analyze a custom directory.
 
 ## Console Suppression
 
@@ -114,10 +115,10 @@ npm run test:e2e
 # Headless CI-friendly E2E run (preferred for automation)
 npm run test:e2e:ci
 
-# Documentation evidence stack
-npm run test:docs
+# VLM audits (docs + viewer; run inside Pixi)
+pixi run npm run test:vlm
 
-# All tests (unit + app E2E + docs evidence)
+# All tests (unit + app E2E + VLM)
 npm run test:all
 
 # Watch mode for development

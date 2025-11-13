@@ -8,7 +8,7 @@ description: "Task list for Project Overview Guidance Index feature"
 **Input**: Design documents from `/specs/001-project-guide-index/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/, quickstart.md
 
-**Tests**: Dual-layer evidence + VLM audit + metrics scripts are mandatory. Every user story couples Vitest markdown parsing with Playwright renders, MLX-based VLM review, and (where applicable) onboarding/freshness scripts.
+**Tests**: Dual-layer evidence + VLM audit + metrics scripts are mandatory. Every user story couples Vitest markdown parsing with Playwright renders, llm/Ollama-based VLM review, and (where applicable) onboarding/freshness scripts.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -29,9 +29,9 @@ description: "Task list for Project Overview Guidance Index feature"
 
 ## Phase 1: Setup (Shared Infrastructure)
 
- - [X] T001 Update `frontend/package.json` + `package-lock.json` to add `gray-matter`, `remark-parse`, `mdast-util-find`, `yaml`, MLX helpers, and CSV tooling needed by scripts/docs.  
- - [X] T002 Add npm scripts (`docs:test`, `docs:e2e`, `docs:vlm-review`, `docs:metrics`) in `frontend/package.json`, wiring them to Vitest, Playwright, VLM, and metrics scripts respectively.  
- - [X] T003 Document prerequisites (Apple Silicon MLX install, metrics command usage) in `AGENTS.md` under the development workflow section.
+ - [X] T001 Update `frontend/package.json` + `package-lock.json` to add `gray-matter`, `remark-parse`, `mdast-util-find`, `yaml`, VLM helpers (llm CLI integration), and CSV tooling needed by scripts/docs.  
+ - [X] T002 Add npm scripts (`docs:test`, `docs:e2e`, `test:vlm`, `docs:metrics`) in `frontend/package.json`, wiring them to Vitest, Playwright, VLM, and metrics scripts respectively.  
+ - [X] T003 Document prerequisites (Ollama install, llm plugin usage, metrics command usage) in `AGENTS.md` under the development workflow section.
 
 ---
 
@@ -58,7 +58,7 @@ description: "Task list for Project Overview Guidance Index feature"
 **Independent Test**:
 - `npm run docs:test -- --runTestsByPath docs/__tests__/project_overview.index.test.ts` (Orientation assertions)
 - `npm run docs:e2e -- docs-overview.spec.ts` (desktop/tablet/phone orientation callouts)
-- `npm run docs:vlm-review` (Orientation portion of `vlm-report.md` clean)
+- `pixi run npm run test:vlm` (Orientation portion of `vlm-report.md` clean)
 - `npm run docs:metrics` (ensures onboarding log success ratio ≥90%)
 
 ### Tests for User Story 1
@@ -86,7 +86,7 @@ description: "Task list for Project Overview Guidance Index feature"
 **Independent Test**:
 - `npm run docs:test` (table + playbook assertions)
 - `npm run docs:e2e -- docs-overview.spec.ts` (scrolling verification, breadcrumbs)
-- `npm run docs:vlm-review` (table/playbook readability)
+- `pixi run npm run test:vlm` (table/playbook readability)
 
 ### Tests for User Story 2
 
@@ -110,7 +110,7 @@ description: "Task list for Project Overview Guidance Index feature"
 **Independent Test**:
 - `npm run docs:test` (metadata + anchor assertions)
 - `npm run docs:e2e -- docs-overview.spec.ts` (metadata callout safe-area checks)
-- `npm run docs:vlm-review` (metadata/drawer readability)
+- `pixi run npm run test:vlm` (metadata/drawer readability)
 - `npm run docs:metrics` (freshness script verifies `last_reviewed`)
 
 ### Tests for User Story 3
@@ -138,7 +138,7 @@ description: "Task list for Project Overview Guidance Index feature"
 
 ## Phase 6: Viewer Responsive Audit (New)
 
-**Purpose**: Extend automation beyond documentation to cover the actual viewer shell so screenshots/MLX findings catch UI regressions like stacked buttons and obscured canvases.
+**Purpose**: Extend automation beyond documentation to cover the actual viewer shell so screenshots/VLM findings catch UI regressions like stacked buttons and obscured canvases.
 
 ### Tests for Viewer Audit
 
@@ -149,7 +149,7 @@ description: "Task list for Project Overview Guidance Index feature"
 
 - [X] T036 Add utilities in `frontend/src/test/viewer-fixtures.ts` (or equivalent) to seed demo cases and expose selectors for header/actions/canvas/drawer so Playwright scripts can assert safe-area padding.  
 - [X] T037 Extend `frontend/scripts/docs-overview-vlm.ts` (or create `frontend/scripts/viewer-vlm.ts`) to ingest viewer screenshots/JSON, tag findings (e.g., `[Viewer-Desktop]`), and fail CI on medium+ issues.  
-- [X] T038 Update `README.md`, `AGENTS.md`, and `specs/001-project-guide-index/quickstart.md` to mention the new viewer audit commands (`npm run docs:e2e -- viewer-responsive.spec.ts`, `npm run docs:vlm-review -- --suite viewer`).  
+- [X] T038 Update `README.md`, `AGENTS.md`, and `specs/001-project-guide-index/quickstart.md` to mention the new viewer audit commands (`npm run docs:e2e -- viewer-responsive.spec.ts`, `pixi run npm run vlm:viewer`).  
 - [X] T039 Wire the viewer audit into `npm run docs:metrics` summary output (or CI checklist) so reviewers must attach viewer screenshots + VLM notes in addition to documentation evidence.
 
 ---
@@ -182,6 +182,6 @@ npm run docs:test -- --runTestsByPath docs/__tests__/project_overview.index.test
 code docs/project_overview.md README.md AGENTS.md docs/TESTING.md docs/metrics/onboarding-log.csv
 
 # Terminal 3 – Playwright + VLM + metrics scripts
-cd frontend && npm run docs:e2e -- docs-overview.spec.ts && npm run docs:vlm-review
+cd frontend && npm run docs:e2e -- docs-overview.spec.ts && pixi run npm run vlm:docs
 npm run docs:metrics
 ```

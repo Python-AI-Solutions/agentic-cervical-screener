@@ -29,8 +29,8 @@
   2. **Generate JSON during build** – harder to validate and would require bundler changes; Playwright already has the rendered DOM.
 
 ## Decision 5: VLM Selection for UX Audits
-- **Decision**: Use `mlx-community/llava-phi-3-mini-4k` (≈4 B params) running via Apple’s MLX runtime to evaluate Playwright screenshots + JSON artifacts. The evaluation script (`frontend/scripts/docs-overview-vlm.ts`) invokes `python -m mlx_lm.generate --model mlx-community/llava-phi-3-mini-4k` with each screenshot and structured prompts to flag occlusion, readability, and accessibility violations. The model outputs Markdown summaries plus severity scores, stored alongside the Playwright reports.
-- **Rationale**: The MLX build is optimized for Apple Silicon and comfortably fits within 16 GB unified memory even when batch-processing four device screenshots. LLaVA-Phi-3-mini has been benchmarked on doc/question answering tasks and offers a good balance between reasoning ability and local footprint, avoiding cloud dependencies.
+- **Decision**: Use the `llm` CLI with the `llm-ollama` plugin and a local LLava-family model (default `llava:latest`) to evaluate Playwright screenshots + JSON artifacts. The evaluation script (`frontend/scripts/docs-overview-vlm.ts`) shells out to `llm -m llava ... -a <image>` so every screenshot receives a JSON severity/notes summary.
+- **Rationale**: Ollama ships optimized Apple Silicon builds, provides straightforward model management (`ollama pull llava`), and keeps the entire audit offline without compiling MLX runtimes. The `llm` CLI already supports attachments and JSON extraction, simplifying the Node wrapper.
 - **Alternatives Considered**:
-  1. **llava-v1.6-mistral-7b** – More capable but risks swapping on 16 GB machines and slows CI.
+  1. **MLX + `mlx_lm`** – Text-only today; lacks mature vision input support and requires extra pip tooling the team wants to avoid.
   2. **Remote GPT-4o mini** – Strong reasoning but violates the requirement for offline/local evaluation and introduces latency/cost.

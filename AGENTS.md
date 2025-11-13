@@ -52,7 +52,7 @@ agentic-cervical-screener/
 **Three-tier approach**:
 - **Unit/Integration (Vitest)**: Fast, mocked tests for logic (`src/**/*.test.ts`, `src/**/*.integration.test.ts`)
 - **E2E (Playwright)**: Real browser tests for actual functionality (`e2e/**/*.spec.ts`)
-- **VLM/Documentation Metrics**: MLX-based review of Playwright artifacts (`npm run docs:vlm-review`) plus onboarding/freshness scripts (`npm run docs:metrics`) provide semantic UX validation and governance evidence.
+- **VLM/Documentation Metrics**: Local vision-language review via the `llm` CLI + Ollama (`pixi run npm run test:vlm`, which wraps `llm -m llava ...`) plus onboarding/freshness scripts (`npm run docs:metrics`) provide semantic UX validation and governance evidence.
 
 **Key principles**:
 - Mock DOM/canvas/browser APIs in unit tests
@@ -102,8 +102,8 @@ cd frontend && npm run test:e2e
 # Headless CI-friendly E2E run (preferred for automation)
 cd frontend && npm run test:e2e:ci
 
-# Documentation + viewer evidence stack
-cd frontend && npm run test:docs
+# VLM audits (docs + viewer screenshots; run via Pixi so the llm CLI + Ollama plugin are on PATH)
+cd frontend && pixi run npm run test:vlm
 
 # All tests
 cd frontend && npm run test:all
@@ -119,22 +119,23 @@ Certain documentation-focused features require extra validation:
 # Markdown structure checks (Vitest)
 cd frontend && npm run docs:test
 
-# Responsive renders + JSON artifacts
+# Responsive renders + JSON artifacts (docs + viewer)
 cd frontend && npm run docs:e2e
 
-# MLX VLM audit (Apple Silicon w/ ≥16 GB RAM)
-cd frontend && npm run docs:vlm-review
+# Local VLM audit (Ollama + llm; Apple Silicon w/ ≥16 GB RAM recommended)
+cd frontend && pixi run npm run test:vlm
 
 # Onboarding + freshness metrics
 cd frontend && npm run docs:metrics
 
 # Viewer responsive audit + VLM
 cd frontend && npm run docs:e2e -- viewer-responsive.spec.ts
-cd frontend && npm run docs:vlm-review -- --suite viewer
+cd frontend && pixi run npm run vlm:viewer
 ```
 
 **Prerequisites**
-- Install Apple’s MLX runtime and model once (`pip install mlx-lm` then allow `mlx_lm` to download `mlx-community/llava-phi-3-mini-4k`).
+- Install [Ollama](https://ollama.com/download/mac) locally, start it (`ollama serve`), and pull at least one multimodal model such as `ollama pull llava`.
+- Confirm the `llm-ollama` plugin sees your models: `pixi run llm plugins` and `pixi run llm ollama models`.
 - Maintain `docs/metrics/onboarding-log.csv` after each mentor session so the metrics script can compute the ≥90 % success threshold.
 
 ### Building

@@ -60,7 +60,7 @@ This document captures the current product vision, architecture, and the primary
 
 1. **Skim the README for architecture + demo context** – Start with [`README.md`](../README.md) to understand the end-to-end workflow and tooling. Run `pixi run dev` followed by `cd frontend && npm run dev` so both backend and frontend boot successfully.
 2. **Read the Agent Development Guide and record onboarding metrics** – Follow [`AGENTS.md`](AGENT_GUIDE.md) to review conventions, then run `cd frontend && npm run docs:test` and `npm run docs:e2e` to capture the latest documentation evidence. Mentors log outcomes in `docs/metrics/onboarding-log.csv` (success flag must stay ≥90 %).
-3. **Verify the testing + responsiveness toolchain** – Use [`docs/TESTING.md`](TESTING.md) to run `npm test`, `npm run test:e2e:ci`, and `npm run docs:vlm-review` so you have dual-layer + VLM evidence before editing the viewer. Always finish with `npm run docs:metrics` to catch stale onboarding entries or outdated `last_reviewed` metadata.
+3. **Verify the testing + responsiveness toolchain** – Use [`docs/TESTING.md`](TESTING.md) to run `npm test`, `npm run test:e2e:ci`, and `npm run test:vlm` so you have dual-layer + VLM evidence before editing the viewer. Always finish with `npm run docs:metrics` to catch stale onboarding entries or outdated `last_reviewed` metadata.
 
 > **Logging Reminder**: Immediately after onboarding a new contributor, append a row to `docs/metrics/onboarding-log.csv` with the date, mentor, contributor, commands executed, and whether they completed the path successfully. This CSV powers the metrics gate enforced by `npm run docs:metrics`.
 
@@ -90,7 +90,7 @@ This document captures the current product vision, architecture, and the primary
 
 ### New Contributor Playbook
 1. Follow the Orientation Path above and run `pixi run dev`, `npm run dev`, `npm test`, `npm run test:e2e:ci`.
-2. Execute `npm run docs:test`, `npm run docs:e2e`, `npm run docs:vlm-review`, and `npm run docs:metrics` so artifacts + metrics are up to date.
+2. Execute `npm run docs:test`, `npm run docs:e2e`, `npm run test:vlm`, and `npm run docs:metrics` so artifacts + metrics are up to date.
 3. Add an onboarding log entry to `docs/metrics/onboarding-log.csv` (mentor + contributor) and confirm success is recorded.
 
 ### Spec Author Playbook
@@ -130,7 +130,7 @@ Questions or discrepancies? Open an issue referencing this overview so we can up
 
 ## Maintenance & Update Workflow
 
-1. **Run the full evidence stack** – `npm run docs:test`, `npm run docs:e2e -- docs-overview.spec.ts`, `npm run docs:vlm-review`, and `npm run docs:metrics`. These commands must pass (and artifacts uploaded) before any documentation PR merges.
+1. **Run the full evidence stack** – `npm run docs:test`, `npm run docs:e2e -- docs-overview.spec.ts`, `npm run test:vlm`, and `npm run docs:metrics`. These commands must pass (and artifacts uploaded) before any documentation PR merges.
 2. **Update metadata + anchors** – bump `doc_version`, refresh `last_reviewed` (ISO format), and ensure `anchor_slugs` reflects every section enumerated in this file. If you add/remove headings, also update the Reference Anchors table below.
 3. **Append onboarding log entry** – mentors record outcomes in `docs/metrics/onboarding-log.csv` immediately after each session so the ≥90% success window remains truthful.
 4. **Attach artifacts to PRs** – include the latest Playwright screenshots (`frontend/playwright-artifacts/docs-overview/*.png`), JSON metadata, `vlm-report.md`, and the console output from `npm run docs:metrics`.
