@@ -75,14 +75,40 @@ This plugin was created to enable fast VLM-based aesthetic testing for the Agent
 
 ```typescript
 // In your test script
+import { execa } from 'execa';
+
 const { stdout } = await execa('llm', [
   '-m', 'SmolVLM-500M',
   '--no-stream',
   '--no-log',
   '-a', screenshotPath,
   uiAnalysisPrompt,
-], { timeout: 30000 });
+], {
+  timeout: 30000,
+  input: '',  // ← IMPORTANT: Close stdin immediately to avoid hanging
+});
 ```
+
+### ⚠️ Important: stdin Handling
+
+The `llm` CLI waits for stdin to close (EOF) before processing. When calling from Node.js subprocess APIs, **you must explicitly close stdin** to avoid the process hanging indefinitely.
+
+**Correct usage with execa:**
+```typescript
+await execa('llm', [...args], {
+  input: '',  // ← Close stdin immediately
+})
+```
+
+**Correct usage with spawn:**
+```typescript
+const proc = spawn('llm', [...args]);
+proc.stdin?.end();  // ← Close stdin immediately
+```
+
+**Why this happens:** The upstream `llm` CLI has logic that reads from stdin in certain scenarios. When Node.js creates a subprocess with piped stdio, the subprocess waits for stdin to close before proceeding. This is standard Unix behavior.
+
+See [DEBUGGING_SUBPROCESS_STDIN.md](../../docs/DEBUGGING_SUBPROCESS_STDIN.md) for detailed troubleshooting information.
 
 ## Performance
 

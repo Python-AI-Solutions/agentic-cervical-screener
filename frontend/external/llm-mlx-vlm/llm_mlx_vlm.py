@@ -2,6 +2,22 @@
 LLM plugin for running vision language models using MLX on Apple Silicon.
 
 This plugin integrates mlx-vlm to provide fast, local VLM inference on Mac.
+
+Usage:
+    llm -m SmolVLM-500M "Describe this image" -a image.png
+
+When calling from Node.js/subprocess:
+    The `llm` CLI waits for stdin EOF before processing. When using execa or spawn,
+    explicitly close stdin to avoid hanging:
+
+    // Using execa
+    await execa('llm', ['-m', 'SmolVLM-500M', 'prompt', '-a', 'image.png'], {
+        input: '',  // Close stdin immediately
+    })
+
+    // Using spawn
+    const proc = spawn('llm', [...]);
+    proc.stdin?.end();  // Close stdin immediately
 """
 import llm
 from typing import Optional
@@ -80,6 +96,7 @@ class MlxVlmModel(llm.Model):
                 cmd,
                 capture_output=True,
                 text=True,
+                stdin=subprocess.DEVNULL,  # Explicitly close stdin to avoid blocking
                 timeout=60,  # 60 second timeout
                 check=True,
             )
