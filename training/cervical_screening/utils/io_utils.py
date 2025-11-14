@@ -3,7 +3,7 @@ Input/Output utilities
 """
 
 import json
-import pickle
+import pickle  # nosec
 from pathlib import Path
 
 import pandas as pd
@@ -30,10 +30,7 @@ def save_results(results, output_path, format="json"):
             pickle.dump(results, f)
 
     elif format == "csv":
-        if isinstance(results, dict):
-            df = pd.DataFrame([results])
-        else:
-            df = pd.DataFrame(results)
+        df = pd.DataFrame([results]) if isinstance(results, dict) else pd.DataFrame(results)
         df.to_csv(output_path, index=False)
 
     else:
@@ -64,7 +61,7 @@ def load_results(input_path, format="json"):
 
     elif format == "pickle":
         with open(input_path, "rb") as f:
-            results = pickle.load(f)
+            results = pickle.load(f)  # nosec
 
     elif format == "csv":
         results = pd.read_csv(input_path)

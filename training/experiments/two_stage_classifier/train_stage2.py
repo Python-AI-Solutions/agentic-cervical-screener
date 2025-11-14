@@ -43,33 +43,33 @@ def main():
     # Mount drive
     try:
         mount_drive()
-    except:
+    except Exception:
         print("Drive already mounted")
 
     # Paths
-    DATASET_PATH = PathsConfig.get_dataset_path()
+    dataset_path = PathsConfig.get_dataset_path()
 
-    BASELINE_MODEL = PathsConfig.get_baseline_model_path()
+    baseline_model = PathsConfig.get_baseline_model_path()
 
-    OUTPUT_DIR = Path(
+    output_dir = Path(
         "/content/drive/Shareddrives/PythonAISolutions/projects/"
         "cervical-screening/outputs/outputs_two_stage"
     )
 
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    CROP_DIR = OUTPUT_DIR / "roi_crops"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    crop_dir = output_dir / "roi_crops"
 
-    if not verify_paths(DATASET_PATH, OUTPUT_DIR):
+    if not verify_paths(dataset_path, output_dir):
         print("Path verification failed")
         return
 
-    print(f"\nDataset: {DATASET_PATH}")
-    print(f"Baseline model: {BASELINE_MODEL}")
-    print(f"Output: {OUTPUT_DIR}")
-    print(f"Baseline exists: {BASELINE_MODEL.exists()}")
+    print(f"\nDataset: {dataset_path}")
+    print(f"Baseline model: {baseline_model}")
+    print(f"Output: {output_dir}")
+    print(f"Baseline exists: {baseline_model.exists()}")
 
     # Class names
-    CLASS_NAMES = ["Negative for intraepithelial lesion", "ASC-US", "ASC-H", "LSIL", "HSIL", "SCC"]
+    class_names = ["Negative for intraepithelial lesion", "ASC-US", "ASC-H", "LSIL", "HSIL", "SCC"]
 
     # ========================================
     # STEP 1: EXTRACT ROI CROPS
@@ -79,11 +79,11 @@ def main():
     print("STEP 1: EXTRACTING ROI CROPS")
     print("=" * 80)
 
-    extractor = ROIExtractor(class_names=CLASS_NAMES, crop_size=(224, 224))
+    extractor = ROIExtractor(class_names=class_names, crop_size=(224, 224))
 
     # Extract crops from ground truth labels
     all_counts = extractor.extract_dataset(
-        dataset_path=DATASET_PATH, output_dir=CROP_DIR, splits=["train", "val"]
+        dataset_path=dataset_path, output_dir=crop_dir, splits=["train", "val"]
     )
 
     # Display counts
@@ -96,7 +96,7 @@ def main():
             print(f"   {short_name}: {count}")
 
     # Verify crops
-    verification = extractor.verify_crops(CROP_DIR, splits=["train", "val"])
+    verification = extractor.verify_crops(crop_dir, splits=["train", "val"])
 
     # ========================================
     # STEP 2: BUILD CLASSIFIER
@@ -109,13 +109,13 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
 
-    classifier = CellClassifier(num_classes=len(CLASS_NAMES), device=device)
+    classifier = CellClassifier(num_classes=len(class_names), device=device)
     classifier.build_model()
 
     # Prepare dataloaders
     print("\n📦 Preparing datasets...")
     train_loader, val_loader = classifier.prepare_dataloaders(
-        crop_dir=CROP_DIR, class_names=CLASS_NAMES, batch_size=32, num_workers=2
+        crop_dir=crop_dir, class_names=class_names, batch_size=32, num_workers=2
     )
 
     # ========================================
@@ -133,7 +133,7 @@ def main():
     print("   Loss: CrossEntropyLoss")
     print("   Optimizer: Adam")
 
-    model_save_path = OUTPUT_DIR / "stage2_classifier_best.pth"
+    model_save_path = output_dir / "stage2_classifier_best.pth"
 
     history = classifier.train(
         train_loader=train_loader,
@@ -155,11 +155,11 @@ def main():
     classifier.load_model(model_save_path)
 
     # Get predictions
-    results = classifier.evaluate(val_loader, CLASS_NAMES)
+    results = classifier.evaluate(val_loader, class_names)
 
     predictions = results["predictions"]
     labels = results["labels"]
-    probabilities = results["probabilities"]
+    # probabilities = results["probabilities"]
 
     # Calculate metrics
     accuracy = accuracy_score(labels, predictions)
@@ -215,7 +215,7 @@ def main():
         },
     }
 
-    summary_path = OUTPUT_DIR / "two_stage_summary.json"
+    summary_path = output_dir / "two_stage_summary.json"
     save_results(summary, summary_path, format="json")
     print(f"✅ Summary: {summary_path}")
 
@@ -228,7 +228,7 @@ def main():
     print("=" * 80)
 
     print("\n📁 Outputs:")
-    print(f"   Crops: {CROP_DIR}")
+    print(f"   Crops: {crop_dir}")
     print(f"   Model: {model_save_path}")
     print(f"   Summary: {summary_path}")
 

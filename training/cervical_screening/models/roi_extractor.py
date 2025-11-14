@@ -132,7 +132,7 @@ class ROIExtractor:
 
         return dict(crop_counts)
 
-    def extract_dataset(self, dataset_path, output_dir, splits=["train", "val"]):
+    def extract_dataset(self, dataset_path, output_dir, splits=None):
         """
         Extract crops for entire dataset
 
@@ -144,6 +144,8 @@ class ROIExtractor:
         Returns:
             Dictionary with counts for each split
         """
+        if splits is None:
+            splits = ["train", "val"]
         dataset_path = Path(dataset_path)
         output_dir = Path(output_dir)
 
@@ -162,7 +164,7 @@ class ROIExtractor:
 
         return all_counts
 
-    def verify_crops(self, crop_dir, splits=["train", "val"]):
+    def verify_crops(self, crop_dir, splits=None):
         """
         Verify extracted crops
 
@@ -173,6 +175,8 @@ class ROIExtractor:
         Returns:
             Verification summary
         """
+        if splits is None:
+            splits = ["train", "val"]
         crop_dir = Path(crop_dir)
         summary = {}
 

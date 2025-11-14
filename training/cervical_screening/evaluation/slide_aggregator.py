@@ -22,7 +22,7 @@ class SlideAggregator:
             class_names: List of class names (Bethesda categories)
         """
         self.class_names = class_names
-        self.class_map = {i: name for i, name in enumerate(class_names)}
+        self.class_map = dict(enumerate(class_names))
 
     def aggregate_slide(self, image_path, model, conf_threshold=0.25):
         """

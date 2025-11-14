@@ -116,7 +116,7 @@ class MetricsCalculator:
 
         return metrics
 
-    def calculate_map(self, predictions, ground_truth, iou_thresholds=[0.5]):
+    def calculate_map(self, predictions, ground_truth, iou_thresholds=None):
         """
         Calculate mean Average Precision (mAP)
 
@@ -128,6 +128,8 @@ class MetricsCalculator:
         Returns:
             Dictionary with mAP values
         """
+        if iou_thresholds is None:
+            iou_thresholds = [0.5]
         aps = []
 
         for iou_thresh in iou_thresholds:

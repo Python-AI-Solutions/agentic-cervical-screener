@@ -42,22 +42,22 @@ def main():
     # Mount drive
     try:
         mount_drive()
-    except:
+    except Exception:
         print("Drive already mounted")
 
     # Paths
-    DATASET_PATH = PathsConfig.get_dataset_path()
+    dataset_path = PathsConfig.get_dataset_path()
 
-    MODEL_PATH = PathsConfig.get_baseline_model_path()
+    model_path = PathsConfig.get_baseline_model_path()
 
-    OUTPUT_DIR = Path(
+    output_dir = Path(
         "/content/drive/Shareddrives/PythonAISolutions/projects/"
         "cervical-screening/outputs/outputs_slide_aggregation"
     )
 
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    if not verify_paths(DATASET_PATH, OUTPUT_DIR):
+    if not verify_paths(dataset_path, output_dir):
         print("Path verification failed")
         return
 
@@ -65,14 +65,14 @@ def main():
     print("\n" + "=" * 80)
     print("LOADING MODEL")
     print("=" * 80)
-    print(f"Model: {MODEL_PATH}")
+    print(f"Model: {model_path}")
 
-    if not MODEL_PATH.exists():
-        print(f"❌ Model not found: {MODEL_PATH}")
+    if not model_path.exists():
+        print(f"❌ Model not found: {model_path}")
         print("Please train baseline model first")
         return
 
-    model = YOLO(str(MODEL_PATH))
+    model = YOLO(str(model_path))
     print("✅ Model loaded")
 
     # Configuration
@@ -86,7 +86,7 @@ def main():
     print("AGGREGATING SLIDES")
     print("=" * 80)
 
-    val_images_dir = DATASET_PATH / "val" / "images"
+    val_images_dir = dataset_path / "val" / "images"
 
     # Process slides (max 20 for analysis)
     slide_results = aggregator.aggregate_dataset(
@@ -149,7 +149,7 @@ def main():
         )
 
     df_detailed = pd.DataFrame(detailed_results)
-    detailed_csv = OUTPUT_DIR / "slide_results_detailed.csv"
+    detailed_csv = output_dir / "slide_results_detailed.csv"
     df_detailed.to_csv(detailed_csv, index=False)
     print(f"✅ Detailed results: {detailed_csv}")
 
@@ -165,7 +165,7 @@ def main():
         )
 
     df_diagnosis = pd.DataFrame(diagnosis_data)
-    diagnosis_csv = OUTPUT_DIR / "slide_diagnosis_distribution.csv"
+    diagnosis_csv = output_dir / "slide_diagnosis_distribution.csv"
     df_diagnosis.to_csv(diagnosis_csv, index=False)
     print(f"✅ Diagnosis distribution: {diagnosis_csv}")
 
@@ -178,7 +178,7 @@ def main():
         "slide_results": slide_results,
     }
 
-    summary_path = OUTPUT_DIR / "slide_aggregation_summary.json"
+    summary_path = output_dir / "slide_aggregation_summary.json"
     save_results(summary_json, summary_path, format="json")
     print(f"✅ Summary: {summary_path}")
 
@@ -187,7 +187,7 @@ def main():
     print("COMPLETE")
     print("=" * 80)
     print(f"Analyzed {summary['total_slides']} slides")
-    print(f"Results saved to: {OUTPUT_DIR}")
+    print(f"Results saved to: {output_dir}")
 
     # Show key findings
     print("\n🔍 Key Findings:")

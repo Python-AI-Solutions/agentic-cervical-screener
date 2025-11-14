@@ -4,7 +4,7 @@ Prediction with Issue #25 improvements
 
 import numpy as np
 import torch
-import torch.nn.functional as F
+import torch.nn.functional as functional
 
 
 class ImprovedPredictor:
@@ -51,7 +51,7 @@ class ImprovedPredictor:
         boxes = results[0].boxes
         detections = []
 
-        for i, box in enumerate(boxes):
+        for _, box in enumerate(boxes):  # Change i to _
             # Extract objectness score
             objectness = float(box.conf[0])
 
@@ -69,7 +69,7 @@ class ImprovedPredictor:
 
                 # FIX: Normalize class scores to probabilities using softmax
                 class_probs_tensor = torch.tensor(class_scores, dtype=torch.float32)
-                class_probs = F.softmax(class_probs_tensor, dim=0).numpy()
+                class_probs = functional.softmax(class_probs_tensor, dim=0).numpy()
 
                 class_id = int(np.argmax(class_probs))
                 class_prob = float(class_probs[class_id])

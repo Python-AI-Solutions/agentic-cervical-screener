@@ -36,22 +36,22 @@ def main():
     # Mount drive
     try:
         mount_drive()
-    except:
+    except Exception:
         print("Drive already mounted")
 
     # Paths
-    DATASET_PATH = PathsConfig.get_dataset_path()
+    dataset_path = PathsConfig.get_dataset_path()
 
-    MODEL_PATH = PathsConfig.get_baseline_model_path()
+    model_path = PathsConfig.get_baseline_model_path()
 
-    OUTPUT_DIR = Path(
+    output_dir = Path(
         "/content/drive/Shareddrives/PythonAISolutions/projects/"
         "cervical-screening/outputs/outputs_tta_evaluation"
     )
 
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    if not verify_paths(DATASET_PATH, OUTPUT_DIR):
+    if not verify_paths(dataset_path, output_dir):
         print("Path verification failed")
         return
 
@@ -59,13 +59,13 @@ def main():
     print("\n" + "=" * 80)
     print("LOADING MODEL")
     print("=" * 80)
-    print(f"Model: {MODEL_PATH}")
+    print(f"Model: {model_path}")
 
-    if not MODEL_PATH.exists():
-        print(f"❌ Model not found: {MODEL_PATH}")
+    if not model_path.exists():
+        print(f"❌ Model not found: {model_path}")
         return
 
-    model = YOLO(str(MODEL_PATH))
+    model = YOLO(str(model_path))
     print("✅ Model loaded")
 
     # Initialize TTA evaluator
@@ -76,7 +76,7 @@ def main():
     print("PREPARING TEST SET")
     print("=" * 80)
 
-    val_images_dir = DATASET_PATH / "val" / "images"
+    val_images_dir = dataset_path / "val" / "images"
 
     # Evaluate TTA
     print("\n" + "=" * 80)
@@ -156,12 +156,12 @@ def main():
     print("=" * 80)
 
     # Save detailed comparison
-    csv_path = OUTPUT_DIR / "tta_comparison.csv"
+    csv_path = output_dir / "tta_comparison.csv"
     df.to_csv(csv_path, index=False)
     print(f"✅ Detailed results: {csv_path}")
 
     # Save summary
-    summary_path = OUTPUT_DIR / "tta_evaluation_summary.json"
+    summary_path = output_dir / "tta_evaluation_summary.json"
     save_results(summary, summary_path, format="json")
     print(f"✅ Summary: {summary_path}")
 

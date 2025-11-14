@@ -39,24 +39,24 @@ def main():
     # Mount drive
     try:
         mount_drive()
-    except:
+    except Exception:
         print("Drive already mounted")
 
     # Paths
-    DATASET_PATH = PathsConfig.get_dataset_path()
+    dataset_path = PathsConfig.get_dataset_path()
 
-    OUTPUT_DIR = Path(
+    output_dir = Path(
         "/content/drive/Shareddrives/PythonAISolutions/projects/cervical-screening/outputs_baseline"
     )
 
-    if not verify_paths(DATASET_PATH, OUTPUT_DIR):
+    if not verify_paths(dataset_path, output_dir):
         print("Path verification failed")
         return
 
     # Configuration
     config = TrainingConfig(
-        data_yaml=DATASET_PATH / "data.yaml",
-        output_dir=OUTPUT_DIR,
+        data_yaml=dataset_path / "data.yaml",
+        output_dir=output_dir,
         model_name="yolo12n.pt",
         epochs=50,
         batch_size=16,
@@ -72,15 +72,15 @@ def main():
     results = trainer.train()  # ← Validates automatically
 
     best_model_path = trainer.get_best_model_path(results)
-    results_dir = Path(results.save_dir)
+    # results_dir = Path(results.save_dir)
 
     # Evaluate
     print("\n" + "=" * 80)
     print("EVALUATION")
     print("=" * 80)
-    eval_output_dir = OUTPUT_DIR / "evaluation"
+    eval_output_dir = output_dir / "evaluation"
     evaluator = ModelEvaluator(trainer.model, config, eval_output_dir)
-    val_images_dir = DATASET_PATH / "val" / "images"
+    val_images_dir = dataset_path / "val" / "images"
 
     eval_results = evaluator.run_full_evaluation(val_image_dir=val_images_dir, num_samples=10)
 
