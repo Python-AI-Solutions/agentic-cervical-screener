@@ -2,158 +2,115 @@
 
 **Input**: Design documents from `/specs/001-project-guide-index/`
 
-**Prerequisites**: `plan.md`, `spec.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`
+**Prerequisites**: `plan.md`, revised `spec.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`
 
-**Tests**: Every user story must include paired Vitest/Python coverage for deterministic math plus Playwright journeys that emit screenshots and JSON artifacts for VLM review.
+**Tests**: Each user story pairs fast unit/integration coverage (Vitest/pytest) with Playwright journeys that emit screenshots + JSON artifacts consumed by the Python VLM audit.
 
-**Organization**: Tasks are grouped by user story so each slice can be implemented and validated independently.
+**Organization**: Tasks are grouped by phase and mapped to user stories so increments stay independently shippable.
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: Establish canonical SampleSlideBundle assets and loaders referenced by every story.
+**Purpose**: Lock down the demo case assets and shared configs referenced throughout the feature.
 
-- [ ] T001 Create SampleSlideBundle manifest with slideId, metadata, overlays, and checksum in `public/samples/cervical-baseline.json`.
-- [ ] T002 [P] Add backend loader/dataclass validating the manifest and checksum in `agentic_cervical_screener/sample_slide.py`.
-- [ ] T003 [P] Define SampleSlideBundle TypeScript types plus fetch helper bound to the manifest in `frontend/src/viewer/data/sampleSlide.ts`.
+- [ ] T001 Verify `public/mock/case-demo.json` and related PNG overlays include orientation, pixel spacing, stain metadata, and checksum notes aligned with README instructions.
+- [ ] T002 [P] Add demo-slide metadata comment block to `frontend/src/services/cqaiClient.ts` documenting which case IDs map to canonical assets for tests.
+- [ ] T003 [P] Capture Niivue version + DPR tolerances in `frontend/src/viewer/config/constants.ts` for reuse across modules and tests.
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: Shared configs, tooling, and contracts that every user story consumes.
+**Purpose**: Core utilities/tests every story depends on (demo metadata parsers, responsive helpers, artifact scaffolding).
 
 **⚠️ CRITICAL**: Complete before starting user story work.
 
-- [ ] T004 Create responsive + Niivue safe-area constants referenced by viewer math in `frontend/src/viewer/config/responsive.ts`.
-- [ ] T005 [P] Add Vitest canvas/Niivue test harness with DPR mocks in `frontend/src/viewer/__tests__/setup.ts`.
-- [ ] T006 [P] Build Playwright evidence helper that writes screenshot + metrics bundles for VLM in `frontend/e2e/utils/evidence.ts`.
-- [ ] T007 Implement `/docs/project-overview` + `/docs/project-overview/anchors` FastAPI routes and contract tests in `agentic_cervical_screener/main.py` and `tests/test_docs_overview.py`.
-- [ ] T008 [P] Scaffold telemetry API client + type guards targeting `/viewer-telemetry` in `frontend/src/services/telemetryClient.ts`.
+- [ ] T004 Create demo-case metadata parser + TypeScript types in `frontend/src/viewer/data/demoCase.ts`.
+- [ ] T005 [P] Add Vitest harness utilities (DPR mocks, Niivue canvas shim) in `frontend/src/viewer/__tests__/setup.ts`.
+- [ ] T006 [P] Build Playwright artifact helper that writes screenshots + metrics JSON to `frontend/playwright-report/metrics/demo-case.js` in `frontend/e2e/utils/artifacts.ts`.
+- [ ] T007 Ensure FastAPI `/docs/project-overview` + `/docs/project-overview/anchors` endpoints match the OpenAPI contract with regression tests in `tests/test_docs_overview.py`.
 
 **Checkpoint**: Foundation ready — user story implementation can now begin.
 
 ---
 
-## Phase 3: User Story 1 – Deterministic Viewer Launch & Sample Slide Integrity (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 – Deterministic Viewer Launch & Demo Slide Integrity (Priority: P1) 🎯 MVP
 
-**Goal**: Ensure contributors can run the README commands to load the bundled slide with deterministic zoom/pan/overlay alignment across DPRs.
+**Goal**: Contributors running the README commands load the existing demo slide with deterministic overlays/ROI math and responsive safe areas.
 
-**Independent Test**: Vitest validates SampleSlideBundle metadata + ROI math; Playwright `viewer-sample-slide.spec.ts` boots the viewer, captures desktop/tablet/phone screenshots, and asserts header/canvas safe areas. Launch must emit a `viewer_launch` telemetry event including slideId, DPR, runtime, and README command versions.
+**Independent Test**: Vitest validates demo metadata + ROI math; Playwright `frontend/e2e/viewer.spec.ts` (or consolidated successor) bootstraps desktop/tablet/phone layouts and stores screenshots + metrics; manual logging confirms launch timing stays within tolerances.
 
 ### Tests for User Story 1
 
-- [ ] T009 [P] [US1] Add Vitest coverage for SampleSlideBundle parsing, pixel spacing, and ROI drift checks in `frontend/src/viewer/__tests__/sampleSlide.test.ts`.
-- [ ] T010 [P] [US1] Author deterministic launch journey with responsive screenshots + JSON metrics in `frontend/e2e/viewer-sample-slide.spec.ts`.
+- [ ] T008 [P] [US1] Write Vitest coverage (`frontend/src/viewer/__tests__/demoCase.test.ts`) asserting metadata parsing, DPR drift math, and ROI overlay alignment for the demo slide.
+- [ ] T009 [P] [US1] Update `frontend/e2e/viewer.spec.ts` to capture multi-breakpoint screenshots, header metrics JSON, and per-device load-time stats for the demo case.
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Load the manifest during viewer bootstrap and hydrate StateManager defaults in `frontend/src/viewer/index.ts` and `frontend/src/viewer/StateManager.ts`.
-- [ ] T012 [US1] Implement overlay/ruler alignment + Niivue DPR-safe transforms in `frontend/src/viewer/CanvasManager.ts`.
-- [ ] T013 [US1] Dispatch `viewer_launch` telemetry events with slideId/DPR/commandVersion via the client in `frontend/src/viewer/telemetry/dispatcher.ts`.
+- [ ] T010 [US1] Wire the demo-case parser into `frontend/src/viewer/index.ts` and `frontend/src/viewer/StateManager.ts` so Niivue loads canonical defaults and restores zoom/pan after resize in ≤200 ms.
+- [ ] T011 [US1] Ensure overlay/ruler transforms honor the shared constants by refactoring `frontend/src/viewer/CanvasManager.ts` and `frontend/src/viewer/OverlayRenderer.ts`.
+- [ ] T012 [US1] Update README.md + `docs/TESTING.md` with the current “clone + pixi run dev / cd frontend && pixi run dev” instructions plus pointers to the demo case artifacts.
 
-**Checkpoint**: User Story 1 is functional and testable independently.
+**Checkpoint**: User Story 1 is fully testable and demonstrable; screenshots + JSON confirm deterministic layouts.
 
 ---
 
-## Phase 4: User Story 2 – Viewer Interaction Telemetry & Observability Anchors (Priority: P1)
+## Phase 4: User Story 2 – Viewer Evidence & Python VLM Audit Pipeline (Priority: P2)
 
-**Goal**: Capture machine-readable telemetry for overlay toggles, ROI draws, and responsive changes while buffering/retrying per research decisions and logging ingestion on the FastAPI backend.
+**Goal**: Keep the existing Python-based VLM audit wired to Playwright outputs so CI blocks on medium-or-higher findings without introducing TypeScript audit tooling.
 
-**Independent Test**: Vitest exercises the telemetry buffer/backoff state machine; FastAPI tests validate `/viewer-telemetry` + `/healthz` contracts and PHI redaction; Playwright extends `viewer-sample-slide.spec.ts` to mock the endpoint and assert beacons fire for overlay/ROI/responsive events with JSON payloads.
+**Independent Test**: Playwright produces enriched artifact bundles for the VLM script; pytest suites verify parsing/adjustments; the Python CLI fails when llava reports issues and writes `frontend/playwright-report/vlm-report.md`.
 
 ### Tests for User Story 2
 
-- [ ] T014 [P] [US2] Write Vitest coverage for telemetry buffer state transitions, retry intervals, and FIFO drops in `frontend/src/viewer/telemetry/buffer.test.ts`.
-- [ ] T015 [P] [US2] Add FastAPI tests for `/viewer-telemetry` + `/healthz` covering success, validation, and rate-limit cases in `tests/test_viewer_telemetry.py`.
-- [ ] T016 [P] [US2] Extend `frontend/e2e/viewer-sample-slide.spec.ts` to stub `/viewer-telemetry` and assert overlay/ROI/responsive beacons plus JSON logs in `frontend/playwright-report/`.
+- [ ] T013 [P] [US2] Extend pytest coverage in `frontend/scripts/test_vlm_viewer_audit.py` to validate bundle validation, JSON parsing, severity adjustments, and error surfaces for missing screenshots.
+- [ ] T014 [P] [US2] Add Playwright regression covering artifact bundle completeness (screenshots + metrics JSON) in `frontend/e2e/viewer-responsive.spec.ts` or a shared helper.
 
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] Implement telemetry buffer + exponential backoff queue with max 50 events in `frontend/src/viewer/telemetry/buffer.ts`.
-- [ ] T018 [US2] Wire overlay toggles, ROI drawing, and responsive mode switches to the dispatcher inside `frontend/src/viewer/StateManager.ts` and `frontend/src/viewer/tools/RoiTool.ts`.
-- [ ] T019 [US2] Build `/viewer-telemetry` FastAPI handler with structured logging, PHI scrubbing, and requestId echoes in `agentic_cervical_screener/main.py`.
-- [ ] T020 [US2] Expose `/healthz` endpoint returning version/timestamp guarded by telemetry status in `agentic_cervical_screener/main.py`.
-- [ ] T021 [US2] Surface telemetry request/queue metrics helper consumed by tests in `agentic_cervical_screener/telemetry/metrics.py`.
+- [ ] T015 [US2] Enhance `frontend/scripts/vlm_viewer_audit.py` with bundle validation (matching screenshots ↔ metrics), improved CLI output, and configurable Ollama model names.
+- [ ] T016 [US2] Update `frontend/pixi.toml` and `frontend/docs/VLM_QUICK_START.md` to reflect the Python pipeline usage (`pixi run vlm-viewer`, `llm` path), including troubleshooting for air-gapped environments.
+- [ ] T017 [US2] Ensure Playwright runs drop metrics JSON + screenshot manifests under `frontend/playwright-report/` using the helper from T006 so the Python script consumes consistent paths.
 
-**Checkpoint**: Telemetry buffering + ingestion validated end-to-end.
-
----
-
-## Phase 5: User Story 3 – Viewer Evidence & VLM Audit Pipeline (Priority: P2)
-
-**Goal**: Package Playwright screenshots/metrics for each breakpoint, validate bundles, and run the offline `pixi run vlm-viewer` pipeline that invokes `llm -m llava`, writing `vlm-report.md` and failing on medium-or-higher findings.
-
-**Independent Test**: Unit tests validate VLM bundle structure before invocation; pipeline tests confirm `pixi run vlm-viewer` exits non-zero when llava returns medium+ issues; Playwright emits enriched JSON metrics consumed by the VLM script.
-
-### Tests for User Story 3
-
-- [ ] T022 [P] [US3] Create bundle validator tests ensuring every screenshot has matching metrics + telemetry counters in `frontend/scripts/__tests__/vlmBundle.test.ts`.
-- [ ] T023 [P] [US3] Add pipeline smoke test that runs the VLM CLI with mocked llava output in `frontend/scripts/__tests__/vlmPipeline.test.ts`.
-
-### Implementation for User Story 3
-
-- [ ] T024 [US3] Implement VLM bundle builder that collects Playwright screenshots + metrics JSON into artifacts in `frontend/scripts/vlmBundle.ts`.
-- [ ] T025 [US3] Implement Ollama/llava invocation + findings parser that writes `frontend/playwright-report/vlm-report.md` in `frontend/scripts/vlmViewer.ts`.
-- [ ] T026 [US3] Extend `frontend/e2e/viewer-sample-slide.spec.ts` to emit per-breakpoint metrics JSON + telemetry counters stored under `frontend/playwright-report/metrics.json`.
-
-**Checkpoint**: Viewer evidence pipeline complete and independently verifiable.
+**Checkpoint**: Python VLM pipeline consumes the refreshed artifacts, pytest + Playwright coverage passes, and CI fails on medium-or-higher findings.
 
 ---
 
 ## Final Phase: Polish & Cross-Cutting Concerns
 
-- [ ] T027 [P] Update canonical commands, telemetry expectations, and artifact pointers in `README.md`.
-- [ ] T028 Sync `docs/TESTING.md` with Vitest, Playwright, and VLM workflows plus troubleshooting notes.
-- [ ] T029 [P] Add CI workflow that runs pixi dev/test/test-e2e-ci/vlm in sequence storing artifacts in `frontend/playwright-report/` via `.github/workflows/viewer-evidence.yml`.
-- [ ] T030 Record quickstart validation results covering telemetry + VLM scenarios in `specs/001-project-guide-index/checklists/requirements.md`.
+- [ ] T018 [P] Align quickstart validation checklist (`specs/001-project-guide-index/checklists/requirements.md`) with the updated demo-case + VLM workflows.
+- [ ] T019 Document artifact locations and failure triage steps in `docs/TESTING.md` without introducing new documentation surfaces.
+- [ ] T020 [P] Add CI workflow `.github/workflows/viewer-evidence.yml` chaining `pixi run test`, `cd frontend && pixi run test`, `pixi run test-e2e-ci`, and `cd frontend && pixi run vlm-viewer`, uploading `frontend/playwright-report/`.
 
 ---
 
 ## Dependencies & Execution Order
 
-### Dependency Graph
-
-`Setup → Foundational → User Story 1 → User Story 2 → User Story 3 → Polish`
-
 ### Phase Dependencies
 
-- **Setup**: No dependencies; establishes shared assets.
-- **Foundational**: Depends on Setup manifest alignment; blocks all user stories.
-- **User Story 1**: Depends on Foundational; unlocks deterministic viewer baseline required by later telemetry and VLM tasks.
-- **User Story 2**: Depends on User Story 1 (telemetry hooks rely on viewer launch emitting events).
-- **User Story 3**: Depends on User Story 2 for telemetry counters embedded in VLM metrics.
-- **Polish**: Runs after all targeted user stories complete.
+- **Setup** → **Foundational** → **US1** → **US2** → **Polish**
+- Foundational tasks rely on the shared constants/assets from Setup.
+- US1 requires Foundational utilities before deterministic viewer work.
+- US2 depends on US1 artifacts for the Python VLM pipeline.
+- Polish waits until both stories are complete.
 
 ### User Story Dependencies
 
-- **US1**: Requires SampleSlideBundle + responsive configs.
-- **US2**: Requires US1 viewer hooks plus telemetry client.
-- **US3**: Requires Playwright artifacts enriched by US1/US2 features before VLM can analyze them.
+- **US1**: Requires demo-case metadata utilities, responsive constants, and test harnesses.
+- **US2**: Requires US1’s deterministic viewer + Playwright artifacts to feed the Python VLM script.
 
 ### Within Each User Story
 
-- Write/verify tests (Vitest/Python/Playwright) before implementing features.
-- Implement data/models before services, services before endpoints/UI, UI before telemetry/emission logic.
-- Ensure telemetry/logging tasks finish before testing evidence capture.
+- Run tests first (Vitest/Playwright or pytest) to capture current failures before implementation.
+- Implement viewer/data changes before touching documentation to avoid stale instructions.
+- For US2, ensure Playwright artifact generation lands before enhancing the Python audit runner.
 
 ---
 
 ## Parallel Execution Examples
 
-### User Story 1
-
-- Run Vitest ROI drift tests (T009) while implementing overlay transforms (T012) because they touch different files.
-- In parallel, build Playwright journey (T010) while wiring manifest bootstrap (T011) since the e2e spec can target mocked data.
-
-### User Story 2
-
-- Telemetry buffer implementation (T017) can proceed alongside backend handler work (T019) because they integrate via HTTP mocks.
-- Playwright telemetry assertions (T016) can start once the mock server scaffold from T006 exists, independent of backend.
-
-### User Story 3
-
-- Bundle validator tests (T022) and Playwright metrics emission (T026) can be developed concurrently; they join through the artifact format.
-- VLM invocation script (T025) can run in parallel with the pipeline smoke test (T023) using stubbed llava output.
+- **setup/foundational**: T002 and T003 modify different files, so they can proceed alongside T001. T005 and T006 are independent utilities and can be executed simultaneously once T004 exists.
+- **US1**: T008 (Vitest) and T009 (Playwright) both rely on the demo-case parser, so start T010 first; once parser wiring lands, tests and overlay refactors (T011) can proceed together.
+- **US2**: T013 (pytest) and T014 (Playwright artifact validation) can run in parallel. T015 (Python script updates) is independent from T017’s Playwright artifact wiring as long as the bundle schema is defined up front.
 
 ---
 
@@ -161,25 +118,17 @@
 
 ### MVP First (User Story 1 Only)
 
-1. Complete Setup (T001–T003) and Foundational work (T004–T008).
-2. Deliver US1 tasks (T009–T013) to achieve deterministic viewer launch and telemetry hook.
-3. Run Vitest + Playwright suites to validate the MVP before proceeding.
+1. Complete Setup (T001–T003) and Foundational (T004–T007).
+2. Deliver US1 tasks (T008–T012) to obtain deterministic viewer launch + responsive evidence.
+3. Validate with Vitest and Playwright before moving on.
 
 ### Incremental Delivery
 
-1. After MVP validation, layer telemetry buffering + backend ingestion from US2 (T014–T021).
-2. Once telemetry evidence is solid, implement VLM pipeline tasks from US3 (T022–T026).
-3. Finish with Polish tasks (T027–T030) to align documentation, CI, and checklists.
-
-### Parallel Team Strategy
-
-1. Pair one developer on telemetry infrastructure (US2) while another owns VLM automation (US3) once US1 stabilizes.
-2. Leverage [P] tasks (e.g., T003, T005, T006, T010, T014, T022, T029) to keep separate files moving without conflicts.
-3. Coordinate via dependency checkpoints so buffer/backoff logic is ready before telemetry endpoints go live.
+1. After MVP validation, implement US2 (T013–T017) to solidify the Python VLM pipeline.
+2. Finish with Polish (T018–T020) to align documentation and CI artifacts.
 
 ### Task Completeness Validation
 
-- Each user story contains explicit test tasks plus implementation items covering UI, telemetry, and backend work.
-- Data-model entities (SampleSlideBundle, ViewerTelemetryEvent, TelemetryBuffer, VlmEvidenceArtifact) map to tasks T001–T026.
-- Contracts for `/docs/project-overview`, `/viewer-telemetry`, and `/healthz` are represented in T007, T015, T019, and T020.
-- Quickstart + documentation updates are captured in Polish tasks (T027–T030), ensuring spec compliance.
+- Every user story has explicit test + implementation tasks referencing concrete files.
+- Demo-case assets, viewer modules, and documentation updates are covered without introducing new telemetry requirements.
+- Python VLM automation relies solely on `frontend/scripts/vlm_viewer_audit.py` and related docs/tests—no TypeScript audit tooling is referenced.
