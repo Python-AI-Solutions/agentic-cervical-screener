@@ -75,7 +75,7 @@ frontend/
 
 - `pixi run npm run test:vlm`: Runs the LLava/Ollama review (via the `llm` CLI) against the latest Playwright screenshots/JSON and fails on medium+ issues.
 - `npm run docs:metrics`: Verifies onboarding success rate (≥90% over last 10 log rows) and documentation freshness (<30 days since `last_reviewed`).
-- Install [Ollama](https://ollama.com/download) locally and pull at least one multimodal model (for example `ollama pull llava`). You can override the default model by setting `VLM_MODEL`, `DOCS_VLM_MODEL`, or `VIEWER_VLM_MODEL`.
+- Install [Ollama](https://ollama.com/download) locally and pull at least one multimodal model (for example `ollama pull llava`). You can override the default model by setting `VLM_MODEL`.
 - Playwright artifacts are written to `frontend/playwright-artifacts/<suite>` by default. Override the location with `PLAYWRIGHT_ARTIFACT_ROOT` (for the Playwright run) or run `pixi run npm run vlm:docs -- --screenshots <dir>` when you need to analyze a custom directory.
 
 ## Console Suppression

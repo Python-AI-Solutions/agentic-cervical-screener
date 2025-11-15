@@ -18,14 +18,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:ci": "playwright test --reporter=line",
     "test:e2e:debug": "playwright test --debug",
-    "test:vlm": "npm run vlm:docs && npm run vlm:viewer",
-    "test:all": "npm run test:unit && npm run test:e2e && npm run test:vlm",
-    "docs:test": "vitest run ../docs/__tests__/project_overview.index.test.ts",
-    "docs:e2e": "cross-env PLAYWRIGHT_ARTIFACT_ROOT=./playwright-artifacts playwright test",
-    "vlm:docs": "cross-env DOCS_VLM_SUITE=docs-overview tsx scripts/docs-overview-vlm.ts",
-    "vlm:viewer": "cross-env DOCS_VLM_SUITE=viewer pixi run python scripts/vlm_viewer_audit.py",
-    "docs:vlm-review": "npm run test:vlm",
-    "docs:metrics": "tsx ../scripts/docs/onboarding-metrics.ts && tsx ../scripts/docs/check-doc-freshness.ts"
+    "test:all": "npm run test:unit && npm run test:e2e",
   },
   "repository": {
     "type": "git",

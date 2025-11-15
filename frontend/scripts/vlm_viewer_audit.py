@@ -17,7 +17,6 @@ from pydantic import BaseModel, Field, ValidationError, conint, confloat
 
 ROOT = Path(__file__).resolve().parents[1]
 PROMPT_PATH = ROOT / "prompts" / "vlm" / "viewer-audit.txt"
-DEFAULT_SUITE = "viewer"
 DEFAULT_MODEL = os.environ.get("VLM_MODEL", "pixtral-12b-4bit")
 LLM_BIN = os.environ.get("LLM_BIN", "llm")
 REMINDER = (
@@ -68,18 +67,13 @@ class Finding(BaseModel):
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run viewer VLM audit using Instructor schema.")
     parser.add_argument(
-        "--suite",
-        default=os.environ.get("DOCS_VLM_SUITE", DEFAULT_SUITE),
-        help="Screenshot suite directory under playwright-artifacts/ (default: viewer)",
-    )
-    parser.add_argument(
         "--screenshots",
         default=None,
-        help="Override screenshots directory path (default: playwright-artifacts/<suite>)",
+        help="Override screenshots directory path (default: playwright-artifacts/viewer)",
     )
     parser.add_argument(
         "--model",
-        default=os.environ.get("DOCS_VLM_MODEL", DEFAULT_MODEL),
+        default=os.environ.get("VLM_MODEL", DEFAULT_MODEL),
         help=f"LLM model identifier (default: {DEFAULT_MODEL})",
     )
     parser.add_argument(
@@ -102,11 +96,11 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def resolve_screenshot_dir(suite: str, override: str | None) -> Path:
+def resolve_screenshot_dir(override: str | None) -> Path:
     if override:
         path = Path(override)
         return path if path.is_absolute() else (ROOT / path)
-    return ROOT / "playwright-artifacts" / suite
+    return ROOT / "playwright-artifacts" / "viewer"
 
 
 def list_screenshots(directory: Path) -> list[Path]:
@@ -209,7 +203,7 @@ def parse_response(raw: str, form_factor: FormFactor) -> AuditResponse:
 
 def iterate(args: argparse.Namespace) -> Iterable[Finding]:
     prompt = load_prompt()
-    screenshots_dir = resolve_screenshot_dir(args.suite, args.screenshots)
+    screenshots_dir = resolve_screenshot_dir(args.screenshots)
     screenshots = list_screenshots(screenshots_dir)
     if not screenshots:
         raise SystemExit(f"No screenshots found in {screenshots_dir}")
@@ -236,11 +230,10 @@ def iterate(args: argparse.Namespace) -> Iterable[Finding]:
         yield Finding(image=image, tag=tag, severity=response.severity, response=response)
 
 
-def write_report(suite: str, model: str, findings: list[Finding], directory: Path) -> Path:
+def write_report(model: str, findings: list[Finding], directory: Path) -> Path:
     lines = [
         "# VLM UX Audit",
         "",
-        f"Suite: {suite}",
         f"Model: {model}",
         f"Generated: {datetime.now(timezone.utc).isoformat()}",
         "",
@@ -268,8 +261,8 @@ def main() -> None:
         print(f"[VLM] FATAL: {exc}", file=sys.stderr)
         sys.exit(1)
 
-    screenshots_dir = resolve_screenshot_dir(args.suite, args.screenshots)
-    report_path = write_report(args.suite, args.model, findings, screenshots_dir)
+    screenshots_dir = resolve_screenshot_dir(args.screenshots)
+    report_path = write_report(args.model, findings, screenshots_dir)
     worst = max((f.severity for f in findings), default="low", key=lambda s: {"low": 0, "medium": 1, "high": 2}[s])
     print(f"[VLM] Report written to {report_path}")
     if worst in {"medium", "high"}:

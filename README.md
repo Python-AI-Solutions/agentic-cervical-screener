@@ -188,7 +188,7 @@ npm run docs:metrics
 
 # Viewer responsive audit
 npm run docs:e2e -- viewer-responsive.spec.ts
-pixi run npm run vlm:viewer
+pixi run pixi run vlm-viewer
 ```
 
 See `docs/TESTING.md` for detailed testing documentation.

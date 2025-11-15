@@ -14,6 +14,7 @@ nodejs = "20.*"
 python = "3.12.*"
 torchvision = ">=0.24.0,<0.25"
 numpy = "<2.3.0"
+pytest = ">=7.0.0"
 
 [target.osx-arm64.pypi-dependencies]
 # MLX-VLM plugin - only on Apple Silicon
@@ -49,7 +50,7 @@ test-vlm = { cmd = "npm run test:vlm", env = { LLM_BIN = "llm" } }
 test-all = { cmd = "npm run test:all", env = { LLM_BIN = "llm" } }
 
 # VLM-specific tasks (use 'llm' available in pixi PATH)
-vlm-viewer = { cmd = "npm run vlm:viewer", env = { LLM_BIN = "llm" } }
+vlm-viewer = { cmd = "python scripts/vlm_viewer_audit.py", env = { LLM_BIN = "llm" } }
 vlm-docs = { cmd = "npm run vlm:docs", env = { LLM_BIN = "llm" } }
 
 # Model management tasks

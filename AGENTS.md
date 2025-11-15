@@ -130,7 +130,7 @@ cd frontend && npm run docs:metrics
 
 # Viewer responsive audit + VLM
 cd frontend && npm run docs:e2e -- viewer-responsive.spec.ts
-cd frontend && pixi run npm run vlm:viewer
+cd frontend && pixi run pixi run vlm-viewer
 ```
 
 **Prerequisites**
