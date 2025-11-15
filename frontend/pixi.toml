@@ -19,16 +19,20 @@ numpy = "<2.3.0"
 # MLX-VLM plugin - only on Apple Silicon
 llm = "*"
 llm-mlx-vlm = { path = "external/llm-mlx-vlm", editable = true }
+mlx-vlm = ">=0.3.6"  # Use latest version
+transformers = ">=4.57.1"
+huggingface-hub = ">=0.34.0"
+mlx-lm = ">=0.23.0,<0.28"
+timm = "*"
+instructor = "*"
 
-[target.osx-64.pypi-dependencies]
-# Intel Mac - use Ollama instead
-llm = "*"
-llm-ollama = "*"
+
 
 [target.linux-64.pypi-dependencies]
 # Linux - use Ollama
 llm = "*"
 llm-ollama = "*"
+instructor = "*"
 
 [tasks]
 # npm passthrough tasks - use pixi's llm in PATH
@@ -52,6 +56,9 @@ vlm-docs = { cmd = "npm run vlm:docs", env = { LLM_BIN = "llm" } }
 add-model = "bash scripts/add-vlm-model.sh $MODEL_NAME $HF_PATH"
 download-model = "python -m mlx_vlm.download --model $HF_PATH"
 test-model = "llm -m $MODEL_NAME 'What do you see?' -a playwright-artifacts/viewer/viewer-desktop-viewer-context.png"
+
+# Default model for VLM testing
+vlm-test-quick = "python -m mlx_vlm.generate --model mlx-community/pixtral-12b-4bit --max-tokens 50 --temp 0.0 --image $IMAGE --prompt \"$PROMPT\""
 
 # Setup task
 setup = { cmd = "npm install", depends-on = ["install-vlm-plugin"] }

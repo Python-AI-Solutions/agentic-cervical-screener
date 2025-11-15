@@ -29,13 +29,41 @@ import llm
 @llm.hookimpl
 def register_models(register):
     """Register MLX-VLM models with the LLM CLI."""
-    # Register popular small VLMs optimized for Apple Silicon
+    
+    # ✅ RECOMMENDED: Tested and working models
+    
+    # pixtral-12b-4bit - Best overall choice
+    # - Memory: 9.2 GB peak
+    # - Speed: 107 tokens/sec (prompt), 15 tokens/sec (generation)
+    # - Quality: Excellent vision understanding
+    # - Note: Uses slow image processor (warning only, works fine)
+    register(MlxVlmModel("pixtral-12b-4bit", "mlx-community/pixtral-12b-4bit"))
+    
+    # paligemma2-3b-mix-448-4bit - Google's vision model
+    # - Memory: Low (estimated 3-4 GB)
+    # - Speed: Fast
+    # - Quality: Good for general vision tasks
+    register(MlxVlmModel("paligemma2-3b", "mlx-community/paligemma2-3b-mix-448-4bit"))
+    
+    # InternVL3-1B-4bit - Smallest option (new in mlx-vlm v0.3.6)
+    # - Memory: 2.3 GB peak (very light!)
+    # - Speed: 728 tokens/sec (prompt), 214 tokens/sec (generation)
+    # - Quality: Poor - refuses to answer many queries, has safety filters
+    # - Use case: Memory-constrained environments only
+    register(MlxVlmModel("InternVL3-1B-4bit", "mlx-community/InternVL3-1B-4bit"))
+    
+    # ⚠️ LEGACY: Older models (may not work on all systems)
+    
+    # SmolVLM models - Small but may hit memory limits
     register(MlxVlmModel("SmolVLM-256M", "HuggingfaceTB/SmolVLM-256M-Instruct"))
     register(MlxVlmModel("SmolVLM-500M", "HuggingfaceTB/SmolVLM-500M-Instruct"))
+    
+    # Qwen models - Good quality but high memory requirements
+    # Note: Qwen2-VL-2B-Instruct-4bit hits Metal buffer limits (25GB allocation)
     register(MlxVlmModel("Qwen2-VL-2B", "Qwen/Qwen2-VL-2B-Instruct"))
     register(MlxVlmModel("Qwen3-VL-4B-Instruct-4bit", "mlx-community/Qwen3-VL-4B-Instruct-4bit"))
     register(MlxVlmModel("Qwen2.5-VL-3B", "mlx-community/Qwen2.5-VL-3B-Instruct-8bit"))
-    # Note: LLaVA-1.6 models use llava_next architecture which is not yet supported by mlx-vlm
+    
 
 
 class MlxVlmModel(llm.Model):

@@ -9,11 +9,12 @@ platforms = ["osx-arm64"]
 [dependencies]
 python = "3.12.*"
 pip = "*"
+pytest = "*"
+llm = "*"
 
 [pypi-dependencies]
-llm = "*"
 mlx-vlm = "*"
-pytest = "*"
+timm = "*"
 
 [tasks]
 install-dev = "pip install -e ."

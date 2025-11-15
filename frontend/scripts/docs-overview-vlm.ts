@@ -9,15 +9,41 @@ type Options = {
   llmArgs?: string;
 };
 
+type Severity = 'low' | 'medium' | 'high';
+
 type Finding = {
   image: string;
   summary: string;
-  severity: string;
+  severity: Severity;
+};
+
+type ViewerChecks = {
+  buttonsClipped: boolean;
+  canvasCoveragePercent: number;
+  headerAligned: boolean;
+  textLegible: boolean;
+  controlsCompact: boolean;
+};
+
+type StructuredResponse = {
+  severity: Severity;
+  summary: string;
+  checks: ViewerChecks;
+  violations: string[];
+  confidence?: number;
 };
 
 type ParsedSummary = {
-  severity: string;
-  notes: string;
+  severity: Severity;
+  structured: StructuredResponse;
+};
+
+type FormFactor = 'desktop' | 'tablet' | 'phone' | 'unknown';
+
+const SEVERITY_ORDER: Record<Severity, number> = {
+  low: 0,
+  medium: 1,
+  high: 2,
 };
 
 function parseArgsValue(value?: string) {
@@ -148,23 +174,42 @@ function tagFor(imagePath: string, suite: string) {
   return '';
 }
 
-function parseSummary(raw: string): ParsedSummary {
-  const trimmed = raw.trim().toLowerCase();
-
-  // Simple heuristic: if response says "no issues" or "looks good", it's low severity
-  // Otherwise, check for severity keywords
-  let severity = 'low';
-  const notes = raw.trim();
-
-  if (trimmed.includes('no major issues') || trimmed.includes('looks good') || trimmed.includes('no issues')) {
-    severity = 'low';
-  } else if (trimmed.includes('broken') || trimmed.includes('unreadable') || trimmed.includes('critical') || trimmed.includes('major problem')) {
-    severity = 'high';
-  } else if (trimmed.includes('problem') || trimmed.includes('issue') || trimmed.includes('difficult') || trimmed.includes('hard to')) {
-    severity = 'medium';
+function parseSummary(raw: string, formFactor: FormFactor): ParsedSummary {
+  const cleaned = stripCodeFence(raw);
+  let parsed: any;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (error) {
+    try {
+      parsed = JSON.parse(repairJsonString(cleaned));
+    } catch (secondError) {
+      throw new Error('VLM response is not valid JSON');
+    }
+  }
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('VLM response is not an object');
   }
 
-  return { severity, notes };
+  const summary = typeof parsed.summary === 'string' ? parsed.summary.trim() : '';
+  if (!summary) {
+    throw new Error('`summary` field missing or empty in VLM response');
+  }
+
+  const checks = normalizeChecks(parsed.checks);
+  const violations = normalizeViolations(parsed.violations);
+  const confidence = clampConfidence(parsed.confidence);
+  const baseSeverity = severityFromString(parsed.severity);
+  const severity = adjustSeverity(baseSeverity, checks, formFactor);
+
+  const structured: StructuredResponse = {
+    severity,
+    summary,
+    checks,
+    violations,
+    confidence,
+  };
+
+  return { severity, structured };
 }
 
 async function listScreenshots(root: string): Promise<string[]> {
@@ -421,6 +466,55 @@ async function runLlmOnImage(params: {
   }
 }
 
+async function evaluateImageWithSchema(params: {
+  imagePath: string;
+  basePrompt: string;
+  model: string;
+  extraArgs: string[];
+  suite: string;
+  llmBin: string;
+  formFactor: FormFactor;
+  maxAttempts?: number;
+}): Promise<ParsedSummary> {
+  const attempts = params.maxAttempts ?? parseInt(process.env.VLM_MAX_ATTEMPTS ?? '3', 10);
+  const reminder =
+    '\n\nREMINDER: Return ONLY the raw JSON object matching the schema. Do not wrap it in markdown fences or explanations, and escape any double quotes inside string values.';
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const prompt = attempt === 1 ? params.basePrompt : `${params.basePrompt}${reminder}`;
+    try {
+      const raw = await runLlmOnImage({
+        imagePath: params.imagePath,
+        prompt,
+        model: params.model,
+        extraArgs: params.extraArgs,
+        suite: params.suite,
+        llmBin: params.llmBin,
+      });
+      try {
+        return parseSummary(raw, params.formFactor);
+      } catch (parseError) {
+        const parseMessage = parseError instanceof Error ? parseError.message : String(parseError);
+        console.error(
+          `[VLM] [LOOP] Response validation failed (attempt ${attempt}/${attempts}): ${parseMessage}`,
+        );
+        console.error(`[VLM] [LOOP] Raw response preview: ${raw.substring(0, 200)}...`);
+        if (attempt === attempts) {
+          throw new Error(`Unable to obtain valid VLM response for ${path.basename(params.imagePath)}`);
+        }
+        console.log('[VLM] [LOOP] Retrying with schema reminder...');
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`[VLM] [LOOP] LLM invocation failed (attempt ${attempt}/${attempts}): ${message}`);
+      if (attempt === attempts) {
+        throw error;
+      }
+      console.log('[VLM] [LOOP] Retrying after invocation failure...');
+    }
+  }
+  throw new Error('Unexpected evaluation failure');
+}
+
 async function main() {
   console.log('[VLM] ========================================');
   console.log('[VLM] Starting VLM audit script');
@@ -497,15 +591,16 @@ async function main() {
     console.log(`[VLM] [LOOP] Prompt length: ${prompt.length} chars`);
 
     console.log(`[VLM] [LOOP] Calling runLlmOnImage...`);
-    let raw: string;
+    let parsed: ParsedSummary;
     try {
-      raw = await runLlmOnImage({
+      parsed = await evaluateImageWithSchema({
         imagePath: image,
-        prompt,
+        basePrompt: prompt,
         model,
         extraArgs,
         suite: options.suite,
         llmBin,
+        formFactor: detectFormFactor(image),
       });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
@@ -517,20 +612,15 @@ async function main() {
       throw error;
     }
     
-    console.log(`[VLM] [LOOP] Received response, length: ${raw.length} chars`);
-    console.log(`[VLM] [LOOP] Response preview: ${raw.substring(0, 100)}...`);
-    
-    console.log(`[VLM] [LOOP] Parsing response...`);
-    const parsed = parseSummary(raw);
     console.log(`[VLM] [LOOP] Parsed severity: ${parsed.severity}`);
-    console.log(`[VLM] [LOOP] Parsed notes: ${parsed.notes}`);
+    console.log(`[VLM] [LOOP] Structured response: ${JSON.stringify(parsed.structured)}`);
     
-    const severity = (parsed.severity ?? 'unknown').toLowerCase();
+    const severity = parsed.severity;
     const tag = tagFor(image, options.suite);
     console.log(`[VLM] [LOOP] Tag: ${tag || '(none)'}`);
     
     const summaryJson = JSON.stringify(
-      { severity, notes: parsed.notes, tag: tag || undefined },
+      { ...parsed.structured, tag: tag || undefined },
       null,
       2,
     );
@@ -574,3 +664,129 @@ void (async () => {
     process.exitCode = 1;
   }
 })();
+function severityFromString(value: string | undefined): Severity {
+  const normalized = (value ?? '').toLowerCase();
+  if (normalized === 'medium' || normalized === 'high' || normalized === 'low') {
+    return normalized;
+  }
+  return 'low';
+}
+
+function maxSeverity(current: Severity, candidate: Severity): Severity {
+  return SEVERITY_ORDER[candidate] > SEVERITY_ORDER[current] ? candidate : current;
+}
+
+function detectFormFactor(imagePath: string): FormFactor {
+  const lower = imagePath.toLowerCase();
+  if (lower.includes('phone')) return 'phone';
+  if (lower.includes('tablet')) return 'tablet';
+  if (lower.includes('desktop')) return 'desktop';
+  return 'unknown';
+}
+
+function stripCodeFence(raw: string): string {
+  const trimmed = raw.trim();
+  const matches = [...trimmed.matchAll(/```(?:json)?\s*([\s\S]+?)\s*```/gi)];
+  if (matches.length > 0) {
+    const [, block = ''] = matches[matches.length - 1];
+    return block.trim();
+  }
+  return trimmed;
+}
+
+function repairJsonString(input: string): string {
+  const chars = Array.from(input);
+  let repaired = '';
+  let inString = false;
+  let escape = false;
+  for (let i = 0; i < chars.length; i += 1) {
+    const char = chars[i];
+    if (!inString) {
+      if (char === '"') {
+        inString = true;
+      }
+      repaired += char;
+      continue;
+    }
+    if (escape) {
+      repaired += char;
+      escape = false;
+      continue;
+    }
+    if (char === '\\') {
+      repaired += char;
+      escape = true;
+      continue;
+    }
+    if (char === '"') {
+      const next = chars[i + 1];
+      const shouldEscape =
+        next !== undefined && ![' ', ',', '}', ']', '\n', '\r', '\t'].includes(next);
+      if (shouldEscape) {
+        repaired += '\\"';
+        continue;
+      }
+      inString = false;
+      repaired += char;
+      continue;
+    }
+    repaired += char;
+  }
+  return repaired;
+}
+
+function clampConfidence(value: number | undefined) {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return undefined;
+  }
+  return Math.min(Math.max(value, 0), 1);
+}
+
+function normalizeViolations(input: unknown): string[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+    .filter((entry) => entry.length > 0);
+}
+
+function normalizeChecks(checks: any): ViewerChecks {
+  if (!checks || typeof checks !== 'object') {
+    throw new Error('`checks` object missing in VLM response');
+  }
+  const canvasCoverage = Number((checks as any).canvasCoveragePercent);
+  if (Number.isNaN(canvasCoverage)) {
+    throw new Error('`canvasCoveragePercent` must be a number between 0 and 100');
+  }
+  return {
+    buttonsClipped: Boolean((checks as any).buttonsClipped),
+    canvasCoveragePercent: Math.max(0, Math.min(100, canvasCoverage)),
+    headerAligned: Boolean((checks as any).headerAligned),
+    textLegible: Boolean((checks as any).textLegible),
+    controlsCompact: Boolean((checks as any).controlsCompact),
+  };
+}
+
+function adjustSeverity(base: Severity, checks: ViewerChecks, formFactor: FormFactor): Severity {
+  let severity = base;
+  if (checks.buttonsClipped) {
+    severity = maxSeverity(severity, 'high');
+  }
+  if (!checks.headerAligned) {
+    severity = maxSeverity(severity, 'high');
+  }
+  if (checks.canvasCoveragePercent < 50) {
+    severity = maxSeverity(severity, 'high');
+  } else {
+    const minCoverage = formFactor === 'phone' ? 60 : 70;
+    if (checks.canvasCoveragePercent < minCoverage) {
+      severity = maxSeverity(severity, 'medium');
+    }
+  }
+  if (!checks.textLegible) {
+    severity = maxSeverity(severity, 'medium');
+  }
+  if (!checks.controlsCompact && (formFactor === 'phone' || formFactor === 'tablet')) {
+    severity = maxSeverity(severity, 'medium');
+  }
+  return severity;
+}
