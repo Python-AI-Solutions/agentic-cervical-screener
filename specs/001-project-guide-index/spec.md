@@ -5,6 +5,12 @@
 **Status**: Draft  
 **Input**: Deliver a deterministic NiiVue viewer experience with telemetry, automated evidence, and zero additional documentation surfaces beyond README.md and `docs/TESTING.md`.
 
+## Clarifications
+
+### Session 2025-11-15
+
+- Q: How should the viewer handle telemetry delivery failures when the backend is temporarily unavailable? → A: Queue up to 50 telemetry events locally, retry every 5 s with exponential backoff, and drop the oldest when full while keeping the UI responsive.
+
 ## User Scenarios & Testing *(mandatory)*
 
 > **Constitution Hooks**  
@@ -14,7 +20,7 @@
 
 ### User Story 1 - Deterministic Viewer Launch & Sample Slide Integrity (Priority: P1)
 
-A contributor must be able to clone the repo, run `pixi run dev` (backend) and `npm run dev` (frontend), and immediately load the bundled sample cervical slide with stable zoom/pan, overlays, and measurement rulers that match Niivue’s deterministic alignment guarantees.
+A contributor must be able to clone the repo, run `pixi run dev` (backend) and `cd frontend && pixi run dev` (frontend), and immediately load the bundled sample cervical slide with stable zoom/pan, overlays, and measurement rulers that match Niivue’s deterministic alignment guarantees.
 
 **Why this priority**: The project’s viability depends on proving the viewer itself works; any time spent on auxiliary documentation blocks the clinical imaging goals laid out in the Constitution.
 
@@ -78,10 +84,10 @@ CI must run an offline-capable VLM audit over the viewer screenshots/JSON captur
 
 - **FR-001**: Provide a canonical sample slide bundle (`public/samples/cervical-baseline.nii.gz` + metadata) referenced directly by README.md and `docs/TESTING.md`, ensuring deterministic orientation, pixel spacing, and stain type.  
 - **FR-002**: Implement viewer bootstrapping that reads the metadata, loads overlays, and restores zoom/pan state within 200 ms after resize, fulfilling Deterministic Imaging Fidelity requirements.  
-- **FR-003**: Wire telemetry emitters for viewer launch, overlay toggle, ROI draw, and responsive mode changes; payloads must include identifiers, DPR, latency, and README command versions.  
+- **FR-003**: Wire telemetry emitters for viewer launch, overlay toggle, ROI draw, and responsive mode changes; payloads must include identifiers, DPR, latency, and README command versions, and failed deliveries must queue up to 50 events, retry every 5 s with exponential backoff, and drop the oldest entry when the buffer is full without blocking the UI.  
 - **FR-004**: Extend Vitest coverage to validate metadata parsing, telemetry schema, ROI math utilities, and Niivue hook wrappers (`frontend/src/viewer/__tests__/*.test.ts`).  
 - **FR-005**: Extend Playwright coverage via `frontend/e2e/viewer-sample-slide.spec.ts` (or similarly named file) that exercises launch, overlay toggles, ROI creation, and responsive breakpoints, storing screenshots + JSON metrics.  
-- **FR-006**: Maintain the viewer-focused VLM pipeline (`pixi run npm run vlm:viewer`) so it consumes the Playwright outputs, emits `vlm-report.md`, and fails CI on medium-or-higher responsive/accessibility findings.  
+- **FR-006**: Maintain the viewer-focused VLM pipeline (`pixi run vlm-viewer`) so it consumes the Playwright outputs, emits `vlm-report.md`, and fails CI on medium-or-higher responsive/accessibility findings.  
 - **FR-007**: Update only README.md and `docs/TESTING.md` to reflect the canonical commands and verification steps; no additional documentation artifacts (indexes, portals, overlays) may be added.  
 - **FR-008**: Ensure backend FastAPI endpoints expose `/healthz` and `/viewer-telemetry` (or extend existing routes) with structured logging so frontend telemetry ingestion remains inspectable.
 
@@ -95,7 +101,7 @@ CI must run an offline-capable VLM audit over the viewer screenshots/JSON captur
 
 ### Measurable Outcomes
 
-- **SC-001**: Running `pixi run dev` + `npm run dev` loads the sample slide with overlays aligned across DPRs, verified by automated screenshot diff ≤2 px tolerance.  
+- **SC-001**: Running `pixi run dev` + `cd frontend && pixi run dev` loads the sample slide with overlays aligned across DPRs, verified by automated screenshot diff ≤2 px tolerance.  
 - **SC-002**: Telemetry ingestion captures ≥95% of overlay/ROI events during CI Playwright runs, and payloads reference README command versions.  
 - **SC-003**: The VLM pipeline completes on Apple Silicon hardware within 5 minutes and blocks merge on any medium-or-higher issue; artifacts live under `frontend/playwright-report/`.  
 - **SC-004**: README.md and `docs/TESTING.md` remain the only documentation touchpoints; they clearly state the canonical commands and mention where to find telemetry/VLM evidence.  

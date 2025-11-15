@@ -202,7 +202,7 @@ async def read_root():
         "docs_url": "/docs",
         "openapi_url": "/openapi.json",
         "health_url": "/healthz",
-        "note": "Frontend not built. Run 'cd frontend && npm run build' to build the frontend.",
+        "note": "Frontend not built. Run 'cd frontend && pixi run build' to build the frontend.",
     }
 
 
@@ -449,7 +449,7 @@ async def serve_frontend(full_path: str):
         "docs_url": "/docs",
         "openapi_url": "/openapi.json",
         "health_url": "/healthz",
-        "note": "Frontend not built. Run 'cd frontend && npm run build' to build the frontend.",
+        "note": "Frontend not built. Run 'cd frontend && pixi run build' to build the frontend.",
     }
 
 

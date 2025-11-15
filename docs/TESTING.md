@@ -23,7 +23,7 @@ This project uses a three-tier testing approach. Before running any suite, compl
 - Error handling
 - Business logic
 
-**Run**: `npm test` or `npm run test:watch`
+**Run**: `cd frontend && pixi run test` (or `pixi run test-watch` for watch mode)
 
 ## 2. End-to-End Tests (Playwright)
 
@@ -49,12 +49,12 @@ This project uses a three-tier testing approach. Before running any suite, compl
 - Cross-browser compatibility
 
 **Run**: 
-- `npm run test:e2e:ci` - Run all E2E tests headlessly (recommended for local/CI automation). Produces responsive header screenshots + JSON metrics under `frontend/playwright-artifacts/`.
-- `npm run test:e2e` - Run all E2E tests
-- `npm run test:e2e:ui` - Run with Playwright UI
-- `npm run test:e2e:debug` - Debug mode
-- `pixi run npm run test:vlm` - Run the local LLava/Ollama audits for docs + viewer screenshots (requires Apple Silicon with ≥16 GB RAM)
-- `npm run test:all` - Run all three stacks (unit/integration, application E2E, local VLM)
+- `cd frontend && pixi run test-e2e-ci` - Run all E2E tests headlessly (recommended for local/CI automation). Produces responsive header screenshots + JSON metrics under `frontend/playwright-artifacts/`.
+- `cd frontend && pixi run test-e2e` - Run all E2E tests
+- `cd frontend && pixi run test-e2e-ui` - Run with Playwright UI
+- `cd frontend && pixi run test-e2e-debug` - Debug mode
+- `cd frontend && pixi run test-vlm` - Run the local LLava/Ollama audits for viewer screenshots/JSON (requires Apple Silicon with ≥16 GB RAM)
+- `cd frontend && pixi run test-all` - Run all three stacks (unit/integration, application E2E, local VLM)
 
 ## Test Organization
 
@@ -71,12 +71,11 @@ frontend/
 └── playwright.config.ts          # Playwright configuration
 ```
 
-## VLM & Metrics
+## VLM Evidence
 
-- `pixi run npm run test:vlm`: Runs the LLava/Ollama review (via the `llm` CLI) against the latest Playwright screenshots/JSON and fails on medium+ issues.
-- `npm run docs:metrics`: Verifies onboarding success rate (≥90% over last 10 log rows) and documentation freshness (<30 days since `last_reviewed`).
+- `cd frontend && pixi run test-vlm`: Runs the LLava/Ollama review (via the `llm` CLI) against the latest Playwright screenshots/JSON and fails on medium+ issues.
 - Install [Ollama](https://ollama.com/download) locally and pull at least one multimodal model (for example `ollama pull llava`). You can override the default model by setting `VLM_MODEL`.
-- Playwright artifacts are written to `frontend/playwright-artifacts/<suite>` by default. Override the location with `PLAYWRIGHT_ARTIFACT_ROOT` (for the Playwright run) or run `pixi run npm run vlm:docs -- --screenshots <dir>` when you need to analyze a custom directory.
+- Playwright artifacts are written to `frontend/playwright-artifacts/<suite>` by default. Override the location with `PLAYWRIGHT_ARTIFACT_ROOT` (for the Playwright run) or pass `--screenshots <dir>` to `pixi run vlm-viewer` when you need to analyze a custom directory.
 
 ## Console Suppression
 
@@ -106,21 +105,20 @@ setConsoleSuppression(false);
 
 ```bash
 # Unit/Integration tests only (fast)
-npm test
+cd frontend && pixi run test
 
 # E2E tests only (slower, requires dev server)
-# (use this when you need to see the browser)
-npm run test:e2e
+cd frontend && pixi run test-e2e
 
 # Headless CI-friendly E2E run (preferred for automation)
-npm run test:e2e:ci
+cd frontend && pixi run test-e2e-ci
 
-# VLM audits (docs + viewer; run inside Pixi)
-pixi run npm run test:vlm
+# VLM audits (viewer evidence; run inside Pixi)
+cd frontend && pixi run test-vlm
 
 # All tests (unit + app E2E + VLM)
-npm run test:all
+cd frontend && pixi run test-all
 
 # Watch mode for development
-npm run test:watch
+cd frontend && pixi run test-watch
 ```

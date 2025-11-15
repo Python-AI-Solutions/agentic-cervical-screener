@@ -1,117 +1,86 @@
 # Implementation Plan: Project Overview Guidance Index
 
-**Branch**: `001-project-guide-index` | **Date**: 2025-11-12 | **Spec**: [`specs/001-project-guide-index/spec.md`](./spec.md)
+**Branch**: `001-project-guide-index` | **Date**: 2025-11-15 | **Spec**: `specs/001-project-guide-index/spec.md`  
 **Input**: Feature specification from `/specs/001-project-guide-index/spec.md`
 
 **Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
 
 ## Summary
 
-Refresh `docs/project_overview.md` so it becomes the canonical orientation hub: add YAML metadata, a three-step onboarding path with required commands, a topic-to-doc index table, workflow playbooks, explicit maintenance rules, and machine-readable anchors. Back the document with automation—markdown validation tests, a Playwright journey that captures desktop/tablet/phone renders (including full-height drawers), a local LLava/Ollama VLM audit over the resulting screenshots/JSON, and metric scripts that verify onboarding success rates plus document freshness—to prove every edit keeps the new guidance accurate and accessible.
+Deliver a deterministic Niivue-based cervical slide viewer experience that launches from the canonical README + `docs/TESTING.md` commands, emits structured telemetry for launch/overlay/ROI/responsive events with buffered retries, and feeds a Playwright + VLM pipeline that captures screenshots/JSON artifacts enforcing responsive, accessible layouts without introducing new documentation surfaces.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
-
-**Language/Version**: Markdown + TypeScript (Node 18 / Vite toolchain)  
-**Primary Dependencies**: Existing docs under `docs/`, Vitest, Playwright, Niivue viewer context for screenshots, [Ollama](https://ollama.com) running a LLava-class model (invoked via the `llm` CLI) for artifact review, Node scripts under `scripts/docs/` for metrics  
-**Storage**: Git-tracked CSV metrics in `docs/metrics/onboarding-log.csv` + YAML front matter freshness timestamps  
-**Testing**: Vitest for markdown validation, Playwright for documentation render checks (desktop/tablet/phone)  
-**Target Platform**: Web (GitHub-rendered docs + internal doc preview route in frontend)  
-**Project Type**: Web/monorepo (FastAPI backend + Vite frontend; this feature touches docs + frontend test harness)  
-**Performance Goals**: Documentation checks must run in <60s locally/CI; Playwright doc journey adds ≤10% to existing e2e runtime  
-**Constraints**: Adhere to Constitution v2.0.0 (deterministic imaging fidelity, responsive occlusion rules, dual-layer evidence); no new datasets outside `public/`; tests must be headless-friendly; VLM evaluation must run on Apple Silicon with ≥16 GB RAM (Ollama + LLava); onboarding/freshness metrics scripts must run via `npm run docs:metrics` and fail CI when thresholds are unmet  
-**Scale/Scope**: One markdown file + associated automation artifacts (1 Vitest suite, 1 Playwright spec, metadata consumed by future agents)
+**Language/Version**: Python ≥3.14 (FastAPI backend) + TypeScript 5.x (Vite frontend)  
+**Primary Dependencies**: FastAPI, PyTorch/Ultralytics YOLO, Pixi, Niivue, Tailwind CSS, Vitest, Playwright, Ollama + llava VLM  
+**Storage**: N/A (sample slide + metadata in `public/`, telemetry forwarded to FastAPI + transient buffer)  
+**Testing**: `pixi run test` (Python/FastAPI), `cd frontend && pixi run test` (Vitest), `cd frontend && pixi run test-e2e-ci` (Playwright), `cd frontend && pixi run vlm-viewer` (VLM audit)  
+**Target Platform**: FastAPI service on macOS/Linux dev hosts + browser-based viewer (desktop/tablet/phone per responsiveness table)  
+**Project Type**: Web monorepo (FastAPI backend + Vite frontend)  
+**Performance Goals**: Sample slide loads ≤15 s, overlay/pan state restores ≤200 ms post-resize, telemetry captures ≥95 % of overlay/ROI events, VLM stage finishes ≤5 min on Apple Silicon, frame budget <16 ms for viewer interactions  
+**Constraints**: No new documentation beyond README.md and `docs/TESTING.md`; must run offline with Ollama; telemetry failures buffered (50 events, 5 s exponential retry); responsive safe areas per `docs/project_overview.md §5`; PHI-free demo data only  
+**Scale/Scope**: Single canonical sample slide + deterministic viewer journey, telemetry ingestion via `/viewer-telemetry`, CI Playwright + VLM audits, maintainers + automation users consuming evidence artifacts
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
-
-Document the status of each constitutional guardrail (Pass / Mitigation Plan / Blocker) and reference the files or tests that prove compliance:
-
-1. **Deterministic Imaging Fidelity** – Documentation references Niivue behavior; we will add markdown validation ensuring every orientation step links to responsive guidance (e.g., `docs/project_overview.md §5`) and update Playwright to capture baseline + full-height panel screenshots so state restoration (dismiss controls, breadcrumbs) is visually verified.  
-   - Status: Pass. Evidence: new Vitest `docs/__tests__/project_overview.index.test.ts`; Playwright `frontend/e2e/docs-overview.spec.ts` capturing before/after panel states.  
-2. **Dual-Layer Evidence** – Fast tests (Vitest) validate structure/links; Playwright run records screenshots + JSON link inventory; the llm/Ollama pipeline (default `llava`) analyzes the artifacts for higher-level UX regressions (e.g., occlusion, readability) and emits a Markdown report that reviewers attach to PRs. All three scripts fail CI if mandatory sections, visuals, or VLM findings regress.  
-   - Status: Pass (automated scripts documented in Quickstart).  
-3. **Responsive & Accessible Header-First UX** – Plan includes mapping each user story to breakpoints, specifying when the Orientation Path or Index sections trigger drawers, and asserting safe-area padding + dismissal controls via Playwright snapshots (desktop/tablet/large-phone/small-phone).  
-   - Status: Pass (tests provide evidence; doc text describes occlusion rationale).  
-4. **Inspectable Automation & Observability** – Markdown validation logs missing anchors; Playwright exports JSON metadata under `frontend/playwright-artifacts/docs-overview/*.json`; onboarding/freshness scripts emit machine-readable reports to `docs/metrics/`. CI docs detail where artifacts live for audits.  
-   - Status: Pass.  
-5. **Clinical Safety, Data Stewardship, and Documentation** – All edits are to checked-in markdown; spec already requires cross-link updates to README / AGENT_GUIDE / TESTING; metrics CSVs contain no PHI.  
-   - Status: Pass.
-
-If any guardrail cannot be satisfied, capture the mitigation and secure approval before proceeding.
+1. **Deterministic Imaging Fidelity – Pass**: Viewer updates stay within `frontend/src/viewer` (StateManager, Canvas/NiiVue hooks) to guarantee zoom/pan and overlay math, backed by Vitest ROI math specs and Playwright screenshot diffs enforcing ≤2 px drift plus DPR toggles (Principle references kept in README/docs pathways).  
+2. **Dual-Layer Evidence – Pass**: Every scenario maps to Vitest suites (`frontend/src/viewer/__tests__`) plus Playwright journeys (`frontend/e2e/viewer-sample-slide.spec.ts`) that collect screenshots + JSON in `frontend/playwright-report/`, with failing tests before implementation for metadata drift, telemetry schema errors, and responsive regressions.  
+3. **Responsive & Accessible Header-First UX – Pass**: Breakpoints follow `docs/project_overview.md §5`; Acceptance Scenarios already list DPR + device states, and Playwright runs cover desktop/tablet/large-phone/small-phone, asserting header safe areas, panel escape actions, and ARIA/tap-target checks.  
+4. **Inspectable Automation & Observability – Pass**: Telemetry buffer + payload schema (`event`, `slideId`, `viewport`, `latencyMs`, `commandVersion`) integrate with `/viewer-telemetry` logging, FastAPI `/healthz`, and CI artifacts capturing emitted metrics, ensuring Principle 4 coverage.  
+5. **Clinical Safety, Data Stewardship, and Documentation – Pass**: Work limits to `public/` demo assets, enforces README + `docs/TESTING.md` updates only, and codifies PHI redaction on the backend plus telemetry persistence requirements so governance expectations remain satisfied.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/[###-feature]/
-├── plan.md              # This file (/speckit.plan command output)
-├── research.md          # Phase 0 output (/speckit.plan command)
-├── data-model.md        # Phase 1 output (/speckit.plan command)
-├── quickstart.md        # Phase 1 output (/speckit.plan command)
-├── contracts/           # Phase 1 output (/speckit.plan command)
-└── tasks.md             # Phase 2 output (/speckit.tasks command - NOT created by /speckit.plan)
+specs/001-project-guide-index/
+├── plan.md
+├── research.md
+├── data-model.md
+├── quickstart.md
+├── contracts/
+└── tasks.md          # created later via /speckit.tasks
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```text
-docs/
-├── project_overview.md
-├── AGENT_GUIDE.md
-├── TESTING.md
-├── metrics/
-│   └── onboarding-log.csv
-└── __tests__/
-    └── project_overview.index.test.ts   # new Vitest suite (Principle 2)
-
-scripts/
-└── docs/
-    ├── onboarding-metrics.ts            # enforces ≥90% success rate
-    └── check-doc-freshness.ts           # enforces YAML freshness window
+agentic_cervical_screener/
+├── __init__.py
+├── main.py
+├── model_loader.py
+├── telemetry/
+├── models/
+└── tests/
 
 frontend/
 ├── src/
-│   └── routes/docs/
-│       └── OverviewPreview.tsx          # lightweight page to render markdown in Playwright
-├── e2e/
-│   └── docs-overview.spec.ts            # new Playwright journey
-├── scripts/
-│   └── docs-overview-vlm.ts             # Node script that calls the llm CLI (Ollama/LLava) to score screenshots
-└── playwright.config.ts                 # ensure doc journey + VLM artifacts run in CI
+│   ├── viewer/
+│   ├── components/
+│   ├── services/
+│   ├── styles/
+│   └── e2e/
+├── public/
+├── docs/
+└── tests/
 
-frontend/playwright-artifacts/
-├── docs-overview/                       # JSON + screenshots + VLM findings (gitignored)
-└── viewer/                              # Responsive audit screenshots + layout JSON
+public/
+└── samples/
 ```
 
-**Structure Decision**: Edit `docs/` markdown + tests, extend the frontend documentation preview route, and add a dedicated Playwright spec so both code and artifacts live beside existing viewer tests.
+**Structure Decision**: Monorepo with FastAPI backend (`agentic_cervical_screener/`) + Vite/TypeScript frontend (`frontend/`); this mirrors the spec’s division of backend telemetry ingestion and frontend viewer workflows while keeping documentation + public assets centralized.
 
 ## Complexity Tracking
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
-
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| None | – | – |
+| _None_ | – | – |
 
 ## Constitution Check (Post-Design)
 
-1. **Deterministic Imaging Fidelity** – Research + data model lock anchors/breadcrumbs; Playwright doc journey (to be added at `frontend/e2e/docs-overview.spec.ts`) captures both unobstructed and full-height drawer states, ensuring Niivue context is recoverable.  
-2. **Dual-Layer Evidence** – Vitest markdown parser test plus Playwright screenshots/JSON provide the two evidence layers; both are mandatory pre-merge steps outlined in `quickstart.md`.  
-3. **Responsive & Accessible Header-First UX** – Orientation + Topic index reference breakpoint behavior from `docs/project_overview.md §5`; Playwright assertions include safe-area padding, dismissal controls, and ARIA labeling for the mock drawer.  
-4. **Inspectable Automation & Observability** – Anchor JSON export records doc version + generation timestamp; research doc defines how logs/artifacts are stored for CI review.  
-5. **Clinical Safety / Documentation** – All work remains within checked-in markdown and frontend test harness; Quickstart documents cross-link obligations so downstream guidance stays synchronized; metrics CSV/scripts live in-repo with no sensitive data.
+1. **Deterministic Imaging Fidelity – Pass**: `data-model.md` defines SampleSlideBundle invariants + telemetry state machine, while `quickstart.md` + contracts ensure Vitest/Playwright evidence and README/docs alignment remain deterministic.  
+2. **Dual-Layer Evidence – Pass**: Research + quickstart sections map Vitest + Playwright commands, and contracts enforce telemetry schema so both layers fail fast when drift occurs.  
+3. **Responsive & Accessible Header-First UX – Pass**: Research log documents multi-breakpoint artifact capture; quickstart instructs running the responsive Playwright suite + VLM validations, satisfying Principle 3.  
+4. **Inspectable Automation & Observability – Pass**: OpenAPI contract plus telemetry buffer design specify structured payloads, retries, and `/healthz`, ensuring CI artifacts expose metrics.  
+5. **Clinical Safety, Data Stewardship, and Documentation – Pass**: Data model + quickstart reiterate README/`docs/TESTING.md` as sole documentation touchpoints and restrict assets to `public/`, keeping governance intact.

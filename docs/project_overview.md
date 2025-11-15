@@ -58,19 +58,19 @@ This document captures the current product vision, architecture, and the primary
 
 ## Orientation Path
 
-1. **Skim the README for architecture + demo context** – Start with [`README.md`](../README.md) to understand the end-to-end workflow and tooling. Run `pixi run dev` followed by `cd frontend && npm run dev` so both backend and frontend boot successfully.
-2. **Read the Agent Development Guide and record onboarding metrics** – Follow [`AGENTS.md`](AGENT_GUIDE.md) to review conventions, then run `cd frontend && npm run docs:test` and `npm run docs:e2e` to capture the latest documentation evidence. Mentors log outcomes in `docs/metrics/onboarding-log.csv` (success flag must stay ≥90 %).
-3. **Verify the testing + responsiveness toolchain** – Use [`docs/TESTING.md`](TESTING.md) to run `npm test`, `npm run test:e2e:ci`, and `npm run test:vlm` so you have dual-layer + VLM evidence before editing the viewer. Always finish with `npm run docs:metrics` to catch stale onboarding entries or outdated `last_reviewed` metadata.
+1. **Skim the README for architecture + demo context** – Start with [`README.md`](../README.md) to understand the end-to-end workflow and tooling. Run `pixi run dev` followed by `cd frontend && pixi run dev` so both backend and frontend boot successfully.
+2. **Read the Agent Development Guide** – Follow [`AGENTS.md`](AGENT_GUIDE.md) to review conventions, then run the canonical tests (`cd frontend && pixi run test`, `pixi run test-e2e`) to gather fresh artifacts.
+3. **Verify the testing + responsiveness toolchain** – Use [`docs/TESTING.md`](TESTING.md) to run `cd frontend && pixi run test-e2e-ci` and `pixi run test-vlm` so you have dual-layer + VLM evidence before editing the viewer.
 
-> **Logging Reminder**: Immediately after onboarding a new contributor, append a row to `docs/metrics/onboarding-log.csv` with the date, mentor, contributor, commands executed, and whether they completed the path successfully. This CSV powers the metrics gate enforced by `npm run docs:metrics`.
+> **Logging Reminder**: Immediately after onboarding a new contributor, append a row to `docs/metrics/onboarding-log.csv` with the date, mentor, contributor, commands executed, and whether they completed the path successfully.
 
 ## 4. Tooling & Environments
 
 - **Dependency management**: `pixi` orchestrates Python tasks; `npm` scripts manage the frontend.
 - **Frontend tasks**:
-  - `npm run dev` – Vite dev server
+  - `pixi run dev` – Vite dev server
   - `npm test` – Vitest suite (headless)
- - `npm run test:e2e:ci` – Playwright (Chromium + Mobile Safari). Produces screenshots + metrics under `frontend/playwright-artifacts`.
+- `pixi run test-e2e-ci` – Playwright (Chromium + Mobile Safari). Produces screenshots + metrics under `frontend/playwright-artifacts`.
 - **Backend tasks**: see `AGENT_GUIDE` for `pixi run dev`, `pixi run test`, etc.
 
 ## Topic-to-Doc Index
@@ -80,7 +80,7 @@ This document captures the current product vision, architecture, and the primary
 | Architecture & Stack | Need repo layout and backend/frontend boundaries | [`README.md`](../README.md) | [`docs/project_overview.md#2-architecture-what-where`](#2-architecture-what--where) |
 | Datasets & Demo Content | Need demo slides or static assets | [`public/`](../public) README | [`AGENTS.md`](AGENT_GUIDE.md#project-structure) |
 | Responsive UX Rules | Implement or verify breakpoints, safe areas | [`docs/project_overview.md#5-responsive-ux-expectations`](#5-responsive-ux-expectations-best-practices) | [`frontend/docs/ZOOM_ISSUES_AND_FIXES.md`](../frontend/docs/ZOOM_ISSUES_AND_FIXES.md) |
-| Testing & Evidence | Run Vitest/Playwright suites and log evidence | [`docs/TESTING.md`](TESTING.md) | `frontend/playwright-artifacts/`, `npm run docs:test` scripts |
+| Testing & Evidence | Run Vitest/Playwright suites and log evidence | [`docs/TESTING.md`](TESTING.md) | `frontend/playwright-artifacts/`, `pixi run test-vlm` outputs |
 | Automation & CI | Understand metrics, VLM audits, automation outputs | [`docs/project_overview.md#orientation-path`](#orientation-path) | `frontend/scripts/docs-overview-vlm.ts`, `docs/metrics/onboarding-log.csv` |
 | Deployment | Update backend services or Docker images | [`Dockerfile`](../Dockerfile), [`deploy/`](../deploy) | `pixi run start`, `.dockerignore` guidelines |
 | Data Governance | Reference update triggers, metadata owners | [`docs/project_overview.md#maintenance--update-workflow`](#maintenance--update-workflow) | YAML front matter (`audience`, `owners`, `update_triggers`) |
@@ -89,18 +89,18 @@ This document captures the current product vision, architecture, and the primary
 ## Workflow Playbooks
 
 ### New Contributor Playbook
-1. Follow the Orientation Path above and run `pixi run dev`, `npm run dev`, `npm test`, `npm run test:e2e:ci`.
-2. Execute `npm run docs:test`, `npm run docs:e2e`, `npm run test:vlm`, and `npm run docs:metrics` so artifacts + metrics are up to date.
+1. Follow the Orientation Path above and run `pixi run dev`, `cd frontend && pixi run dev`, `cd frontend && pixi run test`, `cd frontend && pixi run test-e2e-ci`.
+2. Execute `cd frontend && pixi run test-vlm` so Playwright + VLM artifacts are up to date.
 3. Add an onboarding log entry to `docs/metrics/onboarding-log.csv` (mentor + contributor) and confirm success is recorded.
 
 ### Spec Author Playbook
 1. Read `docs/project_overview.md` (this file) and `docs/TESTING.md` before drafting new requirements.
 2. Use the Topic-to-Doc table to cite canonical sources inside `/specs/.../spec.md`.
-3. Run `npm run docs:test` + `npm run docs:e2e -- docs-overview.spec.ts` and attach artifacts to the spec/plan so reviewers can verify responsive/anchor expectations.
+3. Capture Playwright + VLM evidence (desktop/tablet/phone) and attach artifacts to the spec/plan so reviewers can verify responsive/anchor expectations.
 
 ### Release Triage Playbook
-1. Run `pixi run test` and `npm run test:e2e:ci` to ensure core pipelines pass.
-2. Execute `npm run docs:metrics`; if onboarding success <90 % or `last_reviewed` is stale (>30 days), block the release and trigger documentation updates.
+1. Run `pixi run test` and `cd frontend && pixi run test-e2e-ci` to ensure core pipelines pass.
+2. Review `docs/metrics/onboarding-log.csv`; if onboarding success <90 % or `last_reviewed` is stale (>30 days), block the release and trigger documentation updates.
 3. Capture the latest Playwright screenshots (`frontend/playwright-artifacts/docs-overview/*.png`) and VLM report to attach to the release notes.
 
 ## 5. Responsive UX Expectations (best practices)
@@ -130,10 +130,10 @@ Questions or discrepancies? Open an issue referencing this overview so we can up
 
 ## Maintenance & Update Workflow
 
-1. **Run the full evidence stack** – `npm run docs:test`, `npm run docs:e2e -- docs-overview.spec.ts`, `npm run test:vlm`, and `npm run docs:metrics`. These commands must pass (and artifacts uploaded) before any documentation PR merges.
+1. **Run the full evidence stack** – `cd frontend && pixi run test`, `pixi run test-e2e -- docs-overview.spec.ts`, and `pixi run test-vlm`. These commands must pass (and artifacts uploaded) before any documentation PR merges.
 2. **Update metadata + anchors** – bump `doc_version`, refresh `last_reviewed` (ISO format), and ensure `anchor_slugs` reflects every section enumerated in this file. If you add/remove headings, also update the Reference Anchors table below.
 3. **Append onboarding log entry** – mentors record outcomes in `docs/metrics/onboarding-log.csv` immediately after each session so the ≥90% success window remains truthful.
-4. **Attach artifacts to PRs** – include the latest Playwright screenshots (`frontend/playwright-artifacts/docs-overview/*.png`), JSON metadata, `vlm-report.md`, and the console output from `npm run docs:metrics`.
+4. **Attach artifacts to PRs** – include the latest Playwright screenshots (`frontend/playwright-artifacts/docs-overview/*.png`), JSON metadata, and `vlm-report.md`.
 
 ## Reference Anchors
 

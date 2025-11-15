@@ -1,57 +1,71 @@
-# Data Model – Project Overview Guidance Index
+# Data Model
 
-## Entity: OrientationStep
+## SampleSlideBundle
+- **Fields**:  
+  - `slideId` (string UUID) – canonical identifier referenced in README and telemetry.  
+  - `filePath` (string) – `public/samples/cervical-baseline.nii.gz`.  
+  - `metadata` (object) – `dimensionsPx`, `pixelSpacingMicrons`, `stainType`, `orientation`, `defaultZoom`, `defaultPan`.  
+  - `overlays` (array) – overlay descriptors with `name`, `color`, `maskPath`.  
+  - `checksum` (string) – SHA256 ensuring deterministic asset integrity.
+- **Relationships**:  
+  - Referenced by viewer boot sequence and telemetry events (`slideId`).  
+  - Provides metadata consumed by Vitest (parsing tests) and Playwright (layout assertions).
+- **Validation Rules**:  
+  - `pixelSpacingMicrons` must be positive float.  
+  - `orientation` limited to Niivue-supported enum (RAS+, LAS+, etc.).  
+  - Overlay masks must match the slide voxel grid dimensions.  
+  - `checksum` validated on boot to detect drift before rendering.
+- **Lifecycle**:  
+  - `registered` (asset committed) → `verified` (tests pass) → `in-use` (loaded at runtime). Drift returns the bundle to `registered` until corrected.
 
-| Field | Type | Constraints / Validation | Notes |
-| --- | --- | --- | --- |
-| `order` | Integer | 1–3, sequential with no gaps | Defines the exact order users follow |
-| `title` | String | Required, ≤60 chars | Short action label (e.g., “Read README.md overview”) |
-| `description` | Markdown paragraph | Required | Explains what the contributor learns |
-| `primary_link` | Relative URL | Required, must match existing repo doc | e.g., `README.md`, `AGENTS.md` |
-| `commands` | String[] | Optional, but if present command text must match actual CLI snippet | Used to list `pixi run dev`, `npm test`, etc. |
+## ViewerTelemetryEvent
+- **Fields**:  
+  - `event` (enum: `viewer_launch`, `overlay_toggle`, `roi_draw`, `responsive_mode_change`).  
+  - `slideId` (string) – FK to `SampleSlideBundle`.  
+  - `viewport` (object) – `zoom`, `pan`, `dpr`, `canvasSize`.  
+  - `latencyMs` (float) – measured from command invocation.  
+  - `commandVersion` (string) – README/docs command hash/version.  
+  - `requestId` (UUID) – generated client-side and echoed by backend.  
+  - `emittedAt` (ISO timestamp).  
+  - `status` (enum: `queued`, `sending`, `ack`, `dropped`).  
+  - `retries` (int) – number of retry attempts.
+- **Relationships**:  
+  - Stored transiently in frontend telemetry buffer; posted to FastAPI `/viewer-telemetry`.  
+  - Backend logs pair `requestId` with ingestion success/failure for audits.
+- **Validation Rules**:  
+  - `latencyMs` >= 0 and < 15000.  
+  - `viewport.zoom` must stay within Niivue-supported range (0.01–20).  
+  - `status` transitions follow queue state machine (see below).  
+  - Payload must include `commandVersion` referenced in docs.
+- **State Transitions**:  
+  - `queued` → `sending` (next retry window) → `ack` (HTTP 2xx) or `dropped` (buffer overflow/5 retries exhausted).  
+  - `sending` → `queued` if retry scheduled due to failure/backoff.
 
-**Relationships / Rules**:
-- Steps reference canonical docs; Vitest will assert the link path exists.
-- Only three steps allowed to keep onboarding fast.
+## TelemetryBuffer
+- **Fields**:  
+  - `events` (array<ViewerTelemetryEvent>) – capped at 50.  
+  - `retryIntervalMs` (int) – base 5000 ms, doubled up to 40000 ms per event.  
+  - `lastDispatchAt` (timestamp) – for scheduling next flush.  
+  - `flushInProgress` (bool).
+- **Relationships**:  
+  - Owned by frontend viewer runtime; flushes to `/viewer-telemetry`.  
+  - Observability tests inspect buffer metrics via mocked endpoints.
+- **Validation / Constraints**:  
+  - Dropping policy is FIFO when buffer exceeds 50.  
+  - Buffer never blocks UI threads; operations must be asynchronous.
 
-## Entity: TopicDocIndexRow
-
-| Field | Type | Constraints / Validation | Notes |
-| --- | --- | --- | --- |
-| `topic` | String | Required, unique | e.g., “Responsive UX”, “Datasets” |
-| `use_when` | String | Required sentence | Describes scenario for referencing the doc |
-| `primary_doc` | Relative URL | Required, must resolve to markdown or code path | Main source of truth |
-| `secondary_artifacts` | String[] | Optional; file paths or artifact names | Additional references (Playwright report, README sections) |
-| `last_reviewed` | ISO date | Optional; defaults to metadata block `last_reviewed` | Enables per-topic freshness if needed |
-
-**Rules**:
-- Table must contain ≥8 rows covering architecture, datasets, responsive UX, testing, automation, deployment, data governance, troubleshooting.
-- Links must stay relative to repo root to keep GitHub previews working.
-
-## Entity: MaintenanceMetadata
-
-| Field | Type | Constraints / Validation | Notes |
-| --- | --- | --- | --- |
-| `audience` | String[] | Required; enumerates “New contributors”, “AI agents”, etc. | Used by automation for routing |
-| `owners` | String[] | Required GitHub handles/emails | Responsible for keeping doc fresh |
-| `doc_version` | String (semver) | Required | Increments whenever structure changes |
-| `last_reviewed` | ISO date | Required; equals commit date when doc updated | Feeds freshness checks |
-| `update_triggers` | String[] | Required; describes events that force review | e.g., “commands change”, “new doc added” |
-| `anchor_slugs` | String[] | Required; must include slug for every major section heading | Helps downstream linking |
-
-**Rules**:
-- Stored as YAML front matter parsed by `gray-matter`.
-- Vitest ensures keys exist and values meet formatting requirements.
-
-## Entity: AnchorExport
-
-| Field | Type | Constraints / Validation | Notes |
-| --- | --- | --- | --- |
-| `slug` | String | Required, matches section heading id | e.g., `orientation-path` |
-| `heading` | String | Required | Display text |
-| `breadcrumbs` | String | Optional; e.g., “Case Management Drawer → DEMO-004” | Provided when panels cover imagery |
-| `dismiss_controls` | String[] | Optional; names of buttons/gestures to close overlays | Ensures Constitution compliance |
-
-**Rules**:
-- Generated during Playwright run and written to `frontend/playwright-artifacts/docs-overview/anchors.json`.
-- Serves as downstream machine-readable index for automation agents.
+## VlmEvidenceArtifact
+- **Fields**:  
+  - `screenshots` (array<FileRef>) – per breakpoint/per panel state.  
+  - `metricsJson` (object) – layout measurements, telemetry counters, safe-area padding.  
+  - `llmFindings` (array) – llava issue list with severity + description.  
+  - `generatedAt` (timestamp).  
+  - `playwrightRunId` (string) – ties to CI run.  
+  - `status` (enum: `pass`, `fail`, `blocked`).
+- **Relationships**:  
+  - Produced by Playwright + VLM pipeline, stored under `frontend/playwright-report/`.  
+  - Referenced by docs/TESTING instructions for reviewers to inspect.
+- **Validation Rules**:  
+  - Each screenshot must have matching `metricsJson` entry keyed by breakpoint.  
+  - `llmFindings` severity `medium` or above triggers CI failure.  
+  - `status` derived from llava output; manual overrides forbidden.

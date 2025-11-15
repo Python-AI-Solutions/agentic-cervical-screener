@@ -16,7 +16,7 @@ This document explores small, fast Vision Language Models (VLMs) optimized for A
 ### Testing llava:latest
 ```bash
 # Test speed
-VLM_MODEL=llava:latest VLM_TIMEOUT_MS=60000 VLM_HEARTBEAT_MS=5000 pixi run npm run vlm:viewer
+cd frontend && VLM_MODEL=llava:latest VLM_TIMEOUT_MS=60000 VLM_HEARTBEAT_MS=5000 pixi run vlm-viewer
 ```
 
 ### Other Ollama Vision Models to Try
@@ -59,12 +59,12 @@ python3 -m mlx_vlm.generate \
 
 ### Test with llava:latest (might be faster than gemma3:4b)
 ```bash
-VLM_MODEL=llava:latest VLM_TIMEOUT_MS=60000 VLM_HEARTBEAT_MS=5000 pixi run npm run vlm:viewer
+cd frontend && VLM_MODEL=llava:latest VLM_TIMEOUT_MS=60000 VLM_HEARTBEAT_MS=5000 pixi run vlm-viewer
 ```
 
 ### Increase timeout for gemma3:4b
 ```bash
-VLM_MODEL=gemma3:4b VLM_TIMEOUT_MS=120000 VLM_HEARTBEAT_MS=10000 pixi run npm run vlm:viewer
+cd frontend && VLM_MODEL=gemma3:4b VLM_TIMEOUT_MS=120000 VLM_HEARTBEAT_MS=10000 pixi run vlm-viewer
 ```
 
 ## Quick MLX-VLM Setup (Recommended for Fast Debugging)
@@ -93,9 +93,10 @@ A wrapper script has been created at `frontend/scripts/mlx-vlm-wrapper.ts` that 
 
 To use it with the VLM audit script, set `LLM_BIN` to point to the wrapper:
 ```bash
-LLM_BIN="node frontend/scripts/mlx-vlm-wrapper.ts" \
-VLM_MODEL=SmolVLM-500M \
-pixi run npm run vlm:viewer
+cd frontend && \
+ LLM_BIN="node scripts/mlx-vlm-wrapper.ts" \
+ VLM_MODEL=SmolVLM-500M \
+ pixi run vlm-viewer
 ```
 
 ## Recommendations
@@ -119,4 +120,3 @@ pixi run npm run vlm:viewer
 1. Test bakllava once it finishes downloading
 2. If bakllava is still slow, set up MLX-VLM
 3. Consider adding MLX-VLM support to the script as an optional backend
-

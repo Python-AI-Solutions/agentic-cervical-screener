@@ -36,33 +36,34 @@ llm-ollama = "*"
 instructor = "*"
 
 [tasks]
-# npm passthrough tasks - use pixi's llm in PATH
+# npm passthrough tasks - expose everything via pixi instead of direct npm usage
 install = "npm install"
+setup = { cmd = "npm install", depends-on = ["install-vlm-plugin"] }
 dev = "npm run dev"
 build = "npm run build"
 preview = "npm run preview"
 
-# Testing tasks - use 'llm' (available in pixi PATH)
+# Testing tasks - use pixi wrapper for consistency
 test = { cmd = "npm test", env = { LLM_BIN = "llm" } }
 test-unit = "npm run test:unit"
+test-watch = "npm run test:watch"
 test-e2e = "npm run test:e2e"
+test-e2e-ci = "npm run test:e2e:ci"
+test-e2e-ui = "npm run test:e2e:ui"
+test-e2e-debug = "npm run test:e2e:debug"
 test-vlm = { cmd = "npm run test:vlm", env = { LLM_BIN = "llm" } }
 test-all = { cmd = "npm run test:all", env = { LLM_BIN = "llm" } }
 
 # VLM-specific tasks (use 'llm' available in pixi PATH)
 vlm-viewer = { cmd = "python scripts/vlm_viewer_audit.py", env = { LLM_BIN = "llm" } }
-vlm-docs = { cmd = "npm run vlm:docs", env = { LLM_BIN = "llm" } }
+vlm-test-quick = "python -m mlx_vlm.generate --model mlx-community/pixtral-12b-4bit --max-tokens 50 --temp 0.0 --image $IMAGE --prompt \"$PROMPT\""
 
 # Model management tasks
 add-model = "bash scripts/add-vlm-model.sh $MODEL_NAME $HF_PATH"
 download-model = "python -m mlx_vlm.download --model $HF_PATH"
 test-model = "llm -m $MODEL_NAME 'What do you see?' -a playwright-artifacts/viewer/viewer-desktop-viewer-context.png"
 
-# Default model for VLM testing
-vlm-test-quick = "python -m mlx_vlm.generate --model mlx-community/pixtral-12b-4bit --max-tokens 50 --temp 0.0 --image $IMAGE --prompt \"$PROMPT\""
-
-# Setup task
-setup = { cmd = "npm install", depends-on = ["install-vlm-plugin"] }
+# Setup helpers
 install-vlm-plugin = "echo 'VLM plugin installed via pypi-dependencies'"
 
 # Playwright browser installation

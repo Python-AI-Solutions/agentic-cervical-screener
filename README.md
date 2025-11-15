@@ -70,7 +70,7 @@ The development server includes:
 **Frontend-only development** (if backend is running separately):
 ```bash
 cd frontend
-npm run dev
+pixi run dev
 ```
 
 Frontend will be available at **http://localhost:5173** (proxies API calls to backend)
@@ -80,7 +80,7 @@ Frontend will be available at **http://localhost:5173** (proxies API calls to ba
 Build the frontend:
 ```bash
 cd frontend
-npm run build
+pixi run build
 ```
 
 Start production server:
@@ -132,16 +132,17 @@ pixi run format       # Format code (ruff format)
 ```bash
 cd frontend
 
-npm run dev           # Start Vite dev server
-npm run build         # Build for production
-npm run preview       # Preview production build
-npm test              # Run unit/integration tests
-npm run test:watch    # Run tests in watch mode
-npm run test:e2e      # Run E2E tests (Playwright)
-npm run test:e2e:ci   # Run headless E2E suite (no browser UI, CI-safe)
-npm run test:e2e:ui   # Run E2E tests with UI
-npm run test:vlm      # Run VLM audits (docs + viewer) against the latest screenshots
-npm run test:all      # Run all three test stacks (unit, app E2E, VLM)
+pixi run dev            # Start Vite dev server
+pixi run build          # Build for production
+pixi run preview        # Preview production build
+pixi run test           # Run unit/integration tests
+pixi run test-watch     # Run tests in watch mode
+pixi run test-e2e       # Run E2E tests (Playwright)
+pixi run test-e2e-ci    # Run headless E2E suite (CI-safe)
+pixi run test-e2e-ui    # Run E2E tests with UI
+pixi run test-e2e-debug # Run Playwright inspector/debugger
+pixi run test-vlm       # Run VLM audits against the latest screenshots
+pixi run test-all       # Run all three test stacks (unit, app E2E, VLM)
 ```
 
 ## Project Structure
@@ -174,36 +175,16 @@ The project now uses a three-tier testing approach:
 
 - **Unit/Integration Tests (Vitest)**: Fast, mocked tests for logic (`frontend/src/**/*.test.ts`, `frontend/src/**/*.integration.test.ts`)
 - **E2E Tests (Playwright)**: Real browser tests for actual functionality (`frontend/e2e/**/*.spec.ts`)
-- **VLM + Documentation/Viewer Metrics**: Local LLava/Ollama reviews driven through the `llm` CLI (`pixi run npm run test:vlm`) plus `npm run docs:metrics` enforce onboarding success ≥90% and freshness <30 days while producing semantic UX evidence. Install [Ollama](https://ollama.com/download) and pull `llava` (or set `VLM_MODEL`) before running these commands.
+- **VLM Evidence**: Local LLava/Ollama reviews driven through the `llm` CLI (`cd frontend && pixi run test-vlm`) validate responsive layouts and annotation affordances directly from Playwright screenshots/JSON. Install [Ollama](https://ollama.com/download) and pull `llava` (or set `VLM_MODEL`) before running these commands.
 
-Recommended commands:
-
-```bash
-# Documentation audit
-cd frontend
-npm run docs:test
-npm run docs:e2e -- docs-overview.spec.ts
-pixi run npm run vlm:docs
-npm run docs:metrics
-
-# Viewer responsive audit
-npm run docs:e2e -- viewer-responsive.spec.ts
-pixi run pixi run vlm-viewer
-```
-
-See `docs/TESTING.md` for detailed testing documentation.
+See `docs/TESTING.md` for detailed testing documentation, including the Playwright + VLM artifact flow.
 
 ## Contributing
 
 1. Follow the code style conventions (Python: PEP 8, TypeScript: strict mode)
 2. Write tests for new features
-3. Run tests before committing (`npm test` and `pixi run test`)
+3. Run tests before committing (`cd frontend && pixi run test` for Vitest plus backend `pixi run test`)
 4. Update documentation as needed
-
-### Onboarding Metrics Logging
-
-- After every mentor-led onboarding session, append a new row to `docs/metrics/onboarding-log.csv` (date, mentor, contributor, commands ran, `true/false` success flag, optional notes).
-- The documentation metrics command (`cd frontend && npm run docs:metrics`) reads this CSV to enforce the ≥90 % success threshold before merges.
 
 See `AGENTS.md` for detailed development guidelines (especially useful for AI coding assistants).
 

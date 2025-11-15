@@ -1,36 +1,26 @@
-# Phase 0 Research – Project Overview Guidance Index
+# Research Summary
 
-## Decision 1: YAML Front Matter + Anchor Inventory
-- **Decision**: Prepend `docs/project_overview.md` with YAML front matter containing `audience`, `owners`, `doc_version`, `last_reviewed`, and `update_triggers`, then parse it via `gray-matter` inside a new Vitest suite to enforce presence and freshness.
-- **Rationale**: YAML front matter is already a common markdown convention, works with GitHub rendering, and can be parsed without executing code. `gray-matter` integrates cleanly with TypeScript tests and lets us assert required keys plus ISO date formats.
-- **Alternatives Considered**:
-  1. **Inline metadata table** – human-friendly but hard to parse reliably (table reordering breaks scripts).
-  2. **Separate JSON sidecar** – machine-friendly but risks drifting from the markdown source and adds another file to update.
+## Niivue Sample Slide Packaging
+Decision: Keep the canonical Niivue `.nii.gz` slide plus JSON metadata referenced directly by README.md and `docs/TESTING.md`.  
+Rationale: Pairs deterministic geometry inputs with documentation so Vitest + Playwright can assert drift immediately after cloning, satisfying the Constitution’s documentation constraint.  
+Alternatives considered: Bundling DICOM slices or downloading remote assets was rejected because it violates offline + no-new-documents rules and complicates deterministic sizing.
 
-## Decision 2: Markdown Validation via remark + Vitest
-- **Decision**: Build `docs/__tests__/project_overview.index.test.ts` that loads the markdown, parses it with `remark`/`mdast-util-find`, and asserts: Orientation Path heading exists, ordered list length ≤3, Topic-to-Doc table has ≥8 rows with required columns, anchors match headings, and required command snippets are present.
-- **Rationale**: remark provides a stable AST for headings, lists, and tables, enabling deterministic assertions without ad-hoc regexes. Running inside Vitest keeps the workflow aligned with existing frontend tests and maintains the “fast evidence” layer required by the constitution.
-- **Alternatives Considered**:
-  1. **Regex-only validation** – brittle and error-prone for table parsing.
-  2. **Custom markdown parser** – unnecessary maintenance overhead compared to using remark’s mature ecosystem.
+## Telemetry Buffering & Retries
+Decision: Implement a 50-event in-memory queue that retries failed `/viewer-telemetry` posts every 5 s with exponential backoff while dropping the oldest entry when full.  
+Rationale: Maintains responsive UI, satisfies ≥95 % telemetry capture target, and surfaces observability metrics even during backend hiccups.  
+Alternatives considered: Blocking UI on send (hurts UX) or fire-and-forget logging (no retry guarantees) were rejected because they reduce inspectability and could mask regressions.
 
-## Decision 3: Documentation Preview Route + Playwright Journey
-- **Decision**: Add `frontend/src/routes/docs/OverviewPreview.tsx` that fetches the markdown at build time (via Vite `?raw` import) and renders it using the same typography tokens as the viewer header. Playwright spec `frontend/e2e/docs-overview.spec.ts` will: load this route, toggle a mock “Case Management” drawer overlay, capture screenshots at desktop/tablet/large-phone/small-phone widths, and dump link metadata plus anchor text to JSON under `frontend/playwright-artifacts/docs-overview/`.
-- **Rationale**: Rendering within the app guarantees the documentation is styled consistently with production headers and ensures responsive padding (safe areas, drawers) match real behavior. Playwright already runs for viewer journeys, so extending the suite minimizes new tooling.
-- **Alternatives Considered**:
-  1. **Testing GitHub-rendered markdown** – brittle (external dependency, rate limits, DOM structure outside our control).
-  2. **Manual screenshot capture** – fails Constitution Principle 2 (no automated evidence).
+## Responsive Evidence Collection
+Decision: Extend `frontend/e2e/viewer-sample-slide.spec.ts` to capture screenshots + JSON metrics for desktop, tablet, large-phone, and small-phone breakpoints defined in `docs/project_overview.md §5`.  
+Rationale: Aligns with Responsive Header-First UX principle and gives the VLM pipeline the context it needs to assert safe-area padding for both baseline and full-height panels.  
+Alternatives considered: Limiting to desktop screenshots or using manual QA was rejected due to inadequate coverage and inability to feed the automated VLM stage.
 
-## Decision 4: Anchor & Orientation Data Export
-- **Decision**: During the Playwright run, evaluate the DOM to collect all anchor IDs plus their linked sections and write them to `anchors.json` alongside a summary of Orientation Path steps. Vitest ensures the JSON structure stays in sync.
-- **Rationale**: Agents (Specify, future doc bots) can ingest the JSON to keep context up to date without re-parsing markdown, and the file doubles as evidence that the headless drawer/occlusion state retains breadcrumbs.
-- **Alternatives Considered**:
-  1. **Skip JSON export** – loses machine-readable breadcrumbs and makes future automation harder.
-  2. **Generate JSON during build** – harder to validate and would require bundler changes; Playwright already has the rendered DOM.
+## VLM Audit Pipeline
+Decision: Run `cd frontend && pixi run vlm-viewer` to bundle Playwright artifacts and invoke `llm -m llava` locally via Ollama, failing CI on medium-or-higher findings and writing `frontend/playwright-report/vlm-report.md`.  
+Rationale: Keeps the audit offline-capable, deterministic, and tied to actual viewer evidence, which enforces Dual-Layer Evidence without adding documentation surfaces.  
+Alternatives considered: Cloud-based VLM services or manual screenshot reviews were rejected because they break offline requirements and weaken automated governance.
 
-## Decision 5: VLM Selection for UX Audits
-- **Decision**: Use the `llm` CLI with the `llm-ollama` plugin and a local LLava-family model (default `llava:latest`) to evaluate Playwright screenshots + JSON artifacts. The evaluation script (`frontend/scripts/docs-overview-vlm.ts`) shells out to `llm -m llava ... -a <image>` so every screenshot receives a JSON severity/notes summary.
-- **Rationale**: Ollama ships optimized Apple Silicon builds, provides straightforward model management (`ollama pull llava`), and keeps the entire audit offline without compiling MLX runtimes. The `llm` CLI already supports attachments and JSON extraction, simplifying the Node wrapper.
-- **Alternatives Considered**:
-  1. **MLX + `mlx_lm`** – Text-only today; lacks mature vision input support and requires extra pip tooling the team wants to avoid.
-  2. **Remote GPT-4o mini** – Strong reasoning but violates the requirement for offline/local evaluation and introduces latency/cost.
+## Backend Telemetry Handling
+Decision: Use FastAPI `/viewer-telemetry` to log PHI-free payloads (`event`, `slideId`, `viewport`, `latencyMs`, `commandVersion`, `requestId`) with structured logging + PHI redaction, alongside `/healthz` for readiness checks.  
+Rationale: Supports Inspectable Automation expectations and gives maintainers precise artifacts to correlate with frontend telemetry.  
+Alternatives considered: Reusing existing generic logging endpoints was rejected because they lack schema enforcement and PHI redaction safeguards demanded by the feature.

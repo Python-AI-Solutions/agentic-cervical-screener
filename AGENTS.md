@@ -52,7 +52,7 @@ agentic-cervical-screener/
 **Three-tier approach**:
 - **Unit/Integration (Vitest)**: Fast, mocked tests for logic (`src/**/*.test.ts`, `src/**/*.integration.test.ts`)
 - **E2E (Playwright)**: Real browser tests for actual functionality (`e2e/**/*.spec.ts`)
-- **VLM/Documentation Metrics**: Local vision-language review via the `llm` CLI + Ollama (`pixi run npm run test:vlm`, which wraps `llm -m llava ...`) plus onboarding/freshness scripts (`npm run docs:metrics`) provide semantic UX validation and governance evidence.
+- **VLM Evidence**: Local vision-language review via the `llm` CLI + Ollama (`pixi run test-vlm`, which wraps `llm -m llava ...`) produces semantic UX validation artifacts that pair with Playwright screenshots/JSON.
 
 **Key principles**:
 - Mock DOM/canvas/browser APIs in unit tests
@@ -84,7 +84,7 @@ agentic-cervical-screener/
 pixi run dev
 
 # Frontend only (dev mode)
-cd frontend && npm run dev
+cd frontend && pixi run dev
 
 # Backend only
 pixi run start
@@ -94,55 +94,31 @@ pixi run start
 
 ```bash
 # Unit/Integration tests (fast)
-cd frontend && npm test
+cd frontend && pixi run test
+
+# Watch mode
+cd frontend && pixi run test-watch
 
 # E2E tests (requires dev server)
-cd frontend && npm run test:e2e
+cd frontend && pixi run test-e2e
 
 # Headless CI-friendly E2E run (preferred for automation)
-cd frontend && npm run test:e2e:ci
+cd frontend && pixi run test-e2e-ci
 
-# VLM audits (docs + viewer screenshots; run via Pixi so the llm CLI + Ollama plugin are on PATH)
-cd frontend && pixi run npm run test:vlm
+# VLM audits (viewer screenshots + JSON; uses llm in Pixi env)
+cd frontend && pixi run test-vlm
 
 # All tests
-cd frontend && npm run test:all
+cd frontend && pixi run test-all
 ```
 
-**Note**: E2E tests start a dev server automatically. Prefer `npm run test:e2e:ci` for headless runs so the browser UI doesn't block the terminal. If you need the interactive UI, use `npm run test:e2e:ui` or `npx playwright test --ui`.
-
-### Documentation Evidence & Metrics
-
-Certain documentation-focused features require extra validation:
-
-```bash
-# Markdown structure checks (Vitest)
-cd frontend && npm run docs:test
-
-# Responsive renders + JSON artifacts (docs + viewer)
-cd frontend && npm run docs:e2e
-
-# Local VLM audit (Ollama + llm; Apple Silicon w/ ≥16 GB RAM recommended)
-cd frontend && pixi run npm run test:vlm
-
-# Onboarding + freshness metrics
-cd frontend && npm run docs:metrics
-
-# Viewer responsive audit + VLM
-cd frontend && npm run docs:e2e -- viewer-responsive.spec.ts
-cd frontend && pixi run pixi run vlm-viewer
-```
-
-**Prerequisites**
-- Install [Ollama](https://ollama.com/download/mac) locally, start it (`ollama serve`), and pull at least one multimodal model such as `ollama pull llava`.
-- Confirm the `llm-ollama` plugin sees your models: `pixi run llm plugins` and `pixi run llm ollama models`.
-- Maintain `docs/metrics/onboarding-log.csv` after each mentor session so the metrics script can compute the ≥90 % success threshold.
+**Note**: E2E tests start a dev server automatically. Prefer `pixi run test-e2e-ci` for headless runs so the browser UI doesn't block the terminal. If you need the interactive UI or debugger, use `pixi run test-e2e-ui` or `pixi run test-e2e-debug`.
 
 ### Building
 
 ```bash
 # Frontend build
-cd frontend && npm run build
+cd frontend && pixi run build
 
 # Backend package
 pixi run build
@@ -173,8 +149,8 @@ pixi run build
 
 - **Backend**: Check FastAPI logs, use `pixi run dev` for hot reload
 - **Frontend**: Browser dev tools, Vite HMR
-- **Tests**: Run specific test file: `npm test -- path/to/test.ts`
-- **E2E**: Use `npm run test:e2e:debug` for Playwright inspector
+- **Tests**: Run specific test file: `cd frontend && pixi run test -- path/to/test.ts`
+- **E2E**: Use `cd frontend && pixi run test-e2e-debug` for Playwright inspector
 
 ## Important Files
 
@@ -244,3 +220,10 @@ pixi run build
 - Check `docs/TESTING.md` for testing details
 - Check `frontend/e2e/README.md` for E2E test quick reference
 - Review existing code patterns before adding new features
+
+## Active Technologies
+- Python ≥3.14 (FastAPI backend) + TypeScript 5.x (Vite frontend) + FastAPI, PyTorch/Ultralytics YOLO, Pixi, Niivue, Tailwind CSS, Vitest, Playwright, Ollama + llava VLM (001-project-guide-index)
+- N/A (sample slide + metadata in `public/`, telemetry forwarded to FastAPI + transient buffer) (001-project-guide-index)
+
+## Recent Changes
+- 001-project-guide-index: Added Python ≥3.14 (FastAPI backend) + TypeScript 5.x (Vite frontend) + FastAPI, PyTorch/Ultralytics YOLO, Pixi, Niivue, Tailwind CSS, Vitest, Playwright, Ollama + llava VLM
