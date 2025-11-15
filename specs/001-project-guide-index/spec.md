@@ -14,13 +14,13 @@
 
 ### User Story 1 - Deterministic Viewer Launch & Demo Slide Integrity (Priority: P1)
 
-A contributor must be able to clone the repo, run `pixi run dev` (backend) and `cd frontend && pixi run dev` (frontend), and immediately load the existing bundled demo case (e.g., `public/mock/case-demo.json`) with stable zoom/pan, overlays, and measurement rulers that match Niivue’s deterministic alignment guarantees.
+A contributor must be able to clone the repo, run `pixi run dev` (backend) and `cd frontend && pixi run dev` (frontend), and immediately load the existing bundled demo case (e.g., `public/mock/case-demo.json`) with stable zoom/pan, overlays, measurement rulers, and header controls that remain visible across responsive breakpoints while matching Niivue’s deterministic alignment guarantees.
 
 **Why this priority**: The project’s viability depends on proving the viewer itself works; any time spent on auxiliary documentation blocks the clinical imaging goals laid out in the Constitution.
 
-**Independent Test**:  
+- **Independent Test**:  
 - Deterministic check: Vitest suite validates the demo slide metadata already shipped with the repo (dimensions, pixel spacing, stain type) and asserts the ROI overlay math does not drift when switching DPR/zoom states.  
-- Playwright evidence: `frontend/e2e/viewer.spec.ts` (or successor) boots the viewer, loads the demo case, captures desktop/tablet/phone screenshots, and confirms header + canvas layout adheres to Principle 3 safe areas.  
+- Playwright evidence: `frontend/e2e/viewer.spec.ts` (or successor) boots the viewer, loads the demo case, captures desktop/tablet/phone screenshots, and asserts buttons, toggles, toolbars, and canvases remain accessible—visible when expected, collapsed or hidden only when the layout calls for it—without unintended overlap or clipping.  
 - Observability hook: devtools/manual verification ensures launch timing and ROI math remain within tolerances referenced in README.md commands.
 
 **Acceptance Scenarios**:
@@ -30,20 +30,20 @@ A contributor must be able to clone the repo, run `pixi run dev` (backend) and `
 
 ---
 
-### User Story 2 - Viewer Evidence & Python VLM Audit Pipeline (Priority: P2)
+### User Story 2 - CI Evidence Hardening & Python VLM QC (Priority: P2)
 
-CI must run an offline-capable VLM audit over the viewer screenshots/JSON captured by Playwright to ensure responsive layouts, safe-area padding, and annotation affordances stay compliant without inventing new documentation assets.
+CI must rely on deterministic Vitest + Playwright evidence (screenshots, DOM assertions, and accessibility checks) to gate merges, while the offline Python VLM audit runs as a secondary quality-control pass over those artifacts without owning primary verification.
 
 **Why this priority**: The Constitution’s “Dual-Layer Evidence” + “Responsive & Accessible Header-First UX” principles demand artifact-backed validation; keeping the pipeline viewer-focused avoids the documentation bloat that blocked progress.
 
 **Independent Test**:  
-- Deterministic check: the existing Python audit runner (`frontend/scripts/vlm_viewer_audit.py`) validates the Playwright screenshots + metrics JSON bundle before invoking `llm -m llava` via `pixi run vlm-viewer`.  
-- Playwright evidence: viewer journeys emit screenshots plus metrics payloads under `frontend/playwright-report/` for the Python script to consume.  
-- VLM stage: the Python pipeline fails CI whenever llava flags medium-or-higher responsive/accessibility issues and writes `frontend/playwright-report/vlm-report.md`; `frontend/scripts/test_vlm_viewer_audit.py` covers parser + failure cases.
+- Deterministic check: Playwright suites run in CI (desktop/tablet/large-phone/small-phone) with explicit assertions for button visibility, header safe areas, drawer focus management, and overlay toggles before uploading screenshots to `frontend/playwright-report/`.  
+- Python audit: `frontend/scripts/vlm_viewer_audit.py` consumes the screenshots produced by the Playwright runs (device/breakpoint encoded in filenames) and invokes `llm -m llava` via `pixi run vlm-viewer`; pytest coverage ensures parsing/severity adjustments remain stable.  
+- VLM stage: the Python pipeline fails CI whenever llava flags medium-or-higher responsive/accessibility issues and writes `frontend/playwright-report/vlm-report.md`; because deterministic checks already run in Vitest/Playwright, this stage serves as an additional qualitative gate rather than the primary verification.
 
 **Acceptance Scenarios**:
 
-1. **Given** a code change affecting layout, **When** the pipeline runs, **Then** it captures artifacts for desktop/tablet/phone and blocks merge if safe-area padding regresses.  
+1. **Given** a code change affecting layout, **When** Vitest + Playwright run in CI, **Then** they fail with actionable assertions (e.g., hidden buttons, header overlap, overlay misalignment) before the VLM stage runs.  
 2. **Given** reviewers inspect the VLM report, **When** no issues surface, **Then** they can proceed without requesting additional documentation beyond README.md / `docs/TESTING.md` notes.
 
 ---
@@ -51,6 +51,7 @@ CI must run an offline-capable VLM audit over the viewer screenshots/JSON captur
 ### Edge Cases
 
 - Demo slide loads must remain deterministic when device pixel ratio, zoom, or rotation changes mid-load.  
+- Playwright assertions must detect hidden/tiny buttons, header overlap, or off-screen controls without relying on subjective VLM output.  
 - Air-gapped environments still need to render the viewer and run VLM audits locally via Ollama; when the model is missing, the pipeline must emit a readable CLI error without touching documentation.  
 - If Niivue introduces breaking API changes, tests must detect the mismatch before runtime by validating version strings, preventing silent failures in screenshots or generated artifacts.
 
@@ -61,23 +62,25 @@ CI must run an offline-capable VLM audit over the viewer screenshots/JSON captur
 - **FR-001**: Ensure the existing demo case assets (`public/mock/*.json`, sample PNGs) referenced by README.md and `docs/TESTING.md` load deterministically, preserving orientation, pixel spacing, and stain metadata.  
 - **FR-002**: Maintain viewer bootstrapping that reads the demo metadata, loads overlays, and restores zoom/pan state within 200 ms after resize, fulfilling Deterministic Imaging Fidelity requirements.  
 - **FR-003**: Extend Vitest coverage to validate metadata parsing, ROI math utilities, and Niivue hook wrappers (`frontend/src/viewer/__tests__/*.test.ts`).  
-- **FR-004**: Extend Playwright coverage via `frontend/e2e/viewer.spec.ts` / `viewer-responsive.spec.ts` (or consolidated successor) that exercises launch, overlay toggles, ROI creation, and responsive breakpoints, storing screenshots + JSON metrics.  
-- **FR-005**: Maintain the viewer-focused Python VLM pipeline (`cd frontend && pixi run vlm-viewer`) backed by `frontend/scripts/vlm_viewer_audit.py` so it consumes the Playwright outputs, emits `vlm-report.md`, and fails CI on medium-or-higher responsive/accessibility findings.  
+- **FR-004**: Extend Playwright coverage via `frontend/e2e/viewer.spec.ts` / `viewer-responsive.spec.ts` (or consolidated successor) that exercises launch, overlay toggles, ROI creation, and responsive breakpoints, asserting buttons/toggles stay visible, header safe areas hold, drawers expose focus traps, and actions remain accessible; store screenshots for audit trails.  
+- **FR-005**: Maintain the viewer-focused Python VLM pipeline (`cd frontend && pixi run vlm-viewer`) backed by `frontend/scripts/vlm_viewer_audit.py` so it consumes the Playwright outputs, emits `vlm-report.md`, and fails CI on medium-or-higher responsive/accessibility findings as a secondary qualitative gate.  
 - **FR-006**: Update only README.md and `docs/TESTING.md` to reflect the canonical commands and verification steps; no additional documentation artifacts (indexes, portals, overlays) may be added.
 
 ### Key Entities *(include if feature involves data)*
 
 - **Demo Case Asset**: Existing `public/mock/*.json` definitions paired with PNG overlays that define deterministic rendering inputs for tests and manual runs.  
-- **VLM Evidence Artifact**: Combination of Playwright screenshots and JSON metrics analyzed by the Python `vlm_viewer_audit.py` script to enforce responsive/accessibility requirements.
+- **Playwright Evidence Bundle**: Deterministic Playwright screenshots and DOM/assertion logs that prove header/controls/canvas integrity across breakpoints and feed downstream audits.  
+- **VLM Evidence Artifact**: Combination of Playwright screenshots and audit findings produced by the Python `vlm_viewer_audit.py` script to enforce responsive/accessibility requirements qualitatively.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
 - **SC-001**: Running `pixi run dev` + `cd frontend && pixi run dev` loads the demo slide with overlays aligned across DPRs, verified by automated screenshot diff ≤2 px tolerance.  
-- **SC-002**: The VLM pipeline completes on Apple Silicon hardware within 5 minutes and blocks merge on any medium-or-higher issue; artifacts live under `frontend/playwright-report/`.  
-- **SC-003**: README.md and `docs/TESTING.md` remain the only documentation touchpoints; they clearly state the canonical commands and mention where to find VLM evidence.  
-- **SC-004**: Fast tests fail within 60 s when metadata or Niivue APIs change unexpectedly, preventing regressions from landing.
+- **SC-002**: Playwright CI asserts button visibility, header safe areas, ROI toggles, and responsive drawers without regressions; failures provide actionable selectors/metrics.  
+- **SC-003**: The Python VLM pipeline completes on Apple Silicon hardware within 5 minutes and blocks merge on any medium-or-higher issue; artifacts live under `frontend/playwright-report/`.  
+- **SC-004**: README.md and `docs/TESTING.md` remain the only documentation touchpoints; they clearly state the canonical commands and mention where to find CI/VLM evidence.  
+- **SC-005**: Fast tests fail within 60 s when metadata or Niivue APIs change unexpectedly, preventing regressions from landing.
 
 ## Assumptions
 

@@ -4,7 +4,7 @@
 
 **Prerequisites**: `plan.md`, revised `spec.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`
 
-**Tests**: Each user story pairs fast unit/integration coverage (Vitest/pytest) with Playwright journeys that emit screenshots + JSON artifacts consumed by the Python VLM audit.
+**Tests**: Each user story pairs fast unit/integration coverage (Vitest/pytest) with Playwright journeys that emit screenshots + DOM assertions consumed by CI and the Python VLM audit.
 
 **Organization**: Tasks are grouped by phase and mapped to user stories so increments stay independently shippable.
 
@@ -26,7 +26,7 @@
 
 - [ ] T004 Create demo-case metadata parser + TypeScript types in `frontend/src/viewer/data/demoCase.ts`.
 - [ ] T005 [P] Add Vitest harness utilities (DPR mocks, Niivue canvas shim) in `frontend/src/viewer/__tests__/setup.ts`.
-- [ ] T006 [P] Build Playwright artifact helper that writes screenshots + metrics JSON to `frontend/playwright-report/metrics/demo-case.js` in `frontend/e2e/utils/artifacts.ts`.
+- [ ] T006 [P] Build Playwright artifact helper that ensures screenshots land under `frontend/playwright-report/viewer/` with consistent naming (device + breakpoint) and writes a simple manifest file in `frontend/e2e/utils/artifacts.ts`.
 - [ ] T007 Ensure FastAPI `/docs/project-overview` + `/docs/project-overview/anchors` endpoints match the OpenAPI contract with regression tests in `tests/test_docs_overview.py`.
 
 **Checkpoint**: Foundation ready — user story implementation can now begin.
@@ -35,14 +35,14 @@
 
 ## Phase 3: User Story 1 – Deterministic Viewer Launch & Demo Slide Integrity (Priority: P1) 🎯 MVP
 
-**Goal**: Contributors running the README commands load the existing demo slide with deterministic overlays/ROI math and responsive safe areas.
+**Goal**: Contributors running the README commands load the existing demo slide with deterministic overlays/ROI math and responsive safe areas where controls show/hide exactly as the design intends.
 
-**Independent Test**: Vitest validates demo metadata + ROI math; Playwright `frontend/e2e/viewer.spec.ts` (or consolidated successor) bootstraps desktop/tablet/phone layouts and stores screenshots + metrics; manual logging confirms launch timing stays within tolerances.
+**Independent Test**: Vitest validates demo metadata + ROI math; Playwright `frontend/e2e/viewer.spec.ts` (or consolidated successor) bootstraps desktop/tablet/phone layouts, asserts header/tool buttons/toggles/canvas bounds behave per layout rules (visible when expected, properly collapsed when not), and stores screenshots for review; manual logging confirms launch timing stays within tolerances.
 
 ### Tests for User Story 1
 
 - [ ] T008 [P] [US1] Write Vitest coverage (`frontend/src/viewer/__tests__/demoCase.test.ts`) asserting metadata parsing, DPR drift math, and ROI overlay alignment for the demo slide.
-- [ ] T009 [P] [US1] Update `frontend/e2e/viewer.spec.ts` to capture multi-breakpoint screenshots, header metrics JSON, and per-device load-time stats for the demo case.
+- [ ] T009 [P] [US1] Update `frontend/e2e/viewer.spec.ts` to capture multi-breakpoint screenshots and assert buttons, toggles, drawers, and canvas bounds are either visible or intentionally collapsed with no unintended clipping for the demo case.
 
 ### Implementation for User Story 1
 
@@ -50,26 +50,26 @@
 - [ ] T011 [US1] Ensure overlay/ruler transforms honor the shared constants by refactoring `frontend/src/viewer/CanvasManager.ts` and `frontend/src/viewer/OverlayRenderer.ts`.
 - [ ] T012 [US1] Update README.md + `docs/TESTING.md` with the current “clone + pixi run dev / cd frontend && pixi run dev” instructions plus pointers to the demo case artifacts.
 
-**Checkpoint**: User Story 1 is fully testable and demonstrable; screenshots + JSON confirm deterministic layouts.
+**Checkpoint**: User Story 1 is fully testable and demonstrable; screenshots + Playwright assertions confirm deterministic layouts.
 
 ---
 
-## Phase 4: User Story 2 – Viewer Evidence & Python VLM Audit Pipeline (Priority: P2)
+## Phase 4: User Story 2 – CI Evidence Hardening & Python VLM QC (Priority: P2)
 
-**Goal**: Keep the existing Python-based VLM audit wired to Playwright outputs so CI blocks on medium-or-higher findings without introducing TypeScript audit tooling.
+**Goal**: Keep deterministic Vitest + Playwright evidence as the primary CI gate while wiring the existing Python-based VLM audit to the captured screenshots for secondary qualitative review.
 
-**Independent Test**: Playwright produces enriched artifact bundles for the VLM script; pytest suites verify parsing/adjustments; the Python CLI fails when llava reports issues and writes `frontend/playwright-report/vlm-report.md`.
+**Independent Test**: Playwright produces assertion-rich runs plus screenshot manifests for the VLM script; pytest suites verify parsing/adjustments; the Python CLI fails when llava reports issues and writes `frontend/playwright-report/vlm-report.md`.
 
 ### Tests for User Story 2
 
 - [ ] T013 [P] [US2] Extend pytest coverage in `frontend/scripts/test_vlm_viewer_audit.py` to validate bundle validation, JSON parsing, severity adjustments, and error surfaces for missing screenshots.
-- [ ] T014 [P] [US2] Add Playwright regression covering artifact bundle completeness (screenshots + metrics JSON) in `frontend/e2e/viewer-responsive.spec.ts` or a shared helper.
+- [ ] T014 [P] [US2] Add Playwright regression covering artifact bundle completeness (expected screenshots captured for each project/breakpoint) in `frontend/e2e/viewer-responsive.spec.ts` or a shared helper.
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Enhance `frontend/scripts/vlm_viewer_audit.py` with bundle validation (matching screenshots ↔ metrics), improved CLI output, and configurable Ollama model names.
+- [ ] T015 [US2] Enhance `frontend/scripts/vlm_viewer_audit.py` with bundle validation (ensuring expected screenshot filenames exist per breakpoint), improved CLI output, and configurable Ollama model names.
 - [ ] T016 [US2] Update `frontend/pixi.toml` and `frontend/docs/VLM_QUICK_START.md` to reflect the Python pipeline usage (`pixi run vlm-viewer`, `llm` path), including troubleshooting for air-gapped environments.
-- [ ] T017 [US2] Ensure Playwright runs drop metrics JSON + screenshot manifests under `frontend/playwright-report/` using the helper from T006 so the Python script consumes consistent paths.
+- [ ] T017 [US2] Ensure Playwright runs drop the screenshot manifest under `frontend/playwright-report/` using the helper from T006 so the Python script consumes consistent paths.
 
 **Checkpoint**: Python VLM pipeline consumes the refreshed artifacts, pytest + Playwright coverage passes, and CI fails on medium-or-higher findings.
 
