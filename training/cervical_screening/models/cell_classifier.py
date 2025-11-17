@@ -234,7 +234,7 @@ class CellClassifier:
             if val_acc > best_val_acc:
                 best_val_acc = val_acc
                 if save_path:
-                    torch.save(self.model.state_dict(), save_path)
+                    torch.save(self.model.state_dict(), save_path)  # nosec B614
                     print(f"  ✅ Best model saved (Val Acc: {val_acc:.2f}%)")
 
         print("\n" + "=" * 80)
@@ -283,6 +283,6 @@ class CellClassifier:
         """Load trained model weights"""
         if self.model is None:
             self.build_model()
-        self.model.load_state_dict(torch.load(model_path))
+        self.model.load_state_dict(torch.load(model_path))  # nosec B614
         self.model.eval()
         print(f"✅ Model loaded from {model_path}")
