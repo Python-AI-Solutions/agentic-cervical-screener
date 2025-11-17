@@ -54,7 +54,7 @@ def register_models(register):
     
     # ⚠️ LEGACY: Older models (may not work on all systems)
     
-    # SmolVLM models - Small but may hit memory limits
+    # SmolVLM models - Small
     register(MlxVlmModel("SmolVLM-256M", "HuggingfaceTB/SmolVLM-256M-Instruct"))
     register(MlxVlmModel("SmolVLM-500M", "HuggingfaceTB/SmolVLM-500M-Instruct"))
     

@@ -77,7 +77,7 @@ Capture edge cases that defend the constitutional guardrails:
 
 - How do transforms behave when device pixel ratio or zoom changes mid-interaction (Principle 1)?
 - What happens to header/actions (or full-height panels) when viewport shrinks below 400 px or grows beyond desktop clamp, and how do users dismiss overlays (Principle 3)?
-- How are telemetry/log files protected from PHI while still referencing the new workflow (Principle 4/5)?
+- What documentation or data-handling updates are required to keep demo assets governed and reviewers informed (Principle 4)?
 
 ## Requirements *(mandatory)*
 

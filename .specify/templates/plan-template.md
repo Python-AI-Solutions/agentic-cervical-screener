@@ -36,8 +36,7 @@ Document the status of each constitutional guardrail (Pass / Mitigation Plan / B
 1. **Deterministic Imaging Fidelity** – List the transforms, canvases, or layout elements touched and how Niivue alignment plus header non-occlusion will be preserved/tested.
 2. **Dual-Layer Evidence** – Identify the Vitest (or Python) specs and Playwright journeys that will fail before implementation and what artifacts (screenshots + JSON) they will emit.
 3. **Responsive & Accessible Header-First UX** – Map user stories to the breakpoints in `docs/project_overview.md §5`, explain when/why panels will cover the imagery, and show how escape controls + accessibility/tap-target guarantees will be asserted (screenshots for both baseline and full-height panel states).
-4. **Inspectable Automation & Observability** – Describe the structured logging, telemetry, or health endpoints affected and how new metrics will surface in CI artifacts.
-5. **Clinical Safety, Data Stewardship, and Documentation** – Specify documentation updates plus any data-handling considerations (e.g., demo datasets only) required by the feature.
+4. **Clinical Safety, Data Stewardship, and Documentation** – Specify documentation updates plus any data-handling considerations (e.g., demo datasets only) required by the feature.
 
 If any guardrail cannot be satisfied, capture the mitigation and secure approval before proceeding.
 

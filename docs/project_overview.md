@@ -37,7 +37,7 @@ This document captures the current product vision, architecture, and the primary
 | Accurate Cytology Review | Provide a browser-based experience for exploring cervical cytology slides, overlaying AI detections/ground truth, and collecting human-labelled ROIs. |
 | Consistent Multi-Device UX | The viewer must feel native on desktop, tablets, and narrow phones. Header actions and panels prefer to keep imagery visible, but when workflows demand full attention they may cover the canvas provided they offer obvious dismiss controls and instantly restore the prior view. |
 | Deterministic Rendering | Coordinate transforms account for browser zoom, DPR, and Niivue canvas specifics so that images, overlays, and user-drawn ROIs align regardless of environment. |
-| Inspectable Automation | Every critical workflow (image load, sidebar toggles, drawing, responsive header layout) is exercised by Playwright; the run produces cropped screenshots + JSON metrics so regressions are visible before deployment and assessment by small VLMs is incorporated into the test suite. |
+| Inspectable Automation | Every critical workflow (image load, sidebar toggles, drawing, responsive header layout) is exercised by Playwright; the run produces cropped screenshots so regressions are visible before deployment and assessment by small VLMs is incorporated into the test suite. |
 
 ## 2. Architecture (What & Where)
 
@@ -133,7 +133,7 @@ Questions or discrepancies? Open an issue referencing this overview so we can up
 1. **Run the full evidence stack** – `cd frontend && pixi run test`, `pixi run test-e2e -- docs-overview.spec.ts`, and `pixi run test-vlm`. These commands must pass (and artifacts uploaded) before any documentation PR merges.
 2. **Update metadata + anchors** – bump `doc_version`, refresh `last_reviewed` (ISO format), and ensure `anchor_slugs` reflects every section enumerated in this file. If you add/remove headings, also update the Reference Anchors table below.
 3. **Append onboarding log entry** – mentors record outcomes in `docs/metrics/onboarding-log.csv` immediately after each session so the ≥90% success window remains truthful.
-4. **Attach artifacts to PRs** – include the latest Playwright screenshots (`frontend/playwright-artifacts/docs-overview/*.png`), JSON metadata, and `vlm-report.md`.
+4. **Attach artifacts to PRs** – include the latest Playwright screenshots (`frontend/playwright-artifacts/docs-overview/*.png`) and `vlm-report.md`.
 
 ## Reference Anchors
 

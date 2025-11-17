@@ -52,7 +52,7 @@ agentic-cervical-screener/
 **Three-tier approach**:
 - **Unit/Integration (Vitest)**: Fast, mocked tests for logic (`src/**/*.test.ts`, `src/**/*.integration.test.ts`)
 - **E2E (Playwright)**: Real browser tests for actual functionality (`e2e/**/*.spec.ts`)
-- **VLM Evidence**: Local vision-language review via the `llm` CLI + Ollama (`pixi run test-vlm`, which wraps `llm -m llava ...`) produces semantic UX validation artifacts that pair with Playwright screenshots/JSON.
+- **VLM Evidence**: Local vision-language review via the `llm` CLI + Ollama (`pixi run test-vlm`, which wraps `llm -m llava ...`) produces semantic UX validation artifacts that pair with Playwright screenshots.
 
 **Key principles**:
 - Mock DOM/canvas/browser APIs in unit tests
@@ -105,7 +105,7 @@ cd frontend && pixi run test-e2e
 # Headless CI-friendly E2E run (preferred for automation)
 cd frontend && pixi run test-e2e-ci
 
-# VLM audits (viewer screenshots + JSON; uses llm in Pixi env)
+# VLM audits (viewer screenshots; uses llm in Pixi env)
 cd frontend && pixi run test-vlm
 
 # All tests
@@ -223,7 +223,7 @@ pixi run build
 
 ## Active Technologies
 - Python ≥3.14 (FastAPI backend) + TypeScript 5.x (Vite frontend) + FastAPI, PyTorch/Ultralytics YOLO, Pixi, Niivue, Tailwind CSS, Vitest, Playwright, Ollama + llava VLM (001-project-guide-index)
-- N/A (sample slide + metadata in `public/`, telemetry forwarded to FastAPI + transient buffer) (001-project-guide-index)
+- N/A (demo slide + metadata in `public/`, Playwright/VLM evidence stored under `frontend/playwright-report/`) (001-project-guide-index)
 
 ## Recent Changes
 - 001-project-guide-index: Added Python ≥3.14 (FastAPI backend) + TypeScript 5.x (Vite frontend) + FastAPI, PyTorch/Ultralytics YOLO, Pixi, Niivue, Tailwind CSS, Vitest, Playwright, Ollama + llava VLM

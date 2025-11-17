@@ -26,22 +26,16 @@ Follow-up TODOs:
 **Rationale**: Clinicians cannot review cytology confidently unless geometry is stable and reproducible; allowing intentional occlusion keeps complex workflows possible while guaranteeing rapid, lossless recovery of the imaging context.
 
 ### Dual-Layer Evidence for Every Change
-- Every user-visible change MUST include fast unit/integration coverage (`npm test`) for the logic path AND an automated Playwright journey that captures screenshots + JSON metrics (stored under `frontend/playwright-report/data`).
+- Every user-visible change MUST include fast unit/integration coverage (`npm test`) for the logic path AND an automated Playwright journey that captures screenshots (stored under `frontend/playwright-report/`).
 - Tests are written before implementation, committed alongside the code, and recorded in PR descriptions; no change merges until both layers fail before the fix and pass afterward.
 - Backend routes and Pixi workflows follow the same rule using `pixi run test` for FastAPI/PyTorch code plus an integration assertion from the frontend consuming the new API shape.
 **Rationale**: The product’s trust hinges on deterministic, reproducible evidence; pairing fast tests with captured browser proof prevents regressions and accelerates triage.
 
 ### Responsive & Accessible Header-First UX
-- Apply the breakpoint rules in `docs/project_overview.md §5` exactly: header height clamp, single-row desktop layout, hamburger behavior on tablet, stacked actions on phones <400 px, and mandatory ARIA labels.
+- Apply the breakpoint rules in `docs/project_overview.md §5` exactly: header height clamp, single-row desktop layout, hamburger behavior on tablet, and mandatory ARIA labels.
 - When panels/actions extend over the imagery, they must retain visible close affordances, maintain safe-area padding for gesture bars, and communicate context (e.g., “Case Management for DEMO-004”) so users always know what is hidden.
 - Accessibility gates (WCAG 2.1 AA contrast, 44 px hit targets, focus outlines) are blocking; Playwright tests must assert header layout plus safe padding for desktop, tablet, large-phone, and small-phone runs, including screenshots of full-height panels.
 **Rationale**: Screenings happen on a variety of devices in clinical settings; enforcing predictable layouts and escape hatches guarantees usability—even when high-density panels temporarily take over the screen.
-
-### Inspectable Automation & Observability
-- Backend endpoints emit structured logs (request id, model version, inference latency, ROI counts) and expose `/healthz` plus `/model-info`; logs never include PHI but are detailed enough for audits.
-- Frontend workflows record telemetry for image load, overlay toggles, ROI drawing, and responsive mode changes—hooked into the Playwright suite so failures include contextual metrics and cropped screenshots.
-- Automation artifacts (screenshots, JSON metrics) are retained for every CI run and referenced in retrospectives when regressions slip through.
-**Rationale**: AI-assisted screening demands explainability; observability and inspectable automation provide the audit trail regulators and clinicians expect.
 
 ### Clinical Safety, Data Stewardship, and Documentation
 - Demo data stays in `public/` and is the ONLY dataset agents may ship by default; any new dataset or PHI-like content requires documented provenance and explicit approval.
@@ -58,7 +52,7 @@ Follow-up TODOs:
 ## Workflow & Review Process
 - Every feature starts with a spec (`.specify/templates/spec-template.md`) that enumerates independent user stories plus deterministic success metrics, followed by a plan that documents Constitution Check outcomes and structure decisions.
 - Tasks (`tasks.md`) stay grouped per user story, explicitly calling out required Vitest + Playwright coverage and the files they touch so reviewers can verify independence and completeness.
-- Code reviews block on: passing dual-layer tests, evidence that responsive requirements remain intact (Playwright screenshots attached, including any full-height panels), updated documentation, and confirmation that observability hooks log the new workflow.
+- Code reviews block on: passing dual-layer tests, evidence that responsive requirements remain intact (Playwright screenshots attached, including any full-height panels), and updated documentation covering behavioral changes.
 - Runtime guidance lives in `AGENTS.md`, `docs/TESTING.md`, and `docs/project_overview.md`; reviewers ensure every change references or updates these sources when behavior shifts.
 
 ## Governance

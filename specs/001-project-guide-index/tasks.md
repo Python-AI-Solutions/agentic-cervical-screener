@@ -27,7 +27,6 @@
 - [ ] T004 Create demo-case metadata parser + TypeScript types in `frontend/src/viewer/data/demoCase.ts`.
 - [ ] T005 [P] Add Vitest harness utilities (DPR mocks, Niivue canvas shim) in `frontend/src/viewer/__tests__/setup.ts`.
 - [ ] T006 [P] Build Playwright artifact helper that ensures screenshots land under `frontend/playwright-report/viewer/` with consistent naming (device + breakpoint) and writes a simple manifest file in `frontend/e2e/utils/artifacts.ts`.
-- [ ] T007 Ensure FastAPI `/docs/project-overview` + `/docs/project-overview/anchors` endpoints match the OpenAPI contract with regression tests in `tests/test_docs_overview.py`.
 
 **Checkpoint**: Foundation ready — user story implementation can now begin.
 
@@ -62,12 +61,12 @@
 
 ### Tests for User Story 2
 
-- [ ] T013 [P] [US2] Extend pytest coverage in `frontend/scripts/test_vlm_viewer_audit.py` to validate bundle validation, JSON parsing, severity adjustments, and error surfaces for missing screenshots.
+- [ ] T013 [P] [US2] Extend pytest coverage in `frontend/scripts/test_vlm_viewer_audit.py` to validate bundle validation, JSON parsing, severity adjustments, error surfaces for missing screenshots, and the air-gapped/missing-Ollama scenario.
 - [ ] T014 [P] [US2] Add Playwright regression covering artifact bundle completeness (expected screenshots captured for each project/breakpoint) in `frontend/e2e/viewer-responsive.spec.ts` or a shared helper.
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Enhance `frontend/scripts/vlm_viewer_audit.py` with bundle validation (ensuring expected screenshot filenames exist per breakpoint), improved CLI output, and configurable Ollama model names.
+- [ ] T015 [US2] Enhance `frontend/scripts/vlm_viewer_audit.py` with bundle validation (ensuring expected screenshot filenames exist per breakpoint), improved CLI output, configurable Ollama model names, and a graceful error when the required llava model or Ollama service is absent.
 - [ ] T016 [US2] Update `frontend/pixi.toml` and `frontend/docs/VLM_QUICK_START.md` to reflect the Python pipeline usage (`pixi run vlm-viewer`, `llm` path), including troubleshooting for air-gapped environments.
 - [ ] T017 [US2] Ensure Playwright runs drop the screenshot manifest under `frontend/playwright-report/` using the helper from T006 so the Python script consumes consistent paths.
 
@@ -118,7 +117,7 @@
 
 ### MVP First (User Story 1 Only)
 
-1. Complete Setup (T001–T003) and Foundational (T004–T007).
+1. Complete Setup (T001–T003) and Foundational (T004–T006).
 2. Deliver US1 tasks (T008–T012) to obtain deterministic viewer launch + responsive evidence.
 3. Validate with Vitest and Playwright before moving on.
 
@@ -130,5 +129,5 @@
 ### Task Completeness Validation
 
 - Every user story has explicit test + implementation tasks referencing concrete files.
-- Demo-case assets, viewer modules, and documentation updates are covered without introducing new telemetry requirements.
+- Demo-case assets, viewer modules, and documentation updates are covered while keeping evidence generation focused on Vitest, Playwright, and the Python VLM pipeline.
 - Python VLM automation relies solely on `frontend/scripts/vlm_viewer_audit.py` and related docs/tests—no TypeScript audit tooling is referenced.
