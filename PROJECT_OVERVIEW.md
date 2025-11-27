@@ -36,7 +36,7 @@ AI-powered cervical cancer screening application that uses YOLO deep learning mo
 | Backend | FastAPI | 0.116.0+ |
 | Frontend | Vanilla JavaScript | ES6+ |
 | Viewer | NiiVue | Latest |
-| AI Model | Ultralytics YOLO | 8.3.188 |
+| AI Model | YOLOv12 | Latest |
 | ML Framework | PyTorch | 2.3.1 |
 | Package Manager | Pixi | Latest |
 | Python | CPython | 3.12 |
@@ -262,7 +262,7 @@ kubectl logs -f <pod-name>
 ## 📊 **Model Information**
 
 ### **YOLO Model Details**
-- **Architecture**: YOLOv8 (Ultralytics)
+- **Architecture**: YOLOv12 (Ultralytics)
 - **Task**: Object detection + classification
 - **Classes**: 4 classes (healthy, rubbish, unhealthy, bothcells)
 - **Input**: RGB images (any size, auto-resized)

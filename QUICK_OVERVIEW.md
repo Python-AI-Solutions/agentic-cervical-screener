@@ -4,7 +4,7 @@
 
 ## 🎯 What Is This?
 
-AI-powered cervical cancer screening tool using **YOLOv8** deep learning to detect and classify abnormal cells in cervical cytology images. Web-based interactive viewer with real-time inference and manual annotation capabilities.
+AI-powered cervical cancer screening tool using **YOLOv12** deep learning to detect and classify abnormal cells in cervical cytology images. Web-based interactive viewer with real-time inference and manual annotation capabilities.
 
 **Current Stage**: Ready for clinical evaluation with Cervical Cancer Screening service (3-week timeline).
 
@@ -15,7 +15,7 @@ AI-powered cervical cancer screening tool using **YOLOv8** deep learning to dete
 ```
 Frontend: Vanilla JS + NiiVue Viewer
 Backend:  FastAPI (Python 3.12)
-AI Model: YOLOv8 (PyTorch 2.3.1)
+AI Model: YOLOv12 (PyTorch 2.3.1)
 Infra:    Docker + Kubernetes + Pixi
 ```
 
@@ -76,7 +76,7 @@ pixi run lint              # Code quality
 
 ## 📊 Model Details
 
-- **Architecture**: YOLOv8 (Ultralytics)
+- **Architecture**: YOLOv12 (Ultralytics)
 - **Classes**: 4 classes (healthy, rubbish, unhealthy, bothcells)
 - **Inference**: <2s per image (CPU), auto-GPU if available
 - **Weights**: `src/models/best.pt` (~6MB)
