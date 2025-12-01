@@ -9,7 +9,7 @@
 
 > **Constitution Hooks**  
 > - Each user story MUST trace to (a) a deterministic-fidelity acceptance check (math/unit tests or documented transforms) and (b) a Playwright journey that captures screenshots for responsive evidence.  
-> - Responsive + accessibility expectations from `frontend/docs/ZOOM_ISSUES_AND_FIXES.md` must be listed explicitly in the Acceptance Scenarios for any UI change.  
+> - Responsive + accessibility expectations from `docs/project_overview.md §5` must be listed explicitly in the Acceptance Scenarios for any UI change.  
 
 ### User Story 1 - Deterministic Viewer Launch & Demo Slide Integrity (Priority: P1)
 
@@ -50,7 +50,7 @@ CI must rely on deterministic Vitest + Playwright evidence (screenshots, DOM ass
 ### Edge Cases
 
 - Playwright assertions must detect hidden/tiny buttons, header overlap, or off-screen controls without relying on subjective VLM output.
-- Air-gapped environments still need to render the viewer and run VLM audits locally via mlx_vlm (using llm CLI tools plugin).
+- Air-gapped environments still need to render the viewer and run VLM audits locally via the `llm` CLI (mlx_vlm plugin). When the configured model or CLI is unavailable, the pipeline must emit a readable error without touching documentation.
 - If Niivue introduces breaking API changes, tests must detect the mismatch before runtime by validating version strings, preventing silent failures in screenshots or generated artifacts.
 
 ## Requirements *(mandatory)*
@@ -83,12 +83,12 @@ CI must rely on deterministic Vitest + Playwright evidence (screenshots, DOM ass
 ## Assumptions
 
 - Documentation coverage is restricted to README.md and `docs/TESTING.md`; no new user-facing portals or indexes will be created until the viewer proves viable.  
-- Contributors run workflows on Apple Silicon laptops with ≥16 GB RAM so Niivue, Playwright, and llava can execute locally.  
+- Contributors run workflows on Apple Silicon laptops with ≥16 GB RAM so Niivue, Playwright, and the configured VLM model can execute locally.  
 - Demo assets in `public/` remain non-PHI and are the only datasets baked into tests; additional datasets require explicit approval outside this feature.  
 - Backend endpoints required for viewer workflows already exist; no new API exposure is anticipated for this feature.
 
 ## Dependencies & Risks
 
 - Niivue version bumps or GPU driver changes may alter rendering; maintain lockfiles and screenshot baselines to detect drift quickly.  
-- Ollama/llava availability is required for the VLM pipeline; if the model is missing, document the failure mode in `docs/TESTING.md` but do not add new portals.  
+- Availability of the configured `llm` CLI plugin + VLM model is required for the VLM pipeline; if the model is missing, document the failure mode in `docs/TESTING.md` but do not add new portals.  
 - Viewer evidence generation depends on Playwright health; ensure failing runs clearly log artifact paths for manual inspection.

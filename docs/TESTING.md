@@ -53,7 +53,7 @@ This project uses a three-tier testing approach. Before running any suite, compl
 - `cd frontend && pixi run test-e2e` - Run all E2E tests
 - `cd frontend && pixi run test-e2e-ui` - Run with Playwright UI
 - `cd frontend && pixi run test-e2e-debug` - Debug mode
-- `cd frontend && pixi run test-vlm` - Run the local LLava/Ollama audits for viewer screenshots (requires Apple Silicon with ≥16 GB RAM)
+- `cd frontend && pixi run test-vlm` - Run the local VLM audit via the `llm` CLI + mlx_vlm plugin for viewer screenshots (requires Apple Silicon with ≥16 GB RAM)
 - `cd frontend && pixi run test-all` - Run all three stacks (unit/integration, application E2E, local VLM)
 
 ## Test Organization
@@ -73,8 +73,8 @@ frontend/
 
 ## VLM Evidence
 
-- `cd frontend && pixi run test-vlm`: Runs the LLava/Ollama review (via the `llm` CLI) against the latest Playwright screenshots and fails on medium+ issues.
-- Install [Ollama](https://ollama.com/download) locally and pull at least one multimodal model (for example `ollama pull llava`). You can override the default model by setting `VLM_MODEL`.
+- `cd frontend && pixi run test-vlm`: Runs the VLM review (via the `llm` CLI + mlx_vlm plugin) against the latest Playwright screenshots and fails on medium+ issues.
+- Ensure the `llm` CLI and mlx_vlm plugin are installed (`cd frontend && pixi run install-vlm-plugin`) and download at least one supported model (default `pixtral-12b-4bit`). Override the default by setting `VLM_MODEL`.
 - Playwright artifacts are written to `frontend/playwright-artifacts/<suite>` by default. Override the location with `PLAYWRIGHT_ARTIFACT_ROOT` (for the Playwright run) or pass `--screenshots <dir>` to `pixi run vlm-viewer` when you need to analyze a custom directory.
 
 ## Console Suppression

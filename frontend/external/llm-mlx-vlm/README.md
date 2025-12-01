@@ -6,7 +6,7 @@ This plugin integrates [mlx-vlm](https://github.com/Blaizzy/mlx-vlm) with [Simon
 
 ## Features
 
-- **Fast**: MLX is optimized for Apple Silicon, providing 5-10x faster inference than Ollama
+- **Fast**: MLX is optimized for Apple Silicon, providing 5-10x faster inference than prior CPU-bound runtimes
 - **Small Models**: Includes SmolVLM-256M (~500MB), SmolVLM-500M (~1GB), and Qwen2-VL-2B (~2GB)
 - **Low Memory**: Peak memory usage around 2GB for SmolVLM-500M
 - **Easy Integration**: Works seamlessly with the `llm` CLI tool
@@ -117,7 +117,7 @@ Based on testing with SmolVLM-500M:
 - **Prompt processing**: ~506 tokens/sec
 - **Generation**: ~109 tokens/sec
 - **Peak memory**: ~1.9GB
-- **Typical response time**: 5-15 seconds (vs 30-60s for Ollama)
+- **Typical response time**: 5-15 seconds (compared to 30-60s for older runtimes)
 
 ## Development
 

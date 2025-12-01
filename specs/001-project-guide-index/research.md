@@ -11,6 +11,6 @@ Rationale: Aligns with Responsive Header-First UX principle and gives the pipeli
 Alternatives considered: Limiting to desktop screenshots or using manual QA was rejected due to inadequate coverage and inability to feed the automated VLM stage.
 
 ## VLM Audit Pipeline
-Decision: Run `cd frontend && pixi run vlm-viewer` to bundle Playwright artifacts and invoke `llm -m llava` locally via Ollama, failing CI on medium-or-higher findings and writing `frontend/playwright-report/vlm-report.md`.  
+Decision: Run `cd frontend && pixi run vlm-viewer` to bundle Playwright artifacts and invoke the locally installed `llm` CLI (mlx_vlm plugin; default model `pixtral-12b-4bit`), failing CI on medium-or-higher findings and writing `frontend/playwright-report/vlm-report.md`.  
 Rationale: Keeps the audit offline-capable, deterministic, and tied to actual viewer evidence, which enforces Dual-Layer Evidence without adding documentation surfaces.  
 Alternatives considered: Cloud-based VLM services or manual screenshot reviews were rejected because they break offline requirements and weaken automated governance.

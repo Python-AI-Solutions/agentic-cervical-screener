@@ -30,9 +30,8 @@ instructor = "*"
 
 
 [target.linux-64.pypi-dependencies]
-# Linux - use Ollama
+# Linux fallback uses the base llm CLI
 llm = "*"
-llm-ollama = "*"
 instructor = "*"
 
 [tasks]

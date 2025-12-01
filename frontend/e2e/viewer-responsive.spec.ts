@@ -39,18 +39,6 @@ test.describe('Viewer responsive audit', () => {
     await recordViewerArtifact(testInfo.project.name, 'viewer-context.png', screenshot);
 
     const [headerBox, canvasBox] = await Promise.all([classifyButton.boundingBox(), canvas.boundingBox()]);
-    await recordViewerArtifact(
-      testInfo.project.name,
-      'viewer-layout.json',
-      JSON.stringify(
-        {
-          headerBox,
-          canvasBox,
-        },
-        null,
-        2,
-      ),
-    );
 
     if (!headerBox?.bottom || !canvasBox?.top) {
       console.warn('Unable to derive bounding boxes for viewer layout');

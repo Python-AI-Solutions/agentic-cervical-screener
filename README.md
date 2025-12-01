@@ -175,7 +175,7 @@ The project now uses a three-tier testing approach:
 
 - **Unit/Integration Tests (Vitest)**: Fast, mocked tests for logic (`frontend/src/**/*.test.ts`, `frontend/src/**/*.integration.test.ts`)
 - **E2E Tests (Playwright)**: Real browser tests for actual functionality (`frontend/e2e/**/*.spec.ts`)
-- **VLM Evidence**: Local LLava/Ollama reviews driven through the `llm` CLI (`cd frontend && pixi run test-vlm`) validate responsive layouts and annotation affordances directly from Playwright screenshots. Install [Ollama](https://ollama.com/download) and pull `llava` (or set `VLM_MODEL`) before running these commands.
+- **VLM Evidence**: Local VLM reviews driven through the `llm` CLI + mlx_vlm plugin (`cd frontend && pixi run test-vlm`) validate responsive layouts and annotation affordances directly from Playwright screenshots. Install the plugin (`cd frontend && pixi run install-vlm-plugin`) and pull at least one supported model (default `pixtral-12b-4bit`, override via `VLM_MODEL`) before running these commands.
 
 See `docs/TESTING.md` for detailed testing documentation, including the Playwright + VLM artifact flow.
 

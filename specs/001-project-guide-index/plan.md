@@ -12,13 +12,13 @@ Deliver a deterministic Niivue-based cervical slide viewer experience that launc
 ## Technical Context
 
 **Language/Version**: Python ≥3.14 (FastAPI backend) + TypeScript 5.x (Vite frontend)  
-**Primary Dependencies**: FastAPI, PyTorch/Ultralytics YOLO, Pixi, Niivue, Tailwind CSS, Vitest, Playwright, Ollama + llava VLM  
+**Primary Dependencies**: FastAPI, PyTorch/Ultralytics YOLO, Pixi, Niivue, Tailwind CSS, Vitest, Playwright, `llm` CLI + mlx_vlm plugin  
 **Storage**: N/A (demo case assets + metadata in `public/`)  
 **Testing**: `pixi run test` (Python/FastAPI), `cd frontend && pixi run test` (Vitest), `cd frontend && pixi run test-e2e-ci` (Playwright), `cd frontend && pixi run vlm-viewer` (VLM audit)  
 **Target Platform**: FastAPI service on macOS/Linux dev hosts + browser-based viewer (desktop/tablet/phone per responsiveness table)  
 **Project Type**: Web monorepo (FastAPI backend + Vite frontend)  
 **Performance Goals**: Demo slide loads ≤15 s, overlay/pan state restores ≤200 ms post-resize, VLM stage finishes ≤5 min on Apple Silicon, frame budget <16 ms for viewer interactions  
-**Constraints**: No new documentation beyond README.md and `docs/TESTING.md`; must run offline with Ollama; responsive safe areas per `docs/project_overview.md §5`; PHI-free demo data only  
+**Constraints**: No new documentation beyond README.md and `docs/TESTING.md`; must run offline using the bundled `llm` CLI plugin; responsive safe areas per `docs/project_overview.md §5`; PHI-free demo data only  
 **Scale/Scope**: Single canonical demo slide + deterministic viewer journey, CI Playwright + VLM audits, maintainers + automation users consuming evidence artifacts
 
 ## Constitution Check

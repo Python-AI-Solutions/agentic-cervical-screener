@@ -3,7 +3,7 @@
 ## Prerequisites
 1. Apple Silicon macOS with ≥16 GB RAM (per spec assumptions).  
 2. Pixi CLI installed (bundled via repo toolchain).  
-3. Ollama running locally with `llava` model pulled (`ollama pull llava`).  
+3. `llm` CLI installed with the mlx_vlm plugin + at least one local VLM model (default: `pixtral-12b-4bit`).  
 4. Node.js (per `.tool-versions`) and Python ≥3.14.
 
 ## Setup
@@ -40,7 +40,7 @@
    pixi run test-e2e-ci -- viewer.spec.ts
    ```
 2. Review screenshots under `frontend/playwright-report/`.
-3. Run VLM pipeline (requires Ollama/llava):
+3. Run VLM pipeline (requires the local `llm` CLI + mlx_vlm plugin):
    ```bash
    cd frontend
    pixi run vlm-viewer

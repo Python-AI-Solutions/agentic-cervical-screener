@@ -61,13 +61,13 @@
 
 ### Tests for User Story 2
 
-- [ ] T013 [P] [US2] Extend pytest coverage in `frontend/scripts/test_vlm_viewer_audit.py` to validate bundle validation, JSON parsing, severity adjustments, error surfaces for missing screenshots, and the air-gapped/missing-Ollama scenario.
+- [ ] T013 [P] [US2] Extend pytest coverage in `frontend/scripts/test_vlm_viewer_audit.py` to validate bundle validation, JSON parsing, severity adjustments, error surfaces for missing screenshots, and the air-gapped/missing-model/CLI scenario.
 - [ ] T014 [P] [US2] Add Playwright regression covering artifact bundle completeness (expected screenshots captured for each project/breakpoint) in `frontend/e2e/viewer-responsive.spec.ts` or a shared helper.
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Enhance `frontend/scripts/vlm_viewer_audit.py` with bundle validation (ensuring expected screenshot filenames exist per breakpoint), improved CLI output, configurable Ollama model names, and a graceful error when the required llava model or Ollama service is absent.
-- [ ] T016 [US2] Update `frontend/pixi.toml` and `frontend/docs/VLM_QUICK_START.md` to reflect the Python pipeline usage (`pixi run vlm-viewer`, `llm` path), including troubleshooting for air-gapped environments.
+- [ ] T015 [US2] Enhance `frontend/scripts/vlm_viewer_audit.py` with bundle validation (ensuring expected screenshot filenames exist per breakpoint), improved CLI output, configurable model names, and a graceful error when the configured `llm` binary or model is absent.
+- [ ] T016 [US2] Update `frontend/pixi.toml` so `pixi run vlm-viewer` consistently invokes the local `llm` CLI (mlx_vlm plugin) without relying on extra documentation touchpoints.
 - [ ] T017 [US2] Ensure Playwright runs drop the screenshot manifest under `frontend/playwright-report/` using the helper from T006 so the Python script consumes consistent paths.
 
 **Checkpoint**: Python VLM pipeline consumes the refreshed artifacts, pytest + Playwright coverage passes, and CI fails on medium-or-higher findings.

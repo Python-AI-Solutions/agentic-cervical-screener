@@ -60,12 +60,12 @@ LLM_BIN=llm                # Use system llm
 LLM_BIN="pixi run --manifest-path external/llm-mlx-vlm/pixi.toml llm"  # Use plugin's pixi env
 
 # Timeout (MLX is much faster)
-VLM_TIMEOUT_MS=30000       # 30 seconds (vs 120s for Ollama)
+VLM_TIMEOUT_MS=30000       # 30 seconds (instead of the older 120-second default)
 ```
 
 ## Performance Comparison
 
-### Ollama (Previous Setup)
+### Legacy Runtime (Previous Setup)
 
 - Model: `llava:latest` or `gemma3:4b`
 - Size: 3.3-4.7GB
