@@ -11,53 +11,55 @@
 <body class="m-0 overflow-x-hidden bg-medical-dark-secondary text-medical-text-primary font-sans">
   <!-- Header -->
   <header class="medical-header">
-    <div class="header-left">
-      <button 
-        class="mobile-menu-btn" 
-        id="mobileMenuBtn" 
-        aria-label="Toggle menu"
-      >
-        ☰
-      </button>
-      <div class="header-brand">
-        <div id="brandTitle" class="font-semibold text-lg whitespace-nowrap">Cervical AI Viewer</div>
-        <span class="header-tagline text-xs text-medical-text-muted hidden sm:inline">Deterministic evidence pipeline</span>
+    <div class="header-inner">
+      <div class="header-bar">
+        <div class="header-left">
+          <button 
+            class="mobile-menu-btn" 
+            id="mobileMenuBtn" 
+            aria-label="Toggle menu"
+          >
+            ☰
+          </button>
+          <div class="header-brand">
+            <div id="brandTitle" class="font-semibold text-lg whitespace-nowrap">Cervical AI Viewer</div>
+          </div>
+        </div>
+        <div class="header-meta">
+          <span class="pill" id="status">idle</span>
+          <span id="spinner" class="spinner hidden" aria-label="loading"></span>
+        </div>
       </div>
-    </div>
-    <nav class="header-actions" id="headerActions" aria-label="Viewer actions">
-      <button id="btnClassify" class="header-action" aria-label="Classify">
-        <span class="icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12h14" />
-            <path d="m12 5 7 7-7 7" />
-          </svg>
-        </span>
-        <span class="label">Classify</span>
-      </button>
-      <button id="btnClearRois" class="header-action" aria-label="Clear ROIs">
-        <span class="icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6 6l12 12" />
-            <path d="M6 18 18 6" />
-          </svg>
-        </span>
-        <span class="label">Clear ROIs</span>
-      </button>
-      <button id="btnDownload" class="header-action" aria-label="Download">
-        <span class="icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 5v14" />
-            <path d="m5 12 7 7 7-7" />
-            <path d="M5 19h14" />
-          </svg>
-        </span>
-        <span class="label">Download</span>
-      </button>
-    </nav>
-    <div class="header-meta">
-      <span class="pill" id="status">idle</span>
-      <span id="spinner" class="spinner hidden" aria-label="loading"></span>
-      <span class="text-medical-text-muted text-xs hidden lg:inline">prototype – not for clinical use</span>
+      <nav class="header-actions" id="headerActions" aria-label="Viewer actions">
+        <button id="btnClassify" class="header-action" aria-label="Classify">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
+          </span>
+          <span class="label">Classify</span>
+        </button>
+        <button id="btnClearRois" class="header-action" aria-label="Clear ROIs">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 6l12 12" />
+              <path d="M6 18 18 6" />
+            </svg>
+          </span>
+          <span class="label">Clear ROIs</span>
+        </button>
+        <button id="btnDownload" class="header-action" aria-label="Download">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5v14" />
+              <path d="m5 12 7 7 7-7" />
+              <path d="M5 19h14" />
+            </svg>
+          </span>
+          <span class="label">Download</span>
+        </button>
+      </nav>
     </div>
   </header>
 
@@ -69,8 +71,8 @@
     <!-- Sidebar -->
     <aside 
       id="sidebar" 
-      class="medical-sidebar md:translate-x-0 -translate-x-full md:static fixed top-[56px] left-0 bottom-0 z-[1001] shadow-medical"
-      style="grid-area: sidebar;"
+      class="medical-sidebar md:translate-x-0 -translate-x-full md:static fixed left-0 bottom-0 z-[1001] shadow-medical"
+      style="grid-area: sidebar; top: var(--header-height);"
     >
       <div class="flex justify-between items-center mb-4 mt-4 pb-2 border-b border-medical-dark-border">
         <h3 class="m-0 text-lg font-semibold text-medical-text-primary">Case Management</h3>
