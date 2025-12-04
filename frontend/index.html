@@ -11,32 +11,40 @@
 <body class="m-0 overflow-x-hidden bg-medical-dark-secondary text-medical-text-primary font-sans">
   <!-- Header -->
   <header class="medical-header">
-    <button 
-      class="lg:hidden flex items-center justify-center w-11 h-11 p-2 mr-2 bg-white/10 border border-white/20 text-medical-text-primary text-2xl cursor-pointer rounded-medical hover:bg-white/10 active:bg-white/20 active:scale-95" 
-      id="mobileMenuBtn" 
-      aria-label="Toggle menu"
-    >
-      ☰
-    </button>
-    <div class="flex flex-col lg:flex-row items-start lg:items-center gap-2 flex-1 min-w-0">
-      <div id="brandTitle" class="font-semibold text-lg whitespace-nowrap mr-2">Cervical AI Viewer</div>
-      <div class="flex flex-wrap lg:flex-nowrap items-center gap-2 w-full lg:w-auto lg:flex-1 lg:min-w-0 lg:ml-3" id="headerButtons">
-        <button id="btnClassify" class="medical-button">Classify</button>
-        <button id="btnClearRois" class="medical-button">Clear ROIs</button>
-        <button id="btnDownload" class="medical-button">Download</button>
-      </div>
-      <!-- Mobile layers section - separate from headerButtons to avoid pointer interception -->
-      <div class="md:hidden grid-cols-1 mt-3 pt-3 border-t border-medical-dark-border" id="mobileLayersContainer" style="display: none;">
-        <h4 class="m-0 mb-2 text-base font-semibold text-medical-text-primary text-center">Layers</h4>
-        <div id="mobileLayers"></div>
+    <div class="header-left">
+      <button 
+        class="mobile-menu-btn" 
+        id="mobileMenuBtn" 
+        aria-label="Toggle menu"
+      >
+        ☰
+      </button>
+      <div class="header-brand">
+        <div id="brandTitle" class="font-semibold text-lg whitespace-nowrap">Cervical AI Viewer</div>
+        <span class="header-tagline text-xs text-medical-text-muted hidden sm:inline">Deterministic evidence pipeline</span>
       </div>
     </div>
-    <div class="flex items-center gap-2 ml-auto flex-shrink-0">
-      <span class="pill bg-medical-dark-button text-medical-text-primary px-2 py-1 rounded-full text-xs whitespace-nowrap border border-medical-dark-border" id="status">idle</span>
-      <span id="spinner" class="spinner hidden w-3.5 h-3.5 border-2 border-white/35 border-t-white rounded-full animate-spin ml-2" aria-label="loading"></span>
-      <span class="text-medical-text-muted text-xs hidden md:inline">prototype – not for clinical use</span>
+    <nav class="header-actions" id="headerActions" aria-label="Viewer actions">
+      <button id="btnClassify" class="header-action" data-icon="C" aria-label="Classify">
+        <span class="label">Classify</span>
+      </button>
+      <button id="btnClearRois" class="header-action" data-icon="R" aria-label="Clear ROIs">
+        <span class="label">Clear ROIs</span>
+      </button>
+      <button id="btnDownload" class="header-action" data-icon="D" aria-label="Download">
+        <span class="label">Download</span>
+      </button>
+    </nav>
+    <div class="header-meta">
+      <span class="pill" id="status">idle</span>
+      <span id="spinner" class="spinner hidden" aria-label="loading"></span>
+      <span class="text-medical-text-muted text-xs hidden lg:inline">prototype – not for clinical use</span>
     </div>
   </header>
+  <div class="mobile-layers-panel md:hidden" id="mobileLayersContainer" style="display: none;">
+    <h4 class="m-0 mb-2 text-base font-semibold text-medical-text-primary text-center">Layers</h4>
+    <div id="mobileLayers"></div>
+  </div>
 
   <!-- Mobile Overlay -->
   <div class="hidden fixed inset-0 bg-black/50 z-[999]" id="mobileOverlay"></div>

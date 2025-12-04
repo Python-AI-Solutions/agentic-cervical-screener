@@ -65,9 +65,47 @@
   }
 
   .medical-header {
-    @apply fixed top-0 left-0 right-0 h-[56px] flex items-center gap-2 px-3;
-    @apply bg-medical-dark-primary text-medical-text-primary z-[1000];
-    @apply shadow-medical;
+    @apply fixed top-0 left-0 right-0 h-[56px] flex items-center gap-3 px-4;
+    @apply bg-medical-dark-primary text-medical-text-primary z-[1000] shadow-medical;
+  }
+
+  .header-left {
+    @apply flex items-center gap-3 flex-shrink-0;
+  }
+
+  .header-brand {
+    @apply flex flex-col leading-tight;
+  }
+
+  .header-actions {
+    @apply flex items-center gap-2 flex-1 justify-center min-w-0;
+  }
+
+  .header-action {
+    @apply flex items-center justify-center h-10 px-4 text-sm font-medium rounded-full transition-all duration-150;
+    @apply text-medical-text-primary border border-white/20 bg-white/5 shadow-sm;
+  }
+
+  .header-action .label {
+    @apply whitespace-nowrap;
+  }
+
+  .header-action::before {
+    content: attr(data-icon);
+    display: none;
+    font-weight: 600;
+  }
+
+  .header-action:hover {
+    @apply bg-white/10 border-white/40;
+  }
+
+  .header-action:active {
+    @apply bg-white/20;
+  }
+
+  .header-meta {
+    @apply flex items-center gap-2 flex-shrink-0;
   }
 
   .pill {
@@ -111,24 +149,35 @@
     @apply cursor-pointer rounded-medical hover:bg-white/10 active:bg-white/20 active:scale-95;
   }
 
-  /* Mobile header buttons */
-  #headerButtons {
-    @apply flex items-center gap-2 flex-wrap;
+  @media (max-width: 1100px) {
+    .medical-header {
+      @apply flex-wrap gap-y-2;
+    }
+
+    .header-actions {
+      @apply order-3 w-full justify-center;
+    }
+
+    .header-meta {
+      @apply order-2;
+    }
   }
 
-  #headerButtons button {
-    @apply min-w-[140px];
+  @media (max-width: 768px) {
+    .header-action {
+      @apply w-11 h-11 p-0 rounded-full border border-white/30 bg-white/5;
+    }
+
+    .header-action .label {
+      @apply hidden;
+    }
+
+    .header-action::before {
+      display: inline-block;
+    }
   }
 
   @media (max-width: 1024px) {
-    #headerButtons {
-      @apply w-full ml-0;
-    }
-
-    #headerButtons button {
-      flex: 1 1 calc(50% - 0.5rem);
-    }
-
     #sidebar {
       @apply w-screen p-2;
     }
@@ -143,28 +192,12 @@
     }
   }
 
-  @media (max-width: 640px) {
-    #headerButtons button {
-      flex-basis: 100%;
-    }
+  .mobile-layers-panel {
+    @apply md:hidden border-t border-b border-medical-dark-border bg-medical-dark-primary px-4 py-3 mt-[56px];
   }
 
-  /* Mobile layers section */
-  @media (min-width: 1025px) {
-    .mobile-layers-section {
-      @apply hidden;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    .mobile-layers-section {
-      @apply grid-cols-1 mt-3 pt-3 border-t border-medical-dark-border;
-    }
-
-    .mobile-layers-section .layer {
-      @apply flex items-center justify-between mb-1;
-      @apply bg-white/5 rounded-medical p-2 min-h-[44px] gap-2;
-    }
+  .mobile-layers-panel .layer {
+    @apply bg-white/5;
   }
 
   /* Mobile overlay */
