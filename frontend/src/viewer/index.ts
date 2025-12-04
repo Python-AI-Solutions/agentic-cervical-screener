@@ -38,15 +38,30 @@ const btnClearRois = document.getElementById('btnClearRois');
 const imageFileInput = document.getElementById('imageFile') as HTMLInputElement;
 const btnLoadImage = document.getElementById('btnLoadImage');
 
+function updateHeaderHeightVar(): void {
+  if (typeof document === 'undefined') return;
+  const header = document.querySelector('.medical-header') as HTMLElement | null;
+  if (!header) return;
+  const rect = header.getBoundingClientRect();
+  document.documentElement.style.setProperty('--header-height', `${Math.max(rect.height, 56)}px`);
+}
+const scheduleHeaderHeightSync = (): void => {
+  if (typeof window === 'undefined') return;
+  window.requestAnimationFrame(updateHeaderHeightVar);
+};
+scheduleHeaderHeightSync();
+
 // UI helpers
 function setStatus(s: string) { 
   if (statusEl) statusEl.textContent = s; 
+  scheduleHeaderHeightSync();
 }
 
 function showSpinner(v: boolean) {
   if (spinnerEl) {
     spinnerEl.hidden = !v;
   }
+  scheduleHeaderHeightSync();
 }
 
 // Layer toggle management
@@ -469,6 +484,7 @@ function setupResponsiveFeatures() {
   window.addEventListener('resize', () => {
     debouncedResize(renderOverlays, state.nv);
   });
+  window.addEventListener('resize', scheduleHeaderHeightSync);
 
   // Use ResizeObserver to detect when the viewer container changes size
   const viewer = document.getElementById('viewer');

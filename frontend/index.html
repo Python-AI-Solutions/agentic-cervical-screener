@@ -150,16 +150,8 @@
       document.body.style.overflow = '';
     }
 
-    function syncHeaderHeight() {
-      const header = document.querySelector('.medical-header');
-      if (!header) return;
-      const rect = header.getBoundingClientRect();
-      document.documentElement.style.setProperty('--header-height', `${rect.height}px`);
-    }
-
     // Initialize when DOM is ready
     document.addEventListener('DOMContentLoaded', function() {
-      syncHeaderHeight();
       const mobileMenuBtn = document.getElementById('mobileMenuBtn');
       const mobileCloseBtn = document.getElementById('mobileCloseBtn');
       const mobileOverlay = document.getElementById('mobileOverlay');
@@ -187,7 +179,6 @@
 
       // Handle window resize
       window.addEventListener('resize', function() {
-        syncHeaderHeight();
         if (window.innerWidth > 1024) {
           closeAllPanels();
         }
