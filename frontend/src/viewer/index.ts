@@ -591,7 +591,9 @@ function setupViewerDebugHelpers() {
       state.userDrawnRois.push(roi);
       renderOverlays();
       return { ...roi };
-    }
+    },
+    getCanvasContainerSize,
+    lastDrawnUserRois: [] as Array<{ topLeft: { x: number; y: number }; bottomRight: { x: number; y: number } }>,
   };
 }
 

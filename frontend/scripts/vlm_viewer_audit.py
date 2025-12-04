@@ -201,6 +201,21 @@ def parse_response(raw: str, form_factor: FormFactor) -> AuditResponse:
     return response
 
 
+def prompt_context_for(image_name: str) -> str:
+    """Return contextual instructions based on screenshot name."""
+    lower = image_name.lower()
+    contexts: list[str] = []
+    if "mobile" in lower and "roi" in lower:
+        contexts.append(
+            "Screenshot captured after the user draws ROI annotations on a phone layout. "
+            "Expect to see at least one newly drawn ROI box (pink/purple rectangle). "
+            "If none are visible near the slide, add a violation like 'user ROI missing on mobile'."
+        )
+    if not contexts:
+        return ""
+    return "\n\nCONTEXT:\n" + "\n".join(contexts)
+
+
 def iterate(args: argparse.Namespace) -> Iterable[Finding]:
     prompt = load_prompt()
     screenshots_dir = resolve_screenshot_dir(args.screenshots)
@@ -214,7 +229,7 @@ def iterate(args: argparse.Namespace) -> Iterable[Finding]:
         tag = tag_for(image)
         print(f"[VLM] Processing {image.name} ({form_factor}) …")
         response: AuditResponse | None = None
-        full_prompt = prompt
+        full_prompt = prompt + prompt_context_for(image.name)
         for attempt in range(1, args.attempts + 1):
             try:
                 raw = run_llm(image, full_prompt, args.model, args.timeout, extra_args)

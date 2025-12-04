@@ -43,7 +43,7 @@ CI must rely on deterministic Vitest + Playwright evidence (screenshots, DOM ass
 **Acceptance Scenarios**:
 
 1. **Given** a code change affecting layout, **When** Vitest + Playwright run in CI, **Then** they fail with actionable assertions (e.g., hidden buttons, header overlap, overlay misalignment).
-2. At any time an agent or human can inspect the VLM report to gain insight into any common issues that are hard to capture in deterministic tests.
+2. **Given** a phone viewport with a freshly drawn user ROI, **When** the VLM audit processes the `viewer-mobile-roi` screenshot, **Then** it flags the absence of ROI overlays as a violation so regressions cannot slip through manual review.
 
 ---
 
@@ -52,6 +52,7 @@ CI must rely on deterministic Vitest + Playwright evidence (screenshots, DOM ass
 - Playwright assertions must detect hidden/tiny buttons, header overlap, or off-screen controls without relying on subjective VLM output.
 - Air-gapped environments still need to render the viewer and run VLM audits locally via the `llm` CLI (mlx_vlm plugin). When the configured model or CLI is unavailable, the pipeline must emit a readable error without touching documentation.
 - If Niivue introduces breaking API changes, tests must detect the mismatch before runtime by validating version strings, preventing silent failures in screenshots or generated artifacts.
+- Switching to a phone viewport (emulated or physical) must not hide any user-drawn ROIs; automated Playwright + VLM runs need to expose regressions where ROI overlays disappear on mobile.
 
 ## Requirements *(mandatory)*
 
@@ -63,6 +64,7 @@ CI must rely on deterministic Vitest + Playwright evidence (screenshots, DOM ass
 - **FR-004**: Extend Playwright coverage via `frontend/e2e/viewer.spec.ts` / `viewer-responsive.spec.ts` (or consolidated successor) that exercises launch, overlay toggles, ROI creation, and responsive breakpoints, asserting buttons/toggles stay visible, header safe areas hold, drawers expose focus traps, and actions remain accessible; store screenshots for audit trails.  
 - **FR-005**: Maintain the viewer-focused Python VLM pipeline (`cd frontend && pixi run vlm-viewer`) backed by `frontend/scripts/vlm_viewer_audit.py` so it consumes the Playwright outputs, emits `vlm-report.md`, and fails CI on medium-or-higher responsive/accessibility findings as a secondary qualitative gate.  
 - **FR-006**: Documentation updates must live under `docs/` (or nested subfolders) for canonical guidance, while single-use or investigative notes belong under `docs/temp/`; README.md and `docs/TESTING.md` should still call out the canonical commands and evidence pointers.
+- **FR-007**: Capture a phone-form-factor screenshot immediately after drawing a user ROI and wire the VLM prompt/context so missing ROI overlays on mobile are reported as violations.
 
 ### Key Entities *(include if feature involves data)*
 

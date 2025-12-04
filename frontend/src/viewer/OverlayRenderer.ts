@@ -15,17 +15,17 @@ import { coordinateTransform } from './CoordinateTransformManager';
 function drawUserRois(): void {
   if (!overlayCtx || !state.fixedCanvasPixelSize) return;
 
-  const dpr = state.fixedCanvasPixelSize.width / state.fixedCanvasPixelSize.logicalWidth;
   overlayCtx.save();
-  overlayCtx.scale(dpr, dpr);
 
   // Get current transform from CoordinateTransformManager
   const transform = coordinateTransform.getTransform();
+  const projected: Array<{ topLeft: { x: number; y: number }; bottomRight: { x: number; y: number } }> = [];
 
   state.userDrawnRois.forEach((roi, index) => {
     // Convert ROI image coordinates to canvas logical coordinates using CoordinateTransformManager
     const topLeft = coordinateTransform.imageToCanvasLogical(roi.xmin, roi.ymin);
     const bottomRight = coordinateTransform.imageToCanvasLogical(roi.xmax, roi.ymax);
+    projected.push({ topLeft, bottomRight });
 
     const x1 = topLeft.x;
     const y1 = topLeft.y;
@@ -88,6 +88,10 @@ function drawUserRois(): void {
       roi._deleteButton = undefined;
     }
   });
+
+  if (typeof window !== 'undefined' && (window as any).__viewerDebug) {
+    (window as any).__viewerDebug.lastDrawnUserRois = projected;
+  }
 
   overlayCtx.restore();
 }
@@ -160,4 +164,3 @@ export function renderOverlays(): void {
     console.log('🎨 Not drawing AI boxes:', { showAIDetections: state.showAIDetections });
   }
 }
-

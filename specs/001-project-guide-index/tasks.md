@@ -41,7 +41,7 @@
 ### Tests for User Story 1
 
 - [ ] T008 [P] [US1] Write Vitest coverage (`frontend/src/viewer/__tests__/demoCase.test.ts`) asserting metadata parsing, DPR drift math, and ROI overlay alignment for the demo slide.
-- [ ] T009 [P] [US1] Update `frontend/e2e/viewer.spec.ts` to capture multi-breakpoint screenshots and assert buttons, toggles, drawers, and canvas bounds are either visible or intentionally collapsed with no unintended clipping for the demo case.
+- [ ] T009 [P] [US1] Update `frontend/e2e/viewer.spec.ts` to capture multi-breakpoint screenshots, assert buttons/toggles/drawers/canvas bounds behave per layout rules, and (on phone projects) draw a user ROI then save `viewer-mobile-roi.png` so downstream audits can confirm the ROI remains visible.
 
 ### Implementation for User Story 1
 
@@ -66,7 +66,7 @@
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Enhance `frontend/scripts/vlm_viewer_audit.py` with bundle validation (ensuring expected screenshot filenames exist per breakpoint), improved CLI output, configurable model names, and a graceful error when the configured `llm` binary or model is absent.
+- [ ] T015 [US2] Enhance `frontend/scripts/vlm_viewer_audit.py` with bundle validation (ensuring expected screenshot filenames exist per breakpoint), improved CLI output, configurable model names, and contextual prompt instructions (e.g., flag missing user ROIs on the `viewer-mobile-roi.png` screenshot) plus a graceful error when the configured `llm` binary or model is absent.
 - [ ] T016 [US2] Update `frontend/pixi.toml` so `pixi run vlm-viewer` consistently invokes the local `llm` CLI (mlx_vlm plugin) without relying on extra documentation touchpoints.
 - [ ] T017 [US2] Ensure Playwright runs drop the screenshot manifest under `frontend/playwright-report/` using the helper from T006 so the Python script consumes consistent paths.
 

@@ -89,3 +89,9 @@ def test_parse_response_overrides_declared_severity() -> None:
 def test_parse_response_raises_on_invalid_json() -> None:
     with pytest.raises(ValueError):
         audit.parse_response("not json", "desktop")
+
+
+def test_prompt_context_for_mobile_roi() -> None:
+    context = audit.prompt_context_for("viewer-mobile-roi.png")
+    assert "user ROI missing" in context
+    assert "phone layout" in context
