@@ -39,6 +39,22 @@ async function recordViewerArtifact(project: string, fileName: string, data: str
 }
 
 test.describe('Viewer responsive audit', () => {
+  test('maintains two-column desktop layout until breakpoint', async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 1100, height: 900 });
+    await page.goto('/');
+    await ensureViewerReady(page);
+
+    const sidebarBox = await page.locator('#sidebar').boundingBox();
+    const viewerBox = await page.locator('#viewer').boundingBox();
+    expect(sidebarBox?.width ?? 0).toBeGreaterThan(200);
+    expect(viewerBox?.width ?? 0).toBeGreaterThan(600);
+
+    const gridTemplate = await page.locator('main').evaluate((node) =>
+      window.getComputedStyle(node).gridTemplateColumns,
+    );
+    expect(gridTemplate.replace(/\s+/g, '')).toContain('280px');
+  });
+
   test('captures header/actions and canvas layout', async ({ page }, testInfo) => {
     await page.goto('/');
     await ensureViewerReady(page);

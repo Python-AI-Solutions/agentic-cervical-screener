@@ -32,7 +32,6 @@ import { coordinateTransform } from './CoordinateTransformManager';
 const statusEl = document.getElementById('status');
 const spinnerEl = document.getElementById('spinner');
 const layersEl = document.getElementById('layers');
-const mobileLayersEl = document.getElementById('mobileLayers');
 const btnClassify = document.getElementById('btnClassify');
 const btnDownload = document.getElementById('btnDownload');
 const btnClearRois = document.getElementById('btnClearRois');
@@ -69,18 +68,6 @@ function addLayerToggle(layerId: string, geometry: string, checked = true) {
   }
 
   // Create layer toggle for mobile
-  if (mobileLayersEl) {
-    const mobileEl = document.createElement('div');
-    mobileEl.className = 'layer';
-    mobileEl.innerHTML = `
-      <span>${layerId} <span class="muted">(${geometry})</span></span>
-      <label class="toggle-switch">
-        <input type="checkbox" data-layer="${layerId}" ${checked ? 'checked' : ''}/>
-        <span class="toggle-slider"></span>
-      </label>`;
-    mobileLayersEl.appendChild(mobileEl);
-  }
-
   // Add event listeners to both
   const checkboxes = document.querySelectorAll(`[data-layer="${layerId}"]`);
   checkboxes.forEach(cb => {
@@ -144,7 +131,6 @@ async function loadCaseFromUrl(url?: string) {
   showSpinner(true);
   
   if (layersEl) layersEl.innerHTML = '';
-  if (mobileLayersEl) mobileLayersEl.innerHTML = '';
   
   if (overlayCanvas && overlayCtx) {
     overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);

@@ -65,8 +65,9 @@
   }
 
   .medical-header {
-    @apply fixed top-0 left-0 right-0 h-[56px] flex items-center gap-3 px-4;
+    @apply fixed top-0 left-0 right-0 flex flex-wrap items-center gap-3 px-4 py-2;
     @apply bg-medical-dark-primary text-medical-text-primary z-[1000] shadow-medical;
+    min-height: 56px;
   }
 
   .header-left {
@@ -78,7 +79,7 @@
   }
 
   .header-actions {
-    @apply flex items-center gap-2 flex-1 justify-center min-w-0;
+    @apply flex items-center gap-2 flex-1 justify-center min-w-0 flex-wrap;
   }
 
   .header-action {
@@ -90,10 +91,12 @@
     @apply whitespace-nowrap;
   }
 
-  .header-action::before {
-    content: attr(data-icon);
-    display: none;
-    font-weight: 600;
+  .header-action .icon {
+    @apply mr-2 inline-flex items-center justify-center;
+  }
+
+  .header-action svg {
+    @apply w-4 h-4;
   }
 
   .header-action:hover {
@@ -151,7 +154,7 @@
 
   @media (max-width: 1100px) {
     .medical-header {
-      @apply flex-wrap gap-y-2;
+      @apply gap-y-2;
     }
 
     .header-actions {
@@ -172,32 +175,28 @@
       @apply hidden;
     }
 
-    .header-action::before {
-      display: inline-block;
+    .header-action .icon {
+      @apply mr-0;
     }
   }
 
+  .viewer-shell {
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+    top: var(--header-height);
+  }
+
   @media (max-width: 1024px) {
-    #sidebar {
-      @apply w-screen p-2;
+    .viewer-shell {
+      grid-template-columns: 0 minmax(0, 1fr);
     }
 
-    main {
-      grid-template-columns: minmax(0, 1fr) !important;
-      grid-template-areas: "viewer" !important;
+    #sidebar {
+      @apply w-screen p-2;
     }
 
     #viewer {
       width: 100vw;
     }
-  }
-
-  .mobile-layers-panel {
-    @apply md:hidden border-t border-b border-medical-dark-border bg-medical-dark-primary px-4 py-3 mt-[56px];
-  }
-
-  .mobile-layers-panel .layer {
-    @apply bg-white/5;
   }
 
   /* Mobile overlay */
