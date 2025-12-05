@@ -217,8 +217,10 @@
       const viewSelect = document.getElementById('viewSelect');
       if (viewSelect) {
         viewSelect.addEventListener('change', (event) => {
-          const value = (event.target as HTMLSelectElement).value;
-          setActiveView(value);
+          const target = event.target;
+          if (target && 'value' in target) {
+            setActiveView(target.value);
+          }
         });
         setActiveView(viewSelect.value);
       } else {
