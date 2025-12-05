@@ -22,10 +22,10 @@ RUN pixi install
 
 # Build frontend
 WORKDIR /app/frontend
-COPY frontend/package*.json ./
+COPY frontend/package.json ./
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
-    && npm ci
+    && npm install
 COPY frontend/ ./
 RUN npm run build
 
