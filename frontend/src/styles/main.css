@@ -125,6 +125,14 @@
     @apply flex items-center gap-2 flex-shrink-0;
   }
 
+  .view-selector {
+    @apply flex items-center gap-2 text-xs uppercase tracking-wide text-medical-text-muted;
+  }
+
+  .view-selector select {
+    @apply bg-medical-dark-button text-medical-text-primary border border-white/20 rounded-medical px-3 py-1 text-sm;
+  }
+
   .pill {
     @apply bg-medical-dark-button text-medical-text-primary px-2 py-1 rounded-full text-xs whitespace-nowrap border border-medical-dark-border;
   }
@@ -201,7 +209,8 @@
 
   .viewer-shell {
     grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
-    top: var(--header-height);
+    position: absolute;
+    inset: 0;
   }
 
   @media (max-width: 1024px) {
@@ -216,6 +225,35 @@
     #viewer {
       width: 100vw;
     }
+  }
+
+  .view-container {
+    position: absolute;
+    top: var(--header-height);
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+
+  .view-panel {
+    position: absolute;
+    inset: 0;
+  }
+
+  .view-panel[hidden] {
+    display: none;
+  }
+
+  .placeholder-panel {
+    @apply p-6 overflow-auto bg-medical-dark-secondary;
+  }
+
+  .placeholder-grid {
+    @apply grid gap-4 md:grid-cols-2;
+  }
+
+  .placeholder-card {
+    @apply bg-medical-dark-sidebar border border-medical-dark-border rounded-medical p-5 shadow-medical space-y-2;
   }
 
   /* Mobile overlay */

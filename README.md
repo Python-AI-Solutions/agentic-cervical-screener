@@ -169,6 +169,15 @@ agentic-cervical-screener/
 └── pyproject.toml              # Python project configuration
 ```
 
+## Workspaces
+
+The header now exposes a workspace dropdown for the four core cervical screening disciplines:
+
+- **Cytology** (default) – hosts the deterministic Niivue viewer, overlays, and ROI tooling.
+- **Colposcopy**, **HPV**, **EHR** – placeholder dashboards that outline the upcoming feature roadmaps. They do not yet drive backend code but make the application shell ready for the multi-disciplinary vision.
+
+Use the workspace dropdown (or its responsive variant) to switch between these views. Playwright + VLM tests currently target the Cytology workspace.
+
 ## Testing
 
 The project now uses a three-tier testing approach:

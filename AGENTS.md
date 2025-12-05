@@ -114,6 +114,15 @@ cd frontend && pixi run test-all
 
 **Note**: E2E tests start a dev server automatically. Prefer `pixi run test-e2e-ci` for headless runs so the browser UI doesn't block the terminal. If you need the interactive UI or debugger, use `pixi run test-e2e-ui` or `pixi run test-e2e-debug`.
 
+### Screenshot & Evidence Capture
+
+1. **Generate screenshots** – `cd frontend && pixi run test-e2e-ci -- viewer-responsive.spec.ts`. Playwright writes PNGs + JSON to `frontend/playwright-artifacts/viewer/`.
+2. **Inspect screenshots quickly** – `cd frontend && npx playwright show-report` opens the last HTML report so you can click each device run, or just `open frontend/playwright-artifacts/viewer/viewer-desktop-viewer-context.png` on macOS.
+3. **Iterate on a single device** – `cd frontend && npx playwright test e2e/viewer-responsive.spec.ts --project=viewer-desktop --headed -g "captures header"` launches Chromium so you can pause, tweak styles, and capture new evidence manually.
+4. **Run the VLM audit** – after step 1, execute `cd frontend && pixi run vlm-viewer`. It consumes the PNGs and writes `frontend/playwright-artifacts/viewer/vlm-report.md`; read it alongside the matching screenshots to understand findings.
+
+Never adjust prompts blindly—if the VLM report looks wrong, open the artifact PNG or rerun the targeted Playwright project with `--headed` to confirm the UI before changing tests.
+
 ### Building
 
 ```bash
