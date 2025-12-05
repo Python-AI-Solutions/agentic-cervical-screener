@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from src.main import app
+from agentic_cervical_screener.main import app
 
 
 @pytest.fixture

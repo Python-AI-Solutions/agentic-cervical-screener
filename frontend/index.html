@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <title>Cervical AI Viewer</title>
+</head>
+<body class="m-0 overflow-x-hidden bg-medical-dark-secondary text-medical-text-primary font-sans">
+  <!-- Header -->
+  <header class="medical-header">
+    <div class="header-inner">
+      <div class="header-left">
+        <button 
+          class="mobile-menu-btn" 
+          id="mobileMenuBtn" 
+          aria-label="Toggle menu"
+        >
+          ☰
+        </button>
+        <div class="header-brand">
+          <div id="brandTitle" class="font-semibold text-lg whitespace-nowrap">Cervical AI Viewer</div>
+          <small id="activeViewLabel" class="header-subtitle">Cytology workspace</small>
+        </div>
+      </div>
+      <nav class="header-actions" id="headerActions" aria-label="Viewer actions">
+        <button id="btnClassify" class="header-action" aria-label="Classify">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
+          </span>
+          <span class="label">Classify</span>
+        </button>
+        <button id="btnClearRois" class="header-action" aria-label="Clear ROIs">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 6l12 12" />
+              <path d="M6 18 18 6" />
+            </svg>
+          </span>
+          <span class="label">Clear ROIs</span>
+        </button>
+        <button id="btnDownload" class="header-action" aria-label="Download">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5v14" />
+              <path d="m5 12 7 7 7-7" />
+              <path d="M5 19h14" />
+            </svg>
+          </span>
+          <span class="label">Download</span>
+        </button>
+      </nav>
+      <div class="header-meta">
+        <div class="view-selector">
+          <label for="viewSelect">Workspace</label>
+          <select id="viewSelect" aria-label="Workspace selector">
+            <option value="cytology">Cytology</option>
+            <option value="colposcopy">Colposcopy</option>
+            <option value="hpv">HPV</option>
+            <option value="ehr">EHR</option>
+          </select>
+        </div>
+        <span class="pill" id="status">idle</span>
+        <span id="spinner" class="spinner hidden" aria-label="loading"></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Overlay -->
+  <div class="hidden fixed inset-0 bg-black/50 z-[999]" id="mobileOverlay"></div>
+
+  <div class="view-container">
+    <section class="view-panel" data-view-panel="cytology">
+      <main class="viewer-shell grid" style="grid-template-areas: 'sidebar viewer';">
+        <!-- Sidebar -->
+        <aside 
+          id="sidebar" 
+          class="medical-sidebar md:translate-x-0 -translate-x-full md:static fixed left-0 bottom-0 z-[1001] shadow-medical"
+          style="grid-area: sidebar;"
+        >
+          <div class="flex justify-between items-center mb-4 mt-4 pb-2 border-b border-medical-dark-border">
+            <h3 class="m-0 text-lg font-semibold text-medical-text-primary">Case Management</h3>
+            <button 
+              class="md:hidden block bg-transparent border-none text-2xl text-medical-text-secondary cursor-pointer p-1 hover:text-medical-text-primary" 
+              id="mobileCloseBtn" 
+              aria-label="Close sidebar"
+            >
+              ×
+            </button>
+          </div>
+          <div class="flex items-center gap-2 mb-2 flex-wrap">
+            <input id="imageFile" type="file" accept="image/*" class="hidden"/>
+            <button id="btnLoadImage" class="medical-button w-full justify-start">Load Image from Computer</button>
+          </div>
+          <div class="my-4">
+            <div class="text-medical-text-secondary mb-2 font-medium text-xs">Quick Load Cases:</div>
+            <button onclick="loadQuickCase('/cases/DEMO-001')" class="medical-button w-full mb-1 text-left justify-start">Case 1</button>
+            <button onclick="loadQuickCase('/cases/DEMO-002')" class="medical-button w-full mb-1 text-left justify-start">Case 2</button>
+            <button onclick="loadQuickCase('/cases/DEMO-003')" class="medical-button w-full mb-1 text-left justify-start">Case 3</button>
+            <button onclick="loadQuickCase('/cases/DEMO-004')" class="medical-button w-full mb-1 text-left justify-start">Case 4</button>
+          </div>
+          <hr class="border-none border-t border-medical-dark-border my-4">
+          <div class="mt-4">
+            <h4 class="m-0 mb-2 text-base font-semibold text-medical-text-primary">Layers</h4>
+            <div id="layers"></div>
+          </div>
+        </aside>
+
+        <!-- Viewer -->
+        <section id="viewer" class="canvas-container" style="grid-area: viewer;">
+          <div 
+            id="dropZone" 
+            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-medical-text-muted pointer-events-none z-[5]"
+          >
+            <div class="text-3xl mb-3">📁</div>
+            <div>Drop image here or use the "Load Image from Computer" button</div>
+            <div class="text-xs mt-2">Supports PNG, JPG, JPEG formats</div>
+          </div>
+          <canvas id="glCanvas" class="gl-canvas"></canvas>
+          <canvas id="overlayCanvas" class="overlay-canvas"></canvas>
+        </section>
+      </main>
+    </section>
+
+    <section class="view-panel placeholder-panel" data-view-panel="colposcopy" hidden>
+      <div class="placeholder-grid">
+        <article class="placeholder-card">
+          <h3>Live Colposcopy Workspace</h3>
+          <p>Stream high-resolution cervix imagery, annotate regions of interest, and synchronize findings with biopsy capture forms.</p>
+        </article>
+        <article class="placeholder-card">
+          <h3>Guided Checklists</h3>
+          <p>Step-by-step colposcopy checklists ensure Lugol/Aceto inspections are documented with deterministic evidence.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="view-panel placeholder-panel" data-view-panel="hpv" hidden>
+      <div class="placeholder-grid">
+        <article class="placeholder-card">
+          <h3>HPV Lab Inbox</h3>
+          <p>Surface HPV genotyping results, reflex cytology orders, and recommended actions with evidence links.</p>
+        </article>
+        <article class="placeholder-card">
+          <h3>Triage Automations</h3>
+          <p>Configure rules that pair HPV outcomes with recall intervals, messaging, and escalations.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="view-panel placeholder-panel" data-view-panel="ehr" hidden>
+      <div class="placeholder-grid">
+        <article class="placeholder-card">
+          <h3>EHR Summaries</h3>
+          <p>Preview the documentation packets, orders, and billing codes generated from Cytology/HPV/Colposcopy work.</p>
+        </article>
+        <article class="placeholder-card">
+          <h3>Care Navigation</h3>
+          <p>Track referrals, patient notifications, and audit trails to keep regulatory evidence in sync.</p>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <script>window.__ENV__={API_BASE:''}</script>
+  <script>
+    console.log('Environment loaded:', window.__ENV__);
+
+    // Quick case loading function
+    function loadQuickCase(url) {
+      if (window.loadCaseFromUrl) {
+        window.loadCaseFromUrl(url);
+      }
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const mobileOverlay = document.getElementById('mobileOverlay');
+
+      if (sidebar) {
+        sidebar.classList.toggle('mobile-visible');
+        if (mobileOverlay) {
+          mobileOverlay.classList.toggle('visible');
+          document.body.style.overflow = sidebar.classList.contains('mobile-visible') ? 'hidden' : '';
+        }
+      }
+    }
+
+    function closeAllPanels() {
+      const sidebar = document.getElementById('sidebar');
+      const mobileOverlay = document.getElementById('mobileOverlay');
+
+      if (sidebar) sidebar.classList.remove('mobile-visible');
+      if (mobileOverlay) mobileOverlay.classList.remove('visible');
+      document.body.style.overflow = '';
+    }
+
+    const viewPanels = () => document.querySelectorAll('[data-view-panel]');
+    const viewNames = {
+      cytology: 'Cytology workspace',
+      colposcopy: 'Colposcopy preview',
+      hpv: 'HPV automations',
+      ehr: 'EHR summaries',
+    };
+    const viewLabelEl = document.getElementById('activeViewLabel');
+    function setActiveView(view) {
+      viewPanels().forEach((panel) => {
+        panel.hidden = panel.getAttribute('data-view-panel') !== view;
+      });
+      document.body.dataset.activeView = view;
+      if (viewLabelEl) {
+        viewLabelEl.textContent = viewNames[view] || 'Workspace';
+      }
+    }
+
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+      const mobileCloseBtn = document.getElementById('mobileCloseBtn');
+      const mobileOverlay = document.getElementById('mobileOverlay');
+      const viewSelect = document.getElementById('viewSelect');
+      if (viewSelect) {
+        viewSelect.addEventListener('change', (event) => {
+          const target = event.target;
+          if (target && 'value' in target) {
+            setActiveView(target.value);
+          }
+        });
+        setActiveView(viewSelect.value);
+      } else {
+        setActiveView('cytology');
+      }
+      if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleSidebar();
+        });
+      }
+
+      if (mobileCloseBtn) {
+        mobileCloseBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          closeAllPanels();
+        });
+      }
+
+      if (mobileOverlay) {
+        mobileOverlay.addEventListener('click', function(e) {
+          e.preventDefault();
+          closeAllPanels();
+        });
+      }
+
+      // Handle window resize
+      window.addEventListener('resize', function() {
+        if (window.innerWidth > 1024) {
+          closeAllPanels();
+        }
+      });
+
+      // Handle escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closeAllPanels();
+        }
+      });
+    });
+    console.log('API_BASE:', window.__ENV__.API_BASE);
+  </script>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

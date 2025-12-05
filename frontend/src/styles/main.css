@@ -1,0 +1,415 @@
+/* Import Tailwind Elements - must be first */
+@import 'tw-elements/css/tw-elements.min.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom medical theme base styles */
+@layer base {
+  :root {
+    --header-height: 56px;
+    --sidebar-width: 280px;
+    --sidebar-width-mobile: 100vw;
+    --border-color: #374151;
+    --bg-primary: #0f172a;
+    --bg-secondary: #111827;
+    --bg-sidebar: #1f2937;
+    --bg-button: #374151;
+    --bg-button-hover: #4b5563;
+    --bg-button-active: #1f2937;
+    --text-primary: #ffffff;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --button-height: 44px;
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 24px;
+    --border-radius: 8px;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-medical-dark-secondary text-medical-text-primary;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  }
+}
+
+/* Custom component styles using Tailwind */
+@layer components {
+  .medical-button {
+    @apply min-h-[44px] px-3 py-2 border border-medical-dark-border rounded-medical;
+    @apply bg-medical-dark-button text-medical-text-primary;
+    @apply font-medium text-sm cursor-pointer transition-all duration-200;
+    @apply hover:bg-medical-dark-button-hover hover:-translate-y-px hover:border-gray-600;
+    @apply active:bg-medical-dark-button-active active:translate-y-0;
+    @apply disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none;
+  }
+
+  .medical-input {
+    @apply min-h-[44px] px-3 py-2 border border-medical-dark-border rounded-medical;
+    @apply bg-medical-dark-sidebar text-medical-text-primary text-sm;
+    @apply focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:bg-gray-600;
+    @apply placeholder:text-medical-text-muted;
+  }
+
+  .medical-sidebar {
+    @apply w-[280px] border-r border-medical-dark-border p-3 overflow-y-auto;
+    @apply bg-medical-dark-sidebar transition-transform duration-300;
+    top: var(--header-height);
+  }
+
+  .medical-header {
+    @apply fixed top-0 left-0 right-0 z-[1000] bg-medical-dark-primary shadow-medical;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+  }
+
+  .header-inner {
+    @apply mx-auto px-4 py-3 gap-4 w-full;
+    max-width: 1440px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+  }
+
+  .header-left {
+    @apply flex items-center gap-3 flex-shrink-0;
+  }
+
+  .header-brand {
+    @apply flex flex-col leading-tight;
+  }
+
+  .header-subtitle {
+    @apply text-xs text-medical-text-muted uppercase tracking-[0.2em] mt-1;
+  }
+
+  .header-actions {
+    @apply flex items-center gap-3 justify-center min-w-0;
+    background-color: rgba(255,255,255,0.07);
+    border-radius: 999px;
+    padding: 0.5rem 1.5rem;
+    border: 1px solid rgba(255,255,255,0.15);
+    backdrop-filter: blur(8px);
+  }
+
+  .header-action {
+    @apply flex items-center justify-center h-10 px-5 min-w-[120px];
+    @apply text-sm font-semibold rounded-full transition-all duration-150;
+    @apply text-medical-text-primary border border-white/20 bg-white/10 shadow-medical;
+  }
+
+  .header-action .label {
+    @apply whitespace-nowrap;
+  }
+
+  .header-action .icon {
+    @apply mr-2 inline-flex items-center justify-center;
+  }
+
+  .header-action svg {
+    @apply w-4 h-4;
+  }
+
+  .header-action:hover {
+    @apply bg-white/10 border-white/20;
+  }
+
+  .header-action:active {
+    @apply bg-white/20;
+  }
+
+  .header-meta {
+    @apply flex items-center gap-2 flex-shrink-0;
+  }
+
+  .view-selector {
+    @apply flex items-center gap-2 text-[0.65rem] uppercase tracking-wider text-medical-text-muted;
+  }
+
+  .view-selector select {
+    @apply bg-medical-dark-button text-medical-text-primary border border-white/20 rounded-medical px-3 py-1 text-sm;
+  }
+
+  .pill {
+    @apply bg-medical-dark-button text-medical-text-primary px-2 py-1 rounded-full text-xs whitespace-nowrap border border-medical-dark-border;
+  }
+
+  .spinner {
+    @apply inline-block w-3.5 h-3.5 border-2 border-white/35 border-t-white rounded-full animate-spin;
+  }
+
+  .spinner[hidden] {
+    @apply hidden;
+  }
+}
+
+/* Canvas/viewer specific styles - keep custom as Elements doesn't cover this */
+@layer utilities {
+  .canvas-container {
+    @apply relative flex items-center justify-center bg-medical-dark-secondary overflow-hidden;
+  }
+
+  .gl-canvas {
+    @apply w-full h-full bg-black block;
+  }
+
+  .image-canvas {
+    @apply absolute top-0 left-0 w-full h-full pointer-events-none z-[5];
+  }
+
+  .overlay-canvas {
+    @apply absolute top-0 left-0 pointer-events-auto z-[10] w-full h-full block;
+  }
+}
+
+/* Mobile responsive styles */
+@layer components {
+  /* Mobile menu button */
+  .mobile-menu-btn {
+    @apply md:hidden flex items-center justify-center w-11 h-11 p-2 mr-2;
+    @apply bg-white/10 border border-white/20 text-medical-text-primary text-2xl;
+    @apply cursor-pointer rounded-medical hover:bg-white/10 active:bg-white/20 active:scale-95;
+  }
+
+  @media (max-width: 1100px) {
+    .header-inner {
+      grid-template-columns: 1fr;
+      @apply gap-3;
+    }
+    .header-brand {
+      @apply text-center;
+    }
+    .header-actions {
+      @apply w-full justify-center flex-wrap gap-3;
+    }
+    .header-meta {
+      @apply justify-center;
+    }
+    .header-left {
+      @apply justify-center;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .header-action {
+      @apply w-11 h-11 p-0 rounded-full border border-white/30 bg-white/5;
+    }
+
+    .header-action .label {
+      @apply hidden;
+    }
+
+    .header-action .icon {
+      @apply mr-0;
+    }
+    .header-actions {
+      @apply gap-2 px-3;
+    }
+  }
+
+  .viewer-shell {
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+    position: absolute;
+    inset: 0;
+    top: 0;
+  }
+
+  @media (max-width: 1024px) {
+    .viewer-shell {
+      grid-template-columns: 0 minmax(0, 1fr);
+    }
+
+    #sidebar {
+      @apply w-screen p-2;
+    }
+
+    #viewer {
+      width: 100vw;
+    }
+  }
+
+  .view-container {
+    position: absolute;
+    top: var(--header-height);
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+
+  .view-panel {
+    position: absolute;
+    inset: 0;
+  }
+
+  .view-panel[hidden] {
+    display: none;
+  }
+
+  .placeholder-panel {
+    @apply p-6 overflow-auto bg-medical-dark-secondary;
+  }
+
+  .placeholder-grid {
+    @apply grid gap-4 md:grid-cols-2;
+  }
+
+  .placeholder-card {
+    @apply bg-medical-dark-sidebar border border-medical-dark-border rounded-medical p-5 shadow-medical space-y-2;
+  }
+
+  /* Mobile overlay */
+  .mobile-overlay.visible {
+    @apply block;
+  }
+
+  /* Sidebar mobile visibility */
+  #sidebar.mobile-visible {
+    @apply translate-x-0;
+  }
+
+  /* Layer styles */
+  .layer {
+    @apply flex items-center justify-between gap-2 p-3 border border-medical-dark-border rounded-medical mb-2;
+    @apply bg-medical-dark-sidebar text-medical-text-primary break-words min-w-0 min-h-[48px];
+  }
+
+  .layer label {
+    @apply flex items-center gap-1 text-sm cursor-pointer text-medical-text-primary flex-shrink-0;
+  }
+
+  .layer .toggle-switch {
+    @apply ml-auto;
+  }
+
+  .layer span {
+    @apply flex-1 min-w-0 break-words;
+  }
+
+  /* Toggle switch styles */
+  .toggle-switch {
+    @apply relative inline-block w-11 h-6;
+  }
+
+  .toggle-switch input {
+    @apply opacity-0 w-0 h-0;
+  }
+
+  .toggle-slider {
+    @apply absolute cursor-pointer inset-0 bg-medical-dark-button rounded-full transition duration-300;
+  }
+
+  .toggle-slider:before {
+    @apply absolute h-[18px] w-[18px] left-[3px] bottom-[3px] bg-white rounded-full transition duration-300;
+    content: "";
+  }
+
+  .toggle-switch input:checked + .toggle-slider {
+    @apply bg-blue-600;
+  }
+
+  .toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+  }
+
+  .toggle-switch input:disabled + .toggle-slider {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  /* Quick load button */
+  .quick-load-btn {
+    @apply w-full mb-1 text-left justify-start;
+  }
+}
+
+/* Responsive breakpoints */
+@media (max-width: 768px) {
+  :root {
+    --header-height: 48px;
+  }
+
+  header {
+    @apply h-12 p-2 gap-1;
+  }
+
+  .header-title {
+    @apply text-sm mr-1 max-w-[120px] truncate;
+  }
+
+  .pill {
+    @apply text-[10px] px-1 py-0.5;
+  }
+
+  .spinner {
+    @apply w-3 h-3 ml-1;
+  }
+
+  #sidebar {
+    @apply w-screen p-2;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-title {
+    @apply text-xs max-w-[100px];
+  }
+
+  .pill {
+    @apply text-[10px] px-1;
+  }
+
+  .spinner {
+    @apply w-2.5 h-2.5;
+  }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+  button, input[type="button"], input[type="submit"] {
+    @apply min-h-[48px] p-3;
+  }
+
+  .layer {
+    @apply p-3 min-h-[48px];
+  }
+
+  .layer label {
+    @apply min-h-[48px] text-base;
+  }
+
+  .mobile-menu-btn {
+    @apply min-h-[48px] min-w-[48px] p-3;
+  }
+
+  input[type="text"], input[type="url"] {
+    @apply min-h-[48px] text-base;
+  }
+}
+
+/* Dark theme scrollbars */
+::-webkit-scrollbar {
+  @apply w-2 h-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-medical-dark-sidebar;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-medical-dark-border rounded;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-600;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #374151 #1f2937;
+}

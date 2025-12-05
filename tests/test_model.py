@@ -12,9 +12,9 @@ class TestModelLoader:
 
     def test_model_path_detection(self):
         """Test that model path detection works correctly"""
-        # Test relative to src directory
+        # Test relative to agentic_cervical_screener directory
         current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        model_path = os.path.join(current_dir, "src", "models", "best.pt")
+        model_path = os.path.join(current_dir, "agentic_cervical_screener", "models", "best.pt")
 
         # Should be able to detect if model exists or not
         exists = os.path.exists(model_path)
@@ -27,7 +27,7 @@ class TestModelLoader:
     def test_model_loader_import(self):
         """Test that model_loader module can be imported"""
         try:
-            from src.model_loader import initialize_model
+            from agentic_cervical_screener.model_loader import initialize_model
 
             # Import should succeed
             assert callable(initialize_model)
@@ -38,11 +38,11 @@ class TestModelLoader:
     def test_model_initialization_when_available(self):
         """Test model initialization when model file is available"""
         try:
-            from src.model_loader import initialize_model
+            from agentic_cervical_screener.model_loader import initialize_model
 
             # Find model path
             current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            model_path = os.path.join(current_dir, "src", "models", "best.pt")
+            model_path = os.path.join(current_dir, "agentic_cervical_screener", "models", "best.pt")
 
             if os.path.exists(model_path):
                 # Try to initialize model
@@ -70,9 +70,9 @@ class TestModelLoader:
 
         # Test that main app can be imported without model
         try:
-            import src.main
+            import agentic_cervical_screener.main
 
-            assert hasattr(src.main, "app")
+            assert hasattr(agentic_cervical_screener.main, "app")
             print("Main app imports successfully without model")
         except Exception as e:
             pytest.fail(f"Main app should import even without model: {e}")

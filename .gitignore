@@ -1,13 +1,35 @@
+mlruns
 node_modules/
+dist/
+build/
+frontend/dist/
+frontend/playwright-report/
+frontend/playwright-artifacts/
+frontend/test-results/
+.venv/
+venv/
+*.pyc
+*.pyo
+*.egg-info/
+*.log
+.env
+.env.*
+.ipynb_checkpoints
 npm-debug.log*
 .DS_Store
 __pycache__/
 .pixi/
 pixi.lock
 bandit-report.json
+frontend/package-lock.json
 
 # MLflow authentication
 .mlflow_token
 token.json
 oauth2-credentials.json
 oauth-secret.yaml
+.codex/auth.json
+.codex/history.jsonl
+.codex/log/codex-tui.log
+.codex/version.json
+.codex/sessions/
