@@ -12,31 +12,17 @@
   <!-- Header -->
   <header class="medical-header">
     <div class="header-inner">
-      <div class="header-bar">
-        <div class="header-left">
-          <button 
-            class="mobile-menu-btn" 
-            id="mobileMenuBtn" 
-            aria-label="Toggle menu"
-          >
-            ☰
-          </button>
-          <div class="header-brand">
-            <div id="brandTitle" class="font-semibold text-lg whitespace-nowrap">Cervical AI Viewer</div>
-          </div>
-        </div>
-        <div class="header-meta">
-          <div class="view-selector">
-            <label for="viewSelect">Workspace</label>
-            <select id="viewSelect" aria-label="Workspace selector">
-              <option value="cytology">Cytology</option>
-              <option value="colposcopy">Colposcopy</option>
-              <option value="hpv">HPV</option>
-              <option value="ehr">EHR</option>
-            </select>
-          </div>
-          <span class="pill" id="status">idle</span>
-          <span id="spinner" class="spinner hidden" aria-label="loading"></span>
+      <div class="header-left">
+        <button 
+          class="mobile-menu-btn" 
+          id="mobileMenuBtn" 
+          aria-label="Toggle menu"
+        >
+          ☰
+        </button>
+        <div class="header-brand">
+          <div id="brandTitle" class="font-semibold text-lg whitespace-nowrap">Cervical AI Viewer</div>
+          <small id="activeViewLabel" class="header-subtitle">Cytology workspace</small>
         </div>
       </div>
       <nav class="header-actions" id="headerActions" aria-label="Viewer actions">
@@ -69,6 +55,19 @@
           <span class="label">Download</span>
         </button>
       </nav>
+      <div class="header-meta">
+        <div class="view-selector">
+          <label for="viewSelect">Workspace</label>
+          <select id="viewSelect" aria-label="Workspace selector">
+            <option value="cytology">Cytology</option>
+            <option value="colposcopy">Colposcopy</option>
+            <option value="hpv">HPV</option>
+            <option value="ehr">EHR</option>
+          </select>
+        </div>
+        <span class="pill" id="status">idle</span>
+        <span id="spinner" class="spinner hidden" aria-label="loading"></span>
+      </div>
     </div>
   </header>
 
@@ -202,11 +201,21 @@
     }
 
     const viewPanels = () => document.querySelectorAll('[data-view-panel]');
+    const viewNames = {
+      cytology: 'Cytology workspace',
+      colposcopy: 'Colposcopy preview',
+      hpv: 'HPV automations',
+      ehr: 'EHR summaries',
+    };
+    const viewLabelEl = document.getElementById('activeViewLabel');
     function setActiveView(view) {
       viewPanels().forEach((panel) => {
         panel.hidden = panel.getAttribute('data-view-panel') !== view;
       });
       document.body.dataset.activeView = view;
+      if (viewLabelEl) {
+        viewLabelEl.textContent = viewNames[view] || 'Workspace';
+      }
     }
 
     // Initialize when DOM is ready

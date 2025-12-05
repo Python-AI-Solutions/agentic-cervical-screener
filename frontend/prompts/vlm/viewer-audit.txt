@@ -23,6 +23,8 @@ Interpretation rules:
 4. **Text legibility** – `textLegible=false` if any label is blurry, cut off, or too small to read comfortably.
 5. **General usability** – List every observed issue in `violations`. If no problems, return an empty array.
 6. **JSON validity** – Never include raw double quotes inside string values. If you must mention a label (e.g., user-drawn-rois), wrap it in single quotes or escape the quotes with `\\\"`.
+7. Header layout: brand/workspace selector on the left, pill-shaped action buttons centered, and status badges on the right. Treat this toolbar as aligned even when actions span two rows, as long as the pills (text or icons) are fully visible.
+8. Phone layouts collapse the header actions into icon-only circular buttons. This counts as compact; only flag an issue if the icons are missing, cropped, or unreadable.
 
 Severity rules (apply them before returning the JSON):
 - **High** if buttons are clipped, canvas coverage <50%, or header alignment is broken.

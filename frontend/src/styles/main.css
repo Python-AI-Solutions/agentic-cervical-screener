@@ -62,23 +62,20 @@
   .medical-sidebar {
     @apply w-[280px] border-r border-medical-dark-border p-3 overflow-y-auto;
     @apply bg-medical-dark-sidebar transition-transform duration-300;
+    top: var(--header-height);
   }
 
   .medical-header {
     @apply fixed top-0 left-0 right-0 z-[1000] bg-medical-dark-primary shadow-medical;
-    min-height: 56px;
     border-bottom: 1px solid rgba(255,255,255,0.12);
   }
 
   .header-inner {
-    @apply mx-auto px-4 py-2 gap-3 w-full;
+    @apply mx-auto px-4 py-3 gap-4 w-full;
     max-width: 1440px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .header-bar {
-    @apply w-full flex items-center justify-between gap-3;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
   }
 
   .header-left {
@@ -89,16 +86,23 @@
     @apply flex flex-col leading-tight;
   }
 
+  .header-subtitle {
+    @apply text-xs text-medical-text-muted uppercase tracking-[0.2em] mt-1;
+  }
+
   .header-actions {
-    @apply flex items-center gap-3 w-full justify-center min-w-0;
-    background-color: rgba(255,255,255,0.04);
+    @apply flex items-center gap-3 justify-center min-w-0;
+    background-color: rgba(255,255,255,0.07);
     border-radius: 999px;
-    padding: 0.4rem 1rem;
+    padding: 0.5rem 1.5rem;
+    border: 1px solid rgba(255,255,255,0.15);
+    backdrop-filter: blur(8px);
   }
 
   .header-action {
-    @apply flex items-center justify-center h-10 px-4 text-sm font-semibold rounded-full transition-all duration-150;
-    @apply text-medical-text-primary border border-transparent bg-transparent;
+    @apply flex items-center justify-center h-10 px-5 min-w-[120px];
+    @apply text-sm font-semibold rounded-full transition-all duration-150;
+    @apply text-medical-text-primary border border-white/20 bg-white/10 shadow-medical;
   }
 
   .header-action .label {
@@ -126,7 +130,7 @@
   }
 
   .view-selector {
-    @apply flex items-center gap-2 text-xs uppercase tracking-wide text-medical-text-muted;
+    @apply flex items-center gap-2 text-[0.65rem] uppercase tracking-wider text-medical-text-muted;
   }
 
   .view-selector select {
@@ -175,18 +179,21 @@
   }
 
   @media (max-width: 1100px) {
+    .header-inner {
+      grid-template-columns: 1fr;
+      @apply gap-3;
+    }
+    .header-brand {
+      @apply text-center;
+    }
     .header-actions {
       @apply w-full justify-center flex-wrap gap-3;
     }
-
     .header-meta {
       @apply justify-center;
     }
     .header-left {
       @apply justify-center;
-    }
-    .header-bar {
-      @apply flex-wrap justify-center text-center;
     }
   }
 
@@ -211,6 +218,7 @@
     grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
     position: absolute;
     inset: 0;
+    top: 0;
   }
 
   @media (max-width: 1024px) {

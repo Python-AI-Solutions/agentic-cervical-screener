@@ -205,6 +205,16 @@ def prompt_context_for(image_name: str) -> str:
     """Return contextual instructions based on screenshot name."""
     lower = image_name.lower()
     contexts: list[str] = []
+    if "viewer-context" in lower:
+        contexts.append(
+            "Header layout: brand + workspace selector on the left, pill-shaped actions centered, status badges on the right. "
+            "This two-row toolbar is intentional; treat buttons as aligned if the pills are fully visible."
+        )
+    if "mobile" in lower:
+        contexts.append(
+            "On phones the viewer actions collapse to round icon buttons. That compact state is expected; "
+            "flag an issue only if the icons are missing or cropped."
+        )
     if "mobile" in lower and "roi" in lower:
         contexts.append(
             "Screenshot captured after the user draws ROI annotations on a phone layout. "
