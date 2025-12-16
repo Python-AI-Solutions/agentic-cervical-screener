@@ -348,8 +348,8 @@ MODEL_PATH=/app/models/best.pt
 ## 🔐 **Security & Compliance**
 
 ### **Important Disclaimers**
-⚠️ **NOT FOR CLINICAL USE** - This is a research prototype  
-⚠️ **NO REGULATORY APPROVAL** - Not FDA/CE approved  
+⚠️ **NOT FOR CLINICAL USE** - This is a research prototype
+⚠️ **NO REGULATORY APPROVAL** - Not FDA/CE approved
 ⚠️ **RESEARCH ONLY** - For evaluation and research purposes
 
 ### **Data Handling**
@@ -447,16 +447,16 @@ git push origin feature/your-feature
 
 ### **Quick Troubleshooting**
 
-**Problem**: Model not loading  
+**Problem**: Model not loading
 **Solution**: Check `src/models/best.pt` exists, verify PyTorch installation
 
-**Problem**: Tests failing  
+**Problem**: Tests failing
 **Solution**: Run `pixi install` again, check Python 3.12
 
-**Problem**: Port 8000 in use  
+**Problem**: Port 8000 in use
 **Solution**: Change port: `uvicorn src.main:app --port 8001`
 
-**Problem**: Deployment fails  
+**Problem**: Deployment fails
 **Solution**: Check Kubernetes context, verify image registry access
 
 ---
@@ -491,8 +491,8 @@ git push origin feature/your-feature
 
 ---
 
-**Last Updated**: November 27, 2025  
-**Document Version**: 1.0  
+**Last Updated**: November 27, 2025
+**Document Version**: 1.0
 **Project Repository**: [GitHub](https://github.com/Python-AI-Solutions/agentic-cervical-screener)
 
 ---
@@ -514,4 +514,3 @@ pixi run format           # Format code
 docker build -t cervical-ai .
 kubectl apply -f deploy/k8s/base/
 ```
-

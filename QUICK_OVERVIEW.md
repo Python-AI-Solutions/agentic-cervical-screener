@@ -205,12 +205,12 @@ pixi run dev              # Start server
 pixi run test             # Run tests
 pixi run lint             # Check code
 
-# Deployment  
+# Deployment
 docker build -t cervical-ai .
 kubectl apply -f deploy/k8s/base/
 ```
 
 ---
 
-**GitHub**: [Python-AI-Solutions/agentic-cervical-screener](https://github.com/Python-AI-Solutions/agentic-cervical-screener)  
+**GitHub**: [Python-AI-Solutions/agentic-cervical-screener](https://github.com/Python-AI-Solutions/agentic-cervical-screener)
 **Issues**: [View All Issues](https://github.com/Python-AI-Solutions/agentic-cervical-screener/issues)
