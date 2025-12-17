@@ -20,8 +20,48 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 requires-python = ">=3.12"
-# Dependencies managed by Pixi (see [tool.pixi.dependencies])
-dependencies = []
+dependencies = [
+    "fastapi>=0.116.0",
+    "uvicorn>=0.35.0",
+    "pydantic>=2.11.0",
+    "python-multipart>=0.0.20",
+    "pillow>=10.0.0",
+    "numpy>=1.24.0,<2.0.0",
+    "opencv-python-headless>=4.10.0",
+]
+
+[project.optional-dependencies]
+ml = [
+    "torch==2.3.1",
+    "torchvision==0.18.1",
+    "scikit-learn==1.5.*",
+    "ultralytics==8.3.188",
+    "matplotlib>=3.7.0",
+    "pandas>=2.0.0",
+    "tqdm>=4.65.0",
+    "seaborn>=0.12.0",
+    "psutil>=5.9.0",
+    "py-cpuinfo>=9.0.0",
+]
+onnx = [
+    "onnx>=1.16.0",
+    "onnxruntime>=1.19.0",
+    "onnxslim>=0.1.80",
+]
+test = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "pytest-timeout>=2.0.0",
+    "httpx>=0.24.0",
+    "playwright>=1.40.0",
+    "requests>=2.28.0",
+]
+dev = [
+    "pre-commit>=3.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/Python-AI-Solutions/agentic-cervical-screener"
@@ -29,7 +69,7 @@ Repository = "https://github.com/Python-AI-Solutions/agentic-cervical-screener"
 Issues = "https://github.com/Python-AI-Solutions/agentic-cervical-screener/issues"
 
 [project.scripts]
-cervical-api = "agentic_cervical_screener.main:app"
+cervical-api = "src.main:app"
 
 [tool.pytest.ini_options]
 minversion = "7.0"
@@ -57,10 +97,10 @@ timeout = 10
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
-source = ["agentic_cervical_screener"]
+source = ["src"]
 omit = [
     "tests/*",
-    "agentic_cervical_screener/models/*",
+    "src/models/*",
     "public/*",
     ".pixi/*",
     "build/*",
@@ -100,7 +140,7 @@ ignore = [
 "tests/*" = ["S101"]  # allow assert statements in tests
 
 [tool.ruff.lint.isort]
-known-first-party = ["agentic_cervical_screener"]
+known-first-party = ["src"]
 
 [tool.ruff.format]
 # Use single quotes for strings
@@ -125,80 +165,74 @@ ignore_missing_imports = true
 
 
 [tool.hatch.build.targets.wheel]
-packages = ["agentic_cervical_screener"]
+packages = ["src"]
 
 [tool.bandit]
-exclude_dirs = ["tests", "agentic_cervical_screener/models", "public"]
+exclude_dirs = ["tests", "models", "public"]
 exclude = ["**/__init__.py"]
 skips = ["B101", "B601"]
 
 [tool.pixi.project]
 channels = ["conda-forge", "pytorch"]
-platforms = ["osx-arm64", "linux-64"]
+platforms = ["osx-arm64", "linux-64", "linux-aarch64", "osx-64"]
 
 [tool.pixi.tasks]
-dev = "uvicorn agentic_cervical_screener.main:app --reload --host localhost --port 8000"
-start = "uvicorn agentic_cervical_screener.main:app --host 0.0.0.0 --port 8000"
+dev = "uvicorn src.main:app --reload --host localhost --port 8000"
+start = "uvicorn src.main:app --host 0.0.0.0 --port 8000"
 test = "python -m pytest tests/ -x -q"
 test-ci = "python -m pytest tests/ -v --tb=short"
 test-integration = "python -m pytest tests/ -m integration -v"
-test-coverage = "python -m pytest tests/ --cov=agentic_cervical_screener --cov-report=html --cov-report=term"
+test-coverage = "python -m pytest tests/ --cov=src --cov-report=html --cov-report=term"
 install-browsers = "playwright install chromium"
 format = "ruff format ."
-lint = "ruff check agentic_cervical_screener/ tests/"
+lint = "ruff check src/ tests/"
 check-all = "pre-commit run --all-files"
 pre-commit-install = "pre-commit install"
+serve-static = "python -m scripts.serve_static --port 8000"
+import-dataset-cases = "python -m scripts.import_dataset_cases"
 
 [tool.pixi.dependencies]
-# Core runtime
+# Core runtime dependencies
 python = "3.12.*"
-fastapi = "*"
-uvicorn = "*"
-pydantic = "*"
-python-multipart = "*"
-pillow = "*"
-numpy = "<2"
-opencv = "*"
-markdown = "*"
-pyyaml = "*"
+fastapi = ">=0.116.0"
+uvicorn = ">=0.35.0"
+pydantic = ">=2.11.0"
+python-multipart = ">=0.0.20"
+pillow = ">=10.0.0"
+numpy = ">=1.24.0,<2.0.0"
+opencv = ">=4.10.0"
+onnx = ">=1.16.0"
+onnxruntime = ">=1.19.0"
+onnxslim = ">=0.1.80"
 
-# ML
-pytorch = "*"
-torchvision = "*"
-scikit-learn = "*"
-ultralytics = "*"
-matplotlib = "*"
-pandas = "*"
-tqdm = "*"
-seaborn = "*"
-psutil = "*"
-py-cpuinfo = "*"
+# ML dependencies
+pytorch = ">=2.3.1"
+torchvision = ">=0.18.1"
+scikit-learn = ">=1.5.0"
+ultralytics = ">=8.3.0"
+matplotlib = ">=3.7.0"
+pandas = ">=2.0.0"
+tqdm = ">=4.65.0"
+seaborn = ">=0.12.0"
+psutil = ">=5.9.0"
+py-cpuinfo = ">=9.0.0"
 
-# System libs for OpenCV/image processing
+# System dependencies for OpenCV and image processing
 glib = "*"
 libjpeg-turbo = "*"
 libpng = "*"
 libtiff = "*"
 
-# Test
-pytest = "*"
-pytest-asyncio = "*"
-pytest-cov = "*"
-pytest-timeout = "*"
-httpx = "*"
-requests = "*"
+# Test dependencies
+pytest = ">=7.0.0"
+pytest-asyncio = ">=0.21.0"
+pytest-cov = ">=4.0.0"
+pytest-timeout = ">=2.0.0"
+httpx = ">=0.24.0"
+requests = ">=2.28.0"
 playwright-python = "*"
 
-# Dev
-pre-commit = "*"
-ruff = "*"
-mypy = "*"
-pip = "*"
-llm = "*"
-openai = "<2"
-jiter = "<0.12"
-rich = "<14"
-
-[tool.pixi.pypi-dependencies]
-instructor = "*"
-
+# Dev dependencies
+pre-commit = ">=3.0.0"
+ruff = ">=0.1.0"
+mypy = ">=1.0.0"

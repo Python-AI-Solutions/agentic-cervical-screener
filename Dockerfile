@@ -20,18 +20,8 @@ RUN pixi workspace platform add linux-aarch64
 # Install dependencies using pixi
 RUN pixi install
 
-# Build frontend
-WORKDIR /app/frontend
-COPY frontend/package.json ./
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs \
-    && npm install
-COPY frontend/ ./
-RUN npm run build
-
 # Copy application files
-WORKDIR /app
-COPY agentic_cervical_screener/ ./agentic_cervical_screener/
+COPY src/ ./src/
 COPY public/ ./public/
 
 EXPOSE 8000

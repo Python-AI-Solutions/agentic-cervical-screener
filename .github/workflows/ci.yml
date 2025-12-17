@@ -12,7 +12,7 @@ on:
     branches: [ main ]
 
 jobs:
-  test-backend:
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -30,10 +30,13 @@ jobs:
       - name: Install dependencies with pixi
         run: pixi install
 
-      - name: Run Python unit tests
+      - name: Install Playwright browsers
+        run: pixi run install-browsers
+
+      - name: Run unit tests
         run: pixi run test
 
-      - name: Run Python integration tests
+      - name: Run integration tests
         run: pixi run test-integration
 
       - name: Generate coverage report
@@ -45,45 +48,9 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: false
 
-  test-frontend:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install frontend dependencies
-        working-directory: ./frontend
-        run: npm install
-
-      - name: Run frontend unit/integration tests
-        working-directory: ./frontend
-        run: npm test
-
-      - name: Install Playwright browsers
-        working-directory: ./frontend
-        run: npx playwright install --with-deps chromium
-
-      - name: Build frontend
-        working-directory: ./frontend
-        run: npm run build
-
-      - name: Run E2E tests
-        working-directory: ./frontend
-        run: |
-          # Run E2E tests - Playwright will start dev server automatically
-          # CI mode ensures it exits after tests complete
-          npx playwright test --reporter=list
-        env:
-          CI: true
-
   docker:
     runs-on: ubuntu-latest
-    needs: [test-backend, test-frontend]
+    needs: test
 
     steps:
       - uses: actions/checkout@v4
@@ -107,8 +74,6 @@ jobs:
           curl -f http://localhost:8000/docs || exit 1
           # Test model info endpoint
           curl -f http://localhost:8000/model-info || exit 1
-          # Test frontend is served
-          curl -f http://localhost:8000/ || exit 1
           # Stop and remove container
           docker stop cervical-test
           docker rm cervical-test
@@ -177,23 +142,12 @@ jobs:
       - name: Install dependencies
         run: pixi install
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install frontend dependencies
-        working-directory: ./frontend
-        run: npm install
-
-      - name: Run Python linting
-        run: pixi run lint
-
-      - name: Run frontend linting
-        working-directory: ./frontend
-        run: npm run lint || echo "No lint script found, skipping"
+      - name: Install pre-commit hooks
+        run: |
+          pip install pre-commit
+          pre-commit install
 
       - name: Run quality checks
         run: |
           # run all pre-commit hooks (includes formatting, linting, etc.)
-          pixi run check-all || echo "check-all not found, skipping"
+          pixi run check-all

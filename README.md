@@ -1,4 +1,4 @@
-# Agentic Cervical Screener
+# Cervical AI Viewer (Classification-only Demo)
 
 A web-based cervical screening tool that uses AI to classify and detect abnormal cells in cervical cytology images. The application combines a FastAPI backend with a modern web frontend for interactive image analysis.
 
@@ -11,25 +11,20 @@ A web-based cervical screening tool that uses AI to classify and detect abnormal
 - **ROI Navigation**: Navigate between regions of interest
 - **Real-time Analysis**: Upload and analyze new images instantly
 - **Layer Controls**: Toggle different overlay types and adjust visibility
-- **Responsive Design**: Works on desktop and mobile devices
 
 ## Tech Stack
 
-- **Backend**: FastAPI with Python 3.14
-- **Frontend**: TypeScript/Vite with Tailwind CSS Plus, NiiVue viewer
+- **Backend**: FastAPI with Python 3.12
+- **Frontend**: Vanilla JavaScript with NiiVue viewer
 - **AI Model**: PyTorch YOLO for cell detection and classification
-- **Package Management**: Pixi (conda-forge ecosystem) for Python, npm for frontend
-- **Testing**: Vitest (unit/integration), Playwright (E2E)
+- **Package Management**: Pixi (conda-forge ecosystem)
 
 ## Quick Start
-
-> New contributors should first complete the [Orientation Path](docs/project_overview.md#orientation-path) to run the canonical commands and record onboarding metrics.
 
 ### Prerequisites
 
 - [Pixi](https://pixi.sh) package manager installed
-- Python 3.14+ (managed by Pixi)
-- Node.js 18+ and npm (for frontend development)
+- Python 3.11+ (managed by Pixi)
 
 ### Installation
 
@@ -39,21 +34,14 @@ A web-based cervical screening tool that uses AI to classify and detect abnormal
    cd agentic-cervical-screener
    ```
 
-2. Install Python dependencies:
+2. Install dependencies:
    ```bash
    pixi install
    ```
 
-3. Install frontend dependencies:
-   ```bash
-   cd frontend
-   npm install
-   cd ..
-   ```
-
 ### Development
 
-Start the development server (backend + frontend):
+Start the development server:
 ```bash
 pixi run dev
 ```
@@ -62,41 +50,17 @@ The application will be available at **http://localhost:8000**
 
 The development server includes:
 - Hot reload for Python code changes
-- Vite dev server for frontend (with HMR)
 - Automatic model loading
 - CORS enabled for frontend development
 - Static file serving for assets
 
-**Frontend-only development** (if backend is running separately):
-```bash
-cd frontend
-pixi run dev
-```
-
-Frontend will be available at **http://localhost:5173** (proxies API calls to backend)
-
-### Production Build
-
-Build the frontend:
-```bash
-cd frontend
-pixi run build
-```
-
-Start production server:
-```bash
-pixi run start
-```
-
 ### Usage
 
-1. **Load Demo Cases**: Use the quick-load buttons in the sidebar to try different pathology cases
+1. **Load Dataset Samples**: Choose a dataset-backed sample from the sidebar (ground-truth labels optional)
 2. **Classify Images**: Click "Classify" to run AI analysis on the current image
 3. **Navigate ROIs**: Use the ROI navigation buttons to move between regions of interest
 4. **Upload Images**: Drag and drop new images for analysis
-5. **Toggle Overlays**: Switch between ground truth, AI predictions, and user-drawn ROIs
-6. **Zoom/Pan**: Use mouse wheel to zoom, drag to pan
-7. **Draw ROIs**: Click and drag on the canvas to create regions of interest
+5. **Toggle Overlays**: Switch between ground truth and AI predictions
 
 ### API Endpoints
 
@@ -107,104 +71,74 @@ pixi run start
 - `GET /cases/{case_id}` - Get case data and metadata
 - `GET /model-info` - Get loaded model information
 
-### Demo Cases
+### Dataset Samples
 
-- **Case 1 (DEMO-001)**: Original baseline case
-- **Case 2 (DEMO-002)**: LSIL (Low-grade Squamous Intraepithelial Lesion)
-- **Case 3 (DEMO-003)**: Mixed pathology
-- **Case 4 (DEMO-004)**: High-risk abnormal cells
+- Dataset-backed static cases live under `public/cases/` and are indexed by `public/cases/dataset-samples.json`.
+- Import more samples (image + YOLO ground truth as GeoJSON): `pixi run import-dataset-cases --ids <image_id_1> <image_id_2> ...`
+
+## Browser export (ONNX; int8 is experimental)
+
+- Install the optional deps (Pixi): `pixi install` (onnx/onnxruntime/onnxslim are in the env).
+- Export for CPU/WASM (WebGPU optional):  
+  `pixi run python -m scripts.export_to_onnx --model-path src/models/best.pt --output-dir public/model --imgsz 640 --opset 17 --quantize none`
+- Output: `public/model/best.onnx` (fp32, includes built-in NMS).
+- Label metadata: `public/model/labels.json` is generated from the `.pt` checkpoint class names and used by the browser UI for labeling detections.
+- Optional int8: `--quantize static` / `--quantize dynamic` will also write `public/model/best.int8.onnx`, but see the quantization notes below before enabling it in the browser.
+
+### Quantization notes (current limitations)
+
+At the time of writing, `onnxruntime` int8 quantization (static QDQ/QOperator and dynamic) for this model graph produces a model that runs but returns **all-zero detections** (confidence scores are always 0), even though the fp32 model produces correct detections. This appears to be related to quantizing graphs that include post-processing ops such as `NonMaxSuppression` / `NonZero` and mixed int64 shape/index tensors.
+
+Practical impact:
+- The app defaults to **FP32** (`public/model/best.onnx`) for correctness.
+- If you want to experiment with int8 anyway, set `window.__ENV__.PREFER_INT8 = true` and/or `window.__ENV__.MODEL_INT8_URL`, and validate output quality.
+
+## In-browser inference (onnxruntime-web)
+
+- The frontend defaults to client-side inference with `onnxruntime-web` (CPU/WASM first). Set `window.__ENV__.IN_BROWSER_INFERENCE=false` if you need to force backend mode.
+- To try WebGPU (stretch goal), set `window.__ENV__.ENABLE_WEBGPU=true`. It will fall back to WASM if WebGPU init fails.
+- Model URL defaults to `model/best.onnx` (fp32). Override with `window.__ENV__.MODEL_FP32_URL`.  
+  Optional int8 is disabled by default; enable via `window.__ENV__.ENABLE_INT8=true` and/or set `window.__ENV__.MODEL_INT8_URL`. Use `window.__ENV__.PREFER_INT8=true` to try int8 before fp32.
+- Class labels default to `model/labels.json`. Override with `window.__ENV__.CLASS_NAMES` (array) or `window.__ENV__.LABELS_URL`.
+- To keep WASM multithreading fast, serve with COOP/COEP headers if possible; otherwise it will fall back to single-threaded.
+- Dropped images (PNG/JPG/WebP) are classified locally without a network call.
+
+## Local static testing (no backend)
+
+1) Ensure ONNX artifacts exist:  
+   `pixi run python -m scripts.export_to_onnx --model-path src/models/best.pt --output-dir public/model --imgsz 640 --opset 17 --quantize none`
+2) Serve the repo statically with COOP/COEP headers (enables WASM threads):  
+   `pixi run serve-static`  
+   - Serves `public/` as the web root (so `/niivue`, `/images`, `/cases`, `/model`, `/src` all resolve).  
+   - Open http://localhost:8000/
+3) Opening `public/index.html` directly via `file://` will not work (module and WASM fetches are blocked); always use a local server.
+4) If you ever see requests like `GET /ort-wasm-*.wasm` (404) or `POST /v1/classify` (501) in the local server logs, hard-refresh the page: older cached JS can still point ORT at same-origin WASM or try a backend fallback. The current code loads ORT WASM from the jsDelivr CDN by default.
+
+## Cloudflare Pages (static deploy)
+
+- This repo is designed so `public/` is a self-contained static site (including `public/src/*` modules).
+- Cloudflare management repo: add a `pages_projects` entry with `destination_dir = "public"` and `custom_domain = "cervical-screening.pythonaisolutions.com"`.
+- Remove any legacy DNS records for `cervical-screening` from `subdomain_records` (they conflict with the CNAME created by the Pages module).
+- Site repo workflow: `.github/workflows/deploy.yml` deploys `public/` via `wrangler pages deploy`.
+- `_headers` in `public/_headers` sets COOP/COEP/CORP and CORS for WASM threading.
+- Ensure `public/model/best.onnx` is committed (generated by the export script). `public/model/best.int8.onnx` is optional/experimental.
+
+## Assets
+
+- Demo slide images are stored as WebP in `public/images/*.webp` (PNG sources are intentionally not shipped in `public/` to keep static deploy size down).
+- Convert new demo images: `pixi run python -m scripts.convert_images_to_webp --input-dir public/images --overwrite --delete-originals` (lossless by default; use `--no-lossless` for smaller lossy files).
+- Import dataset-backed demo cases (image + YOLO ground truth as GeoJSON):  
+  `pixi run import-dataset-cases --ids <image_id_1> <image_id_2> ...`  
+  - Writes `public/images/<id>.webp` (lossless), `public/cases/cric-<id>.json`, and `public/cases/cric-<id>-gt.geojson`.  
+  - Updates `public/cases/dataset-samples.json`, which the UI uses to render the “Dataset samples (CRIC)” list in the sidebar.
 
 ## Development Commands
-
-### Backend (Python)
 
 ```bash
 pixi run dev          # Start development server
 pixi run start        # Start production server
-pixi run test         # Run Python tests
+pixi run test         # Run tests
 pixi run test-coverage # Run tests with coverage report
-pixi run lint         # Run code linting (ruff)
-pixi run format       # Format code (ruff format)
+pixi run lint         # Run code linting
+pixi run format       # Format code
 ```
-
-### Frontend (Node.js)
-
-```bash
-cd frontend
-
-pixi run dev            # Start Vite dev server
-pixi run build          # Build for production
-pixi run preview        # Preview production build
-pixi run test           # Run unit/integration tests
-pixi run test-watch     # Run tests in watch mode
-pixi run test-e2e       # Run E2E tests (Playwright)
-pixi run test-e2e-ci    # Run headless E2E suite (CI-safe)
-pixi run test-e2e-ui    # Run E2E tests with UI
-pixi run test-e2e-debug # Run Playwright inspector/debugger
-pixi run test-vlm       # Run VLM audits against the latest screenshots
-pixi run test-all       # Run all three test stacks (unit, app E2E, VLM)
-```
-
-## Project Structure
-
-```
-agentic-cervical-screener/
-├── agentic_cervical_screener/  # Python package (backend)
-│   ├── main.py                 # FastAPI application
-│   ├── model_loader.py          # Model initialization
-│   └── models/                  # PyTorch model files
-├── frontend/                    # Frontend application
-│   ├── src/                     # TypeScript source code
-│   │   ├── viewer/             # Image viewer modules
-│   │   ├── services/           # API clients
-│   │   ├── components/         # UI components
-│   │   └── styles/             # CSS/Tailwind styles
-│   ├── e2e/                    # Playwright E2E tests
-│   └── dist/                   # Build output (gitignored)
-├── public/                      # Static assets
-│   ├── images/                 # Demo images
-│   └── mock/                   # Mock API responses
-├── tests/                       # Python backend tests
-├── deploy/                      # Kubernetes deployment configs
-└── pyproject.toml              # Python project configuration
-```
-
-## Workspaces
-
-The header now exposes a workspace dropdown for the four core cervical screening disciplines:
-
-- **Cytology** (default) – hosts the deterministic Niivue viewer, overlays, and ROI tooling.
-- **Colposcopy**, **HPV**, **EHR** – placeholder dashboards that outline the upcoming feature roadmaps. They do not yet drive backend code but make the application shell ready for the multi-disciplinary vision.
-
-Use the workspace dropdown (or its responsive variant) to switch between these views. Playwright + VLM tests currently target the Cytology workspace.
-
-## Testing
-
-The project now uses a three-tier testing approach:
-
-- **Unit/Integration Tests (Vitest)**: Fast, mocked tests for logic (`frontend/src/**/*.test.ts`, `frontend/src/**/*.integration.test.ts`)
-- **E2E Tests (Playwright)**: Real browser tests for actual functionality (`frontend/e2e/**/*.spec.ts`)
-- **VLM Evidence**: Local VLM reviews driven through the `llm` CLI + mlx_vlm plugin (`cd frontend && pixi run test-vlm`) validate responsive layouts and annotation affordances directly from Playwright screenshots. Install the plugin (`cd frontend && pixi run install-vlm-plugin`) and pull at least one supported model (default `pixtral-12b-4bit`, override via `VLM_MODEL`) before running these commands.
-
-See `docs/TESTING.md` for detailed testing documentation, including the Playwright + VLM artifact flow.
-
-## Contributing
-
-1. Follow the code style conventions (Python: PEP 8, TypeScript: strict mode)
-2. Write tests for new features
-3. Run tests before committing (`cd frontend && pixi run test` for Vitest plus backend `pixi run test`)
-4. Update documentation as needed
-
-See `AGENTS.md` for detailed development guidelines (especially useful for AI coding assistants).
-
-## License
-
-Copyright (c) 2025 [Your Company Name].  
-All rights reserved.  
-This software is proprietary and confidential.  
-Unauthorized copying or distribution is strictly prohibited.  
-Use is permitted only with explicit, written permission from the copyright holder.
-
-## Support
-
-For issues and questions, please open an issue on the repository.
