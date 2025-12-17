@@ -148,6 +148,8 @@ format = "ruff format ."
 lint = "ruff check agentic_cervical_screener/ tests/"
 check-all = "pre-commit run --all-files"
 pre-commit-install = "pre-commit install"
+download-dataset = "python scripts/download_figshare_dataset.py"
+extract-dataset = "python scripts/extract_dataset.py"
 
 [tool.pixi.dependencies]
 # Core runtime
@@ -179,6 +181,7 @@ glib = "*"
 libjpeg-turbo = "*"
 libpng = "*"
 libtiff = "*"
+p7zip = "*"
 
 # Test
 pytest = "*"
