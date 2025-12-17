@@ -1,0 +1,63 @@
+# Pre-commit hooks configuration
+# Install: pixi run pre-commit-install
+# Run manually: pixi run pre-commit-run
+
+repos:
+  # Ruff - Fast Python linter and formatter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.9
+    hooks:
+      # Run the linter
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      # Run the formatter
+      - id: ruff-format
+
+  # Pre-commit hooks for common issues
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      # Prevent committing large files
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+
+      # Check YAML syntax
+      - id: check-yaml
+        exclude: ^pixi\.lock$
+
+      # Check TOML syntax
+      - id: check-toml
+
+      # Check JSON syntax
+      - id: check-json
+
+      # Ensure files end with newline
+      - id: end-of-file-fixer
+
+      # Remove trailing whitespace
+      - id: trailing-whitespace
+
+      # Check for merge conflict markers
+      - id: check-merge-conflict
+
+      # Check for debug statements
+      - id: debug-statements
+
+      # Check Python syntax
+      - id: check-ast
+
+  # Notebook cleaning (optional - uncomment if using notebooks in git)
+  # - repo: https://github.com/kynan/nbstripout
+  #   rev: 0.6.1
+  #   hooks:
+  #     - id: nbstripout
+
+# Global exclusions
+exclude: |
+  (?x)^(
+      \.pixi/.*|
+      \.git/.*|
+      .*\.egg-info/.*|
+      build/.*|
+      dist/.*
+  )$
