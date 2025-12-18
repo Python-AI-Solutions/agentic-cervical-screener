@@ -24,13 +24,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files
-# Use current working directory since public is copied to /app/public
+# Mount static files (public/ is the canonical site)
 public_dir = os.path.join(os.getcwd(), "public")
 public_path = Path(public_dir)
 cases_path = public_path / "cases"
 
 app.mount("/images", StaticFiles(directory=os.path.join(public_dir, "images")), name="images")
+app.mount("/cases", StaticFiles(directory=os.path.join(public_dir, "cases")), name="cases")
 app.mount("/niivue", StaticFiles(directory=os.path.join(public_dir, "niivue")), name="niivue")
 app.mount("/model", StaticFiles(directory=os.path.join(public_dir, "model")), name="model")
 app.mount("/src", StaticFiles(directory=os.path.join(public_dir, "src")), name="src")

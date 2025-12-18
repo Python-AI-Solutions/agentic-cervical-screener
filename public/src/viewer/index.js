@@ -232,7 +232,7 @@ function updateCanvasSize() {
 }
 
 function fitOverlayToImage(imageWidth, imageHeight) {
-  // Get container dimensions ONCE when image loads
+  // Get container dimensions (recomputed whenever called)
   const { width: containerWidthRaw, height: containerHeightRaw } = getCanvasContainerSize();
   const containerWidth = Math.round(containerWidthRaw);
   const containerHeight = Math.round(containerHeightRaw);
@@ -242,8 +242,7 @@ function fitOverlayToImage(imageWidth, imageHeight) {
     return;
   }
 
-  // CRITICAL: FREEZE canvas pixel dimensions at image load
-  // These will NEVER change, even with browser zoom
+  // Size the pixel buffers based on the current container + DPR
   const dpr = window.devicePixelRatio || 1;
   fixedCanvasPixelSize = {
     width: Math.round(containerWidth * dpr),
@@ -252,24 +251,13 @@ function fitOverlayToImage(imageWidth, imageHeight) {
     logicalHeight: containerHeight
   };
 
-  // Calculate scale to fit image in container
-  const scale = Math.min(containerWidth / imageWidth, containerHeight / imageHeight);
+  // Recalculate transform using the latest container + DPR
+  recalculateTransform();
 
-  // Center the image
-  const scaledWidth = imageWidth * scale;
-  const scaledHeight = imageHeight * scale;
-  const tx = (containerWidth - scaledWidth) / 2;
-  const ty = (containerHeight - scaledHeight) / 2;
-
-  // Set transform ONCE - it won't be recalculated on browser zoom
-  transform.scale = scale;
-  transform.tx = tx;
-  transform.ty = ty;
-
-  console.log('✅ Canvas size and transform FROZEN (immune to browser zoom):', {
+  console.log('✅ Canvas size and transform recalculated:', {
     imageSize: { width: imageWidth, height: imageHeight },
     fixedCanvasPixelSize,
-    transform: { scale, tx, ty }
+    transform: { ...transform }
   });
 }
 
@@ -277,9 +265,10 @@ function handleCanvasResize() {
   const sizeChanged = updateCanvasSize();
 
   if (currentImageObject) {
-    // CRITICAL: DO NOT recalculate transform on browser zoom/resize
-    // The transform is in IMAGE PIXEL coordinates and should NOT change with browser zoom
-    // Only redraw the canvases using the EXISTING transform
+    // Keep the transform aligned to the new container after zoom/resize
+    if (currentImageDimensions?.width && currentImageDimensions?.height) {
+      fitOverlayToImage(currentImageDimensions.width, currentImageDimensions.height);
+    }
     renderImageCanvas();
     renderOverlays();
     return;

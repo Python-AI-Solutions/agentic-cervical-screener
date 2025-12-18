@@ -27,18 +27,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static assets used by the API responses
-# Use current working directory since public is copied to /app/public
+# Mount static assets used by the API responses (public/ is the canonical site)
 public_dir = os.path.join(os.getcwd(), "public")
 
 app.mount("/images", StaticFiles(directory=os.path.join(public_dir, "images")), name="images")
-app.mount("/mock", StaticFiles(directory=os.path.join(public_dir, "mock")), name="mock")
+app.mount("/cases", StaticFiles(directory=os.path.join(public_dir, "cases")), name="cases")
+app.mount("/model", StaticFiles(directory=os.path.join(public_dir, "model")), name="model")
+app.mount("/src", StaticFiles(directory=os.path.join(public_dir, "src")), name="src")
 app.mount("/niivue", StaticFiles(directory=os.path.join(public_dir, "niivue")), name="niivue")
-
-# Mount frontend static assets (built files)
-frontend_dist = os.path.join(os.getcwd(), "frontend", "dist")
-if os.path.exists(frontend_dist):
-    app.mount("/assets", StaticFiles(directory=os.path.join(frontend_dist, "assets")), name="assets")
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PROJECT_OVERVIEW_MD = REPO_ROOT / "docs" / "project_overview.md"
@@ -187,11 +183,10 @@ class ClassifyResp(BaseModel):
 @app.get("/")
 async def read_root():
     """
-    Root endpoint - serves frontend if available, otherwise API info.
+    Root endpoint - serves the static viewer (public/index.html) if available.
     The catch-all route below will handle actual frontend serving.
     """
-    frontend_dist = os.path.join(os.getcwd(), "frontend", "dist")
-    index_path = os.path.join(frontend_dist, "index.html")
+    index_path = os.path.join(public_dir, "index.html")
     
     if os.path.exists(index_path):
         return FileResponse(index_path)
@@ -202,7 +197,7 @@ async def read_root():
         "docs_url": "/docs",
         "openapi_url": "/openapi.json",
         "health_url": "/healthz",
-        "note": "Frontend not built. Run 'cd frontend && pixi run build' to build the frontend.",
+        "note": "Static frontend not found. Serve public/ with `pixi run serve-static`.",
     }
 
 
@@ -426,20 +421,18 @@ async def serve_frontend(full_path: str):
     and serves the frontend SPA. API routes are handled by their specific endpoints above.
     """
     # Don't serve frontend for API routes
-    if full_path.startswith(("api", "v1", "healthz", "model-info", "cases", "images", "mock", "niivue", "docs", "openapi.json", "assets")):
+    if full_path.startswith(("api", "v1", "healthz", "model-info", "cases", "images", "niivue", "docs", "openapi.json", "assets", "model", "src")):
         raise HTTPException(status_code=404, detail="Not found")
     
     # Serve frontend files
-    frontend_dist = os.path.join(os.getcwd(), "frontend", "dist")
-    
     # If requesting a specific file, try to serve it
-    if full_path and full_path != "/":
-        file_path = os.path.join(frontend_dist, full_path)
+    if full_path:
+        file_path = os.path.join(public_dir, full_path)
         if os.path.exists(file_path) and os.path.isfile(file_path):
             return FileResponse(file_path)
     
     # Otherwise serve index.html for SPA routing
-    index_path = os.path.join(frontend_dist, "index.html")
+    index_path = os.path.join(public_dir, "index.html")
     if os.path.exists(index_path):
         return FileResponse(index_path)
     
@@ -449,7 +442,7 @@ async def serve_frontend(full_path: str):
         "docs_url": "/docs",
         "openapi_url": "/openapi.json",
         "health_url": "/healthz",
-        "note": "Frontend not built. Run 'cd frontend && pixi run build' to build the frontend.",
+        "note": "Static frontend not found. Serve public/ with `pixi run serve-static`.",
     }
 
 

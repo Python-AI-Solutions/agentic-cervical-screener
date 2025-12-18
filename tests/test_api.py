@@ -28,7 +28,7 @@ def test_image():
 
 @pytest.fixture(scope="session")
 def dataset_samples():
-    """Load the static dataset sample index used by the frontend."""
+    """Load the static dataset sample index used by the viewer."""
     repo_root = Path(__file__).resolve().parent.parent
     index_path = repo_root / "public" / "cases" / "dataset-samples.json"
     doc = json.loads(index_path.read_text(encoding="utf-8"))

@@ -1,21 +1,21 @@
 # Cervical AI Viewer (Classification-only Demo)
 
-A web-based cervical screening tool that uses AI to classify and detect abnormal cells in cervical cytology images. The application combines a FastAPI backend with a modern web frontend for interactive image analysis.
+A web-based cervical screening tool that uses AI to classify and detect abnormal cells in cervical cytology images. The app now ships purely as a static site under `public/` (vanilla JS + NiiVue) backed by CRIC demo data; the Python API is optional.
 
 ## Features
 
 - **AI-Powered Classification**: Uses YOLO model for detecting and classifying cervical cells
-- **Interactive Viewer**: Built with NiiVue for smooth image navigation and visualization
+- **Interactive Viewer**: Built with NiiVue for smooth image navigation and visualization (no build step required)
 - **Bounding Box Overlays**: Visual detection results with confidence scores
-- **Multiple Demo Cases**: 4 pre-loaded test cases with different pathology types
+- **CRIC Dataset Samples**: Pre-loaded CRIC tiles + YOLO ground truth (see `public/cases/dataset-samples.json`)
 - **ROI Navigation**: Navigate between regions of interest
 - **Real-time Analysis**: Upload and analyze new images instantly
 - **Layer Controls**: Toggle different overlay types and adjust visibility
 
 ## Tech Stack
 
-- **Backend**: FastAPI with Python 3.12
-- **Frontend**: Vanilla JavaScript with NiiVue viewer
+- **Viewer**: Static vanilla JavaScript + NiiVue under `public/src`
+- **Optional API**: FastAPI with Python 3.12 (for `/v1/classify*` endpoints)
 - **AI Model**: PyTorch YOLO for cell detection and classification
 - **Package Management**: Pixi (conda-forge ecosystem)
 
@@ -39,24 +39,25 @@ A web-based cervical screening tool that uses AI to classify and detect abnormal
    pixi install
    ```
 
-### Development
+### Development / Local serve
 
-Start the development server:
+Serve the static site (no backend required):
+```bash
+pixi run serve-static
+```
+
+Open **http://localhost:8000**.  
+`public/` is the root, so `/src`, `/cases`, `/images`, `/model`, and `/niivue` are all available.
+
+Run the optional API (if you want backend classification instead of in-browser ONNX):
 ```bash
 pixi run dev
 ```
-
-The application will be available at **http://localhost:8000**
-
-The development server includes:
-- Hot reload for Python code changes
-- Automatic model loading
-- CORS enabled for frontend development
-- Static file serving for assets
+The static site still loads from `public/`; set `window.__ENV__.API_BASE` if you want the JS to call the backend.
 
 ### Usage
 
-1. **Load Dataset Samples**: Choose a dataset-backed sample from the sidebar (ground-truth labels optional)
+1. **Load Dataset Samples**: Choose a CRIC sample from the sidebar (ground-truth labels optional)
 2. **Classify Images**: Click "Classify" to run AI analysis on the current image
 3. **Navigate ROIs**: Use the ROI navigation buttons to move between regions of interest
 4. **Upload Images**: Drag and drop new images for analysis
@@ -64,7 +65,7 @@ The development server includes:
 
 ### API Endpoints
 
-- `GET /` - Frontend application
+- `GET /` - Static viewer (`public/index.html`)
 - `GET /healthz` - Health check and model status
 - `POST /v1/classify` - Classify image by slide ID or image URI
 - `POST /v1/classify-upload` - Classify uploaded image file
@@ -95,7 +96,7 @@ Practical impact:
 
 ## In-browser inference (onnxruntime-web)
 
-- The frontend defaults to client-side inference with `onnxruntime-web` (CPU/WASM first). Set `window.__ENV__.IN_BROWSER_INFERENCE=false` if you need to force backend mode.
+- The viewer defaults to client-side inference with `onnxruntime-web` (CPU/WASM first). Set `window.__ENV__.IN_BROWSER_INFERENCE=false` if you need to force backend mode.
 - To try WebGPU (stretch goal), set `window.__ENV__.ENABLE_WEBGPU=true`. It will fall back to WASM if WebGPU init fails.
 - Model URL defaults to `model/best.onnx` (fp32). Override with `window.__ENV__.MODEL_FP32_URL`.  
   Optional int8 is disabled by default; enable via `window.__ENV__.ENABLE_INT8=true` and/or set `window.__ENV__.MODEL_INT8_URL`. Use `window.__ENV__.PREFER_INT8=true` to try int8 before fp32.
@@ -116,7 +117,7 @@ Practical impact:
 
 ## Cloudflare Pages (static deploy)
 
-- This repo is designed so `public/` is a self-contained static site (including `public/src/*` modules).
+- `public/` is a self-contained static site (including `public/src/*` modules).
 - Cloudflare management repo: add a `pages_projects` entry with `destination_dir = "public"` and `custom_domain = "cervical-screening.pythonaisolutions.com"`.
 - Remove any legacy DNS records for `cervical-screening` from `subdomain_records` (they conflict with the CNAME created by the Pages module).
 - Site repo workflow: `.github/workflows/deploy.yml` deploys `public/` via `wrangler pages deploy`.
@@ -132,13 +133,14 @@ Practical impact:
   - Writes `public/images/<id>.webp` (lossless), `public/cases/cric-<id>.json`, and `public/cases/cric-<id>-gt.geojson`.  
   - Updates `public/cases/dataset-samples.json`, which the UI uses to render the “Dataset samples (CRIC)” list in the sidebar.
 
-## Development Commands
+## Development Commands (Python/backend + static viewer)
 
 ```bash
-pixi run dev          # Start development server
-pixi run start        # Start production server
-pixi run test         # Run tests
-pixi run test-coverage # Run tests with coverage report
-pixi run lint         # Run code linting
-pixi run format       # Format code
+pixi run serve-static   # Serve public/ (preferred for the static viewer)
+pixi run dev            # Run the FastAPI app (optional backend)
+pixi run start          # Production FastAPI server
+pixi run test           # Backend tests
+pixi run test-coverage  # Backend test coverage
+pixi run lint           # Ruff lint
+pixi run format         # Ruff format
 ```
