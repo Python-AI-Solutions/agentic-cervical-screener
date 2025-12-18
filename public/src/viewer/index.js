@@ -1701,9 +1701,9 @@ function setupResponsiveFeatures() {
   // Add resize listener for canvas
   window.addEventListener('resize', debouncedResize);
 
-  // CRITICAL: Detect CSS breakpoint changes (mobile ↔ desktop) using media query
-  // This is MORE RELIABLE than ResizeObserver for layout breakpoint detection
-  const mobileBreakpoint = window.matchMedia('(max-width: 1024px)');
+  // Detect the sidebar/layout breakpoint (mobile overlay ↔ desktop docked) using a media query.
+  // Keep this aligned with `public/index.html` (currently 560px).
+  const mobileBreakpoint = window.matchMedia('(max-width: 560px)');
   let wasMobile = mobileBreakpoint.matches;
 
   const handleBreakpointChange = (e) => {

@@ -1290,72 +1290,102 @@
 
     initDatasetSamples();
 
-    // Sidebar + workspace switching
-    function isMobileSidebarMode() {
-      return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 560px)').matches;
-    }
+	    // Sidebar + workspace switching
+	    function isMobileSidebarMode() {
+	      return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 560px)').matches;
+	    }
 
-    function applySidebarState(visible) {
-      const sidebar = document.getElementById('sidebar');
-      const mobileOverlay = document.getElementById('mobileOverlay');
-      const viewContainer = document.getElementById('viewContainer');
-      const mobile = isMobileSidebarMode();
+	    // Keep separate sidebar visibility state per layout mode so breakpoint changes
+	    // (including browser zoom causing CSS pixel changes) don't permanently alter
+	    // the user's desktop preference.
+	    let desktopSidebarVisible = true;
+	    let mobileSidebarVisible = false;
 
-      if (!sidebar) return;
+	    function getSidebarVisibleForMode(mobile) {
+	      return mobile ? mobileSidebarVisible : desktopSidebarVisible;
+	    }
 
-      sidebarVisible = visible;
+	    function getSidebarVisibleForCurrentMode() {
+	      return getSidebarVisibleForMode(isMobileSidebarMode());
+	    }
 
-      if (typeof window !== 'undefined') {
-        window.__sidebarStates = window.__sidebarStates || [];
-        window.__sidebarStates.push({ visible, mobile, ts: Date.now() });
-      }
+	    function applySidebarState(visible, { mobileOverride } = {}) {
+	      const sidebar = document.getElementById('sidebar');
+	      const mobileOverlay = document.getElementById('mobileOverlay');
+	      const viewContainer = document.getElementById('viewContainer');
+	      const mobile = typeof mobileOverride === 'boolean' ? mobileOverride : isMobileSidebarMode();
 
-      if (mobile) {
-        sidebar.classList.toggle('mobile-visible', visible);
-        if (mobileOverlay) mobileOverlay.classList.toggle('visible', visible);
-        document.body.style.overflow = visible ? 'hidden' : '';
-      } else {
-        sidebar.classList.remove('mobile-visible');
-        if (mobileOverlay) mobileOverlay.classList.remove('visible');
-        if (viewContainer) {
-          viewContainer.classList.toggle('sidebar-expanded', visible);
-          viewContainer.classList.toggle('sidebar-collapsed', !visible);
-        }
-        document.body.style.overflow = '';
-      }
-      // Always apply collapsed class so visibility matches state in all layouts
-      sidebar.classList.toggle('collapsed', !visible);
-    }
+	      if (!sidebar) return;
 
-    function toggleSidebar() {
-      applySidebarState(!sidebarVisible);
-    }
+	      if (mobile) {
+	        mobileSidebarVisible = visible;
+	      } else {
+	        desktopSidebarVisible = visible;
+	      }
 
-    function closeSidebar() {
-      // Hide on mobile; on desktop, respect current state.
-      applySidebarState(isMobileSidebarMode() ? false : sidebarVisible);
-    }
+	      if (typeof window !== 'undefined') {
+	        window.__sidebarStates = window.__sidebarStates || [];
+	        window.__sidebarStates.push({
+	          visible,
+	          mobile,
+	          desktopSidebarVisible,
+	          mobileSidebarVisible,
+	          ts: Date.now()
+	        });
+	      }
 
-    function hideSidebar() {
-      if (isMobileSidebarMode()) {
-        closeSidebar();
-      }
-    }
+	      if (mobile) {
+	        sidebar.classList.toggle('mobile-visible', visible);
+	        if (mobileOverlay) mobileOverlay.classList.toggle('visible', visible);
+	        document.body.style.overflow = visible ? 'hidden' : '';
+	        // Mobile sidebar hides via transform; keep it in the DOM so it can animate.
+	        sidebar.classList.remove('collapsed');
+	      } else {
+	        sidebar.classList.remove('mobile-visible');
+	        if (mobileOverlay) mobileOverlay.classList.remove('visible');
+	        if (viewContainer) {
+	          viewContainer.classList.toggle('sidebar-expanded', visible);
+	          viewContainer.classList.toggle('sidebar-collapsed', !visible);
+	        }
+	        document.body.style.overflow = '';
+	        sidebar.classList.toggle('collapsed', !visible);
+	      }
+	    }
 
-    const viewNames = {
-      cytology: 'Cytology workspace',
-      colposcopy: 'Colposcopy preview',
-      hpv: 'HPV automations',
-      ehr: 'EHR summaries',
-    };
-    let sidebarVisible = true;
+	    function toggleSidebar() {
+	      const mobile = isMobileSidebarMode();
+	      applySidebarState(!getSidebarVisibleForMode(mobile), { mobileOverride: mobile });
+	    }
 
-    const sidebarTitles = {
-      cytology: 'Cytology',
-      colposcopy: 'Colposcopy',
-      hpv: 'HPV',
-      ehr: 'EHR',
-    };
+	    function closeSidebar() {
+	      // Hide on mobile; on desktop, keep current preference.
+	      const mobile = isMobileSidebarMode();
+	      if (mobile) {
+	        applySidebarState(false, { mobileOverride: true });
+	      } else {
+	        applySidebarState(desktopSidebarVisible, { mobileOverride: false });
+	      }
+	    }
+
+	    function hideSidebar() {
+	      // Explicit hide action (sidebar ×). Apply to the current mode.
+	      const mobile = isMobileSidebarMode();
+	      applySidebarState(false, { mobileOverride: mobile });
+	    }
+
+	    const viewNames = {
+	      cytology: 'Cytology workspace',
+	      colposcopy: 'Colposcopy preview',
+	      hpv: 'HPV automations',
+	      ehr: 'EHR summaries',
+	    };
+
+		    const sidebarTitles = {
+		      cytology: 'Cytology',
+		      colposcopy: 'Colposcopy',
+	      hpv: 'HPV',
+	      ehr: 'EHR',
+	    };
 
     function setActiveView(view) {
       document.querySelectorAll('[data-view-panel]').forEach((panel) => {
@@ -1389,28 +1419,23 @@
       }
     }
 
-    // Initialize when DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
-      const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-      const mobileCloseBtn = document.getElementById('mobileCloseBtn');
-      const mobileOverlay = document.getElementById('mobileOverlay');
-      const viewSelect = document.getElementById('viewSelect');
-      const sidebar = document.getElementById('sidebar');
-      const viewContainer = document.getElementById('viewContainer');
-      let lastMobile = isMobileSidebarMode();
+	    // Initialize when DOM is ready
+	    document.addEventListener('DOMContentLoaded', function() {
+	      const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+	      const mobileCloseBtn = document.getElementById('mobileCloseBtn');
+	      const mobileOverlay = document.getElementById('mobileOverlay');
+	      const viewSelect = document.getElementById('viewSelect');
+	      const sidebar = document.getElementById('sidebar');
+	      const viewContainer = document.getElementById('viewContainer');
+	      let lastMobile = isMobileSidebarMode();
 
-      // Ensure sidebar is visible on desktop at load
-      if (sidebar && viewContainer && !isMobileSidebarMode()) {
-        viewContainer.classList.add('sidebar-expanded');
-        viewContainer.classList.remove('sidebar-collapsed');
-        sidebar.classList.remove('mobile-visible');
-        sidebar.style.display = 'block';
-      }
+	      // Ensure initial sidebar matches the current layout mode.
+	      applySidebarState(getSidebarVisibleForMode(lastMobile), { mobileOverride: lastMobile });
 
-      if (viewSelect) {
-        viewSelect.addEventListener('change', (event) => {
-          const target = event.target;
-          if (target && 'value' in target) {
+	      if (viewSelect) {
+	        viewSelect.addEventListener('change', (event) => {
+	          const target = event.target;
+	          if (target && 'value' in target) {
             setActiveView(target.value);
           }
         });
@@ -1442,13 +1467,13 @@
       }
 
 
-      // Handle window resize
-      window.addEventListener('resize', function() {
-        const nowMobile = isMobileSidebarMode();
-        // Reapply current state in the current layout mode
-        applySidebarState(sidebarVisible);
-        lastMobile = nowMobile;
-      });
+	      // Handle window resize
+	      window.addEventListener('resize', function() {
+	        const nowMobile = isMobileSidebarMode();
+	        // Reapply state for the current layout mode (do not copy state across modes).
+	        applySidebarState(getSidebarVisibleForMode(nowMobile), { mobileOverride: nowMobile });
+	        lastMobile = nowMobile;
+	      });
 
       // Handle escape key
       document.addEventListener('keydown', function(e) {
