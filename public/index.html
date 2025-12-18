@@ -265,6 +265,12 @@
       grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
       grid-template-areas: "sidebar content";
     }
+    .view-container.sidebar-collapsed {
+      grid-template-columns: 0 minmax(0, 1fr);
+    }
+    .view-container.sidebar-expanded {
+      grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+    }
 
     .workspace-area {
       grid-area: content;
@@ -291,6 +297,10 @@
       overflow-y: auto;
       background: var(--bg-sidebar);
       transition: transform 0.3s ease;
+    }
+    #sidebar.collapsed {
+      display: none !important;
+      visibility: hidden !important;
     }
 
     .sidebar-actions {
@@ -379,6 +389,13 @@
 
     #sidebar.mobile-visible {
       transform: translateX(0);
+    }
+    @media (min-width: 561px) {
+      /* Always show sidebar on desktop */
+      #sidebar {
+        transform: translateX(0);
+        display: block;
+      }
     }
 
     /* Viewer Styles */
@@ -1049,7 +1066,7 @@
     </div>
   </header>
   <div class="mobile-overlay" id="mobileOverlay"></div>
-  <div class="view-container">
+  <div class="view-container sidebar-expanded" id="viewContainer">
     <aside id="sidebar">
       <div class="sidebar-header">
         <h3 id="sidebarTitle">Cytology</h3>
@@ -1278,32 +1295,45 @@
       return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 560px)').matches;
     }
 
-    function toggleSidebar() {
+    function applySidebarState(visible) {
       const sidebar = document.getElementById('sidebar');
       const mobileOverlay = document.getElementById('mobileOverlay');
+      const viewContainer = document.getElementById('viewContainer');
+      const mobile = isMobileSidebarMode();
 
-      if (sidebar) {
-        if (!isMobileSidebarMode()) {
-          // On desktop, always ensure sidebar is visible.
-          sidebar.classList.remove('mobile-visible');
-          sidebar.style.display = 'block';
-          return;
-        }
+      if (!sidebar) return;
 
-        const willShow = !sidebar.classList.contains('mobile-visible');
-        sidebar.classList.toggle('mobile-visible', willShow);
-        if (mobileOverlay) mobileOverlay.classList.toggle('visible', willShow);
-        document.body.style.overflow = willShow ? 'hidden' : '';
+      sidebarVisible = visible;
+
+      if (typeof window !== 'undefined') {
+        window.__sidebarStates = window.__sidebarStates || [];
+        window.__sidebarStates.push({ visible, mobile, ts: Date.now() });
       }
+
+      if (mobile) {
+        sidebar.classList.toggle('mobile-visible', visible);
+        if (mobileOverlay) mobileOverlay.classList.toggle('visible', visible);
+        document.body.style.overflow = visible ? 'hidden' : '';
+      } else {
+        sidebar.classList.remove('mobile-visible');
+        if (mobileOverlay) mobileOverlay.classList.remove('visible');
+        if (viewContainer) {
+          viewContainer.classList.toggle('sidebar-expanded', visible);
+          viewContainer.classList.toggle('sidebar-collapsed', !visible);
+        }
+        document.body.style.overflow = '';
+      }
+      // Always apply collapsed class so visibility matches state in all layouts
+      sidebar.classList.toggle('collapsed', !visible);
+    }
+
+    function toggleSidebar() {
+      applySidebarState(!sidebarVisible);
     }
 
     function closeSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const mobileOverlay = document.getElementById('mobileOverlay');
-
-      if (sidebar) sidebar.classList.remove('mobile-visible');
-      if (mobileOverlay) mobileOverlay.classList.remove('visible');
-      document.body.style.overflow = '';
+      // Hide on mobile; on desktop, respect current state.
+      applySidebarState(isMobileSidebarMode() ? false : sidebarVisible);
     }
 
     function hideSidebar() {
@@ -1318,6 +1348,7 @@
       hpv: 'HPV automations',
       ehr: 'EHR summaries',
     };
+    let sidebarVisible = true;
 
     const sidebarTitles = {
       cytology: 'Cytology',
@@ -1364,6 +1395,17 @@
       const mobileCloseBtn = document.getElementById('mobileCloseBtn');
       const mobileOverlay = document.getElementById('mobileOverlay');
       const viewSelect = document.getElementById('viewSelect');
+      const sidebar = document.getElementById('sidebar');
+      const viewContainer = document.getElementById('viewContainer');
+      let lastMobile = isMobileSidebarMode();
+
+      // Ensure sidebar is visible on desktop at load
+      if (sidebar && viewContainer && !isMobileSidebarMode()) {
+        viewContainer.classList.add('sidebar-expanded');
+        viewContainer.classList.remove('sidebar-collapsed');
+        sidebar.classList.remove('mobile-visible');
+        sidebar.style.display = 'block';
+      }
 
       if (viewSelect) {
         viewSelect.addEventListener('change', (event) => {
@@ -1402,14 +1444,10 @@
 
       // Handle window resize
       window.addEventListener('resize', function() {
-        if (window.innerWidth > 560) {
-          closeSidebar();
-        }
-        const sidebar = document.getElementById('sidebar');
-        if (sidebar && !isMobileSidebarMode()) {
-          sidebar.classList.remove('mobile-visible');
-          sidebar.style.display = 'block';
-        }
+        const nowMobile = isMobileSidebarMode();
+        // Reapply current state in the current layout mode
+        applySidebarState(sidebarVisible);
+        lastMobile = nowMobile;
       });
 
       // Handle escape key

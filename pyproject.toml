@@ -188,8 +188,9 @@ format = "ruff format ."
 lint = "ruff check src/ tests/"
 check-all = "pre-commit run --all-files"
 pre-commit-install = "pre-commit install"
-serve-static = "python -m scripts.serve_static --port 8000"
+serve-static = "python -m scripts.serve_static --port 8009"
 import-dataset-cases = "python -m scripts.import_dataset_cases"
+smoke-sidebar = "python -m scripts.smoke_sidebar --url http://localhost:8000/"
 
 [tool.pixi.dependencies]
 # Core runtime dependencies
