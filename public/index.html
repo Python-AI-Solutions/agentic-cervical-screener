@@ -9,14 +9,15 @@
   <title>Cervical AI Viewer</title>
   <link rel="stylesheet" href="niivue/niivue.css"/>
   <style>
-    :root {
-      --header-height: 56px;
-      --sidebar-width: 280px;
-      --sidebar-width-mobile: 100vw;
-      --border-color: #374151;
-      --bg-primary: #0f172a;
-      --bg-secondary: #111827;
-      --bg-sidebar: #1f2937;
+	    :root {
+	      --header-height: 56px;
+	      --sidebar-width: 280px;
+	      --sidebar-width-mobile: 100vw;
+	      --sidebar-overlay: 0; /* 1 when sidebar is an overlay drawer (mobile) */
+	      --border-color: #374151;
+	      --bg-primary: #0f172a;
+	      --bg-secondary: #111827;
+	      --bg-sidebar: #1f2937;
       --bg-button: #374151;
       --bg-button-hover: #4b5563;
       --bg-button-active: #1f2937;
@@ -769,15 +770,25 @@
       }
     }
 
-    /* Responsive layout */
-    @media (max-width: 560px) {
-      .view-container {
-        grid-template-columns: 1fr;
-        grid-template-areas: "content";
-      }
+	    /* Responsive layout */
+	    @media (max-width: 560px) {
+	      :root {
+	        --sidebar-overlay: 1;
+	      }
 
-      #sidebar {
-        position: fixed;
+	      .view-container,
+	      .view-container.sidebar-collapsed,
+	      .view-container.sidebar-expanded {
+	        grid-template-columns: 1fr;
+	        grid-template-areas: "content";
+	      }
+
+	      .view-container {
+	        /* see overrides above */
+	      }
+
+	      #sidebar {
+	        position: fixed;
         top: var(--header-height);
         left: 0;
         bottom: 0;
@@ -1292,7 +1303,11 @@
 
 	    // Sidebar + workspace switching
 	    function isMobileSidebarMode() {
-	      return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 560px)').matches;
+	      if (typeof window === 'undefined' || typeof window.getComputedStyle !== 'function') return false;
+	      const root = document.documentElement;
+	      const overlay = window.getComputedStyle(root).getPropertyValue('--sidebar-overlay').trim();
+	      if (overlay) return overlay === '1';
+	      return typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 560px)').matches;
 	    }
 
 	    // Keep separate sidebar visibility state per layout mode so breakpoint changes
@@ -1340,6 +1355,9 @@
 	        document.body.style.overflow = visible ? 'hidden' : '';
 	        // Mobile sidebar hides via transform; keep it in the DOM so it can animate.
 	        sidebar.classList.remove('collapsed');
+	        if (viewContainer) {
+	          viewContainer.classList.remove('sidebar-expanded', 'sidebar-collapsed');
+	        }
 	      } else {
 	        sidebar.classList.remove('mobile-visible');
 	        if (mobileOverlay) mobileOverlay.classList.remove('visible');
@@ -1484,6 +1502,6 @@
     });
     console.log('API_BASE:', window.__ENV__.API_BASE);
   </script>
-  <script type="module" src="src/viewer/index.js?v=13"></script>
-</body>
-</html>
+	  <script type="module" src="src/viewer/index.js?v=14"></script>
+	</body>
+	</html>
