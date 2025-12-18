@@ -86,7 +86,54 @@ const CERVICAL_LABELS = [
   'SCC'
 ];
 
-function setStatus(s){ statusEl.textContent=s; }
+let toastTimer = null;
+let lastToastMessage = null;
+
+function shouldShowToast(message) {
+  if (!message) return false;
+  const normalized = String(message).trim().toLowerCase();
+  if (!normalized) return false;
+
+  // Keep toasts focused on outcomes and errors so we don't spam during
+  // normal workflows (e.g. drag/drop instructions, drawing mode updates).
+  const toastRegexes = [
+    /classified/,
+    /no rois?/,
+    /cleared .*rois?/,
+    /downloaded successfully/,
+    /download failed/,
+    /no image loaded/,
+    /unsupported/,
+    /error/,
+    /failed/,
+  ];
+  return toastRegexes.some((re) => re.test(normalized));
+}
+
+function showToast(message) {
+  if (typeof document === 'undefined') return;
+  if (document.body?.dataset?.activeView && document.body.dataset.activeView !== 'cytology') return;
+  const toastEl = document.getElementById('toast');
+  if (!toastEl) return;
+
+  const text = String(message);
+  if (text === lastToastMessage) return;
+  lastToastMessage = text;
+
+  toastEl.textContent = text;
+  toastEl.classList.toggle('error', /error|failed/i.test(text));
+  toastEl.hidden = false;
+
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toastEl.hidden = true;
+  }, 2500);
+}
+
+function setStatus(s){
+  if (statusEl) statusEl.textContent = s;
+  if (shouldShowToast(s)) showToast(s);
+}
 function showSpinner(v){
   if (spinnerEl) {
     spinnerEl.hidden = !v;

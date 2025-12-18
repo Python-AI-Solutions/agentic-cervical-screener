@@ -37,6 +37,10 @@
       box-sizing: border-box;
     }
 
+    [hidden] {
+      display: none !important;
+    }
+
     body {
       margin: 0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
@@ -52,54 +56,147 @@
       left: 0;
       right: 0;
       height: var(--header-height);
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-sm);
-      padding: 0 var(--spacing-md);
       background: var(--bg-primary);
       color: var(--text-primary);
       z-index: 1000;
       box-shadow: var(--shadow);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     }
 
-    .header-content {
-      display: flex;
+    .header-inner {
+      height: 100%;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 var(--spacing-md);
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
       align-items: center;
-      gap: var(--spacing-sm);
-      flex: 1;
-      min-width: 0; /* Allow flex items to shrink */
-    }
-
-    .header-title {
-      font-weight: 600;
-      font-size: 1.1rem;
-      white-space: nowrap;
-      margin-right: var(--spacing-sm);
-    }
-
-    .header-buttons {
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-sm);
-      flex-wrap: wrap;
+      gap: var(--spacing-md);
       min-width: 0;
-      margin-left: var(--spacing-md);
     }
 
-    .sidebar-btn {
-      order: 1;
-    }
-
-    .hidden-button {
-      order: 2;
-    }
-
-    .header-status {
+    .header-left {
       display: flex;
       align-items: center;
       gap: var(--spacing-sm);
-      margin-left: auto;
-      flex-shrink: 0;
+      min-width: 0;
+    }
+
+    .header-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-sm);
+      min-width: 0;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .header-actions::-webkit-scrollbar {
+      display: none;
+    }
+
+    .header-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      min-width: 0;
+    }
+
+    .header-action .label {
+      white-space: nowrap;
+    }
+
+    .header-action .icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-action svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .header-action:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .header-action:active {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(0);
+    }
+
+    .header-meta {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: var(--spacing-sm);
+      min-width: 0;
+    }
+
+    .view-selector {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--text-muted);
+    }
+
+    .view-selector label {
+      white-space: nowrap;
+    }
+
+    .view-selector select {
+      min-height: 44px;
+      padding: 0 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--border-radius);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      cursor: pointer;
+      width: 100%;
+      min-width: 0;
+      max-width: 220px;
+    }
+
+    .view-selector select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .disclaimer {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      white-space: nowrap;
     }
 
     /* Button Styles */
@@ -157,16 +254,32 @@
       color: var(--text-muted);
     }
 
-    /* Main Layout */
-    main {
+    /* View Layout */
+    .view-container {
       position: absolute;
       top: var(--header-height);
       left: 0;
       right: 0;
       bottom: 0;
       display: grid;
-      grid-template-columns: var(--sidebar-width) 1fr;
-      grid-template-areas: "sidebar viewer";
+      grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+      grid-template-areas: "sidebar content";
+    }
+
+    .workspace-area {
+      grid-area: content;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg-secondary);
+    }
+
+    .view-panel {
+      position: absolute;
+      inset: 0;
+    }
+
+    .view-panel[hidden] {
+      display: none;
     }
 
     /* Sidebar Styles */
@@ -180,6 +293,86 @@
       transition: transform 0.3s ease;
     }
 
+    .sidebar-actions {
+      display: grid;
+      gap: var(--spacing-sm);
+      margin: var(--spacing-sm) 0 var(--spacing-lg) 0;
+    }
+
+    .sidebar-actions h4 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .sidebar-action {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: var(--spacing-sm);
+    }
+
+    .sidebar-action svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .status-banner {
+      display: block;
+      padding: 8px 10px;
+      border-radius: var(--border-radius);
+      border: 1px solid var(--border-color);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      line-height: 1.35;
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    .toast {
+      position: fixed;
+      left: calc(var(--spacing-md) + env(safe-area-inset-left, 0px));
+      right: calc(var(--spacing-md) + env(safe-area-inset-right, 0px));
+      bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px));
+      z-index: 1100;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(17, 24, 39, 0.95);
+      color: var(--text-primary);
+      box-shadow: var(--shadow);
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+
+    .toast.error {
+      border-color: rgba(239, 68, 68, 0.7);
+      background: rgba(127, 29, 29, 0.92);
+    }
+
+    .sidebar-block {
+      margin-top: var(--spacing-lg);
+    }
+
+    .sidebar-block h4 {
+      margin: 0 0 var(--spacing-sm) 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .sidebar-list {
+      margin: 0;
+      padding-left: var(--spacing-lg);
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+
     #sidebar.mobile-hidden {
       transform: translateX(-100%);
     }
@@ -190,13 +383,14 @@
 
     /* Viewer Styles */
     #viewer {
-      grid-area: viewer;
       position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
       background: var(--bg-secondary);
       overflow: hidden;
+      width: 100%;
+      height: 100%;
     }
 
     #glCanvas {
@@ -225,6 +419,40 @@
       width: 100%;
       height: 100%;
       display: block;
+    }
+
+    /* Placeholder panels (non-cytology workspaces) */
+    .placeholder-panel {
+      padding: var(--spacing-xl);
+      overflow: auto;
+      background: var(--bg-secondary);
+    }
+
+    .placeholder-grid {
+      display: grid;
+      gap: var(--spacing-lg);
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .placeholder-card {
+      background: var(--bg-sidebar);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: var(--spacing-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .placeholder-card h3 {
+      margin: 0 0 var(--spacing-sm) 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .placeholder-card p {
+      margin: 0;
+      color: var(--text-secondary);
+      line-height: 1.5;
     }
 
     /* Utility Classes */
@@ -356,7 +584,6 @@
       border-top-color: #fff;
       border-radius: 50%;
       animation: spin .8s linear infinite;
-      margin-left: var(--spacing-sm);
     }
 
     .spinner[hidden] {
@@ -367,16 +594,15 @@
       to { transform: rotate(360deg) }
     }
 
-    /* Mobile Menu Button */
+    /* Sidebar Toggle Button */
     .mobile-menu-btn {
-      display: none;
+      display: flex;
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.2);
       color: var(--text-primary);
       font-size: 1.5rem;
       cursor: pointer;
       padding: var(--spacing-sm);
-      margin-right: var(--spacing-sm);
       border-radius: var(--border-radius);
       min-width: 44px;
       min-height: 44px;
@@ -429,7 +655,7 @@
     }
 
     .mobile-close-btn {
-      display: none;
+      display: block;
       background: none;
       border: none;
       font-size: 1.5rem;
@@ -485,14 +711,14 @@
     }
 
     /* Hide mobile layers section on desktop */
-    @media (min-width: 1025px) {
+    @media (min-width: 769px) {
       .mobile-layers-section {
         display: none;
       }
     }
 
     /* Style mobile layers to look good in the mobile menu */
-    @media (max-width: 1024px) {
+    @media (max-width: 768px) {
       .mobile-layers-section .layer {
         display: flex;
         align-items: center;
@@ -526,65 +752,11 @@
       }
     }
 
-    /* Responsive adjustments for sidebar elements */
-    @media (max-width: 1024px) {
-      .mobile-close-btn {
-        display: block;
-      }
-    }
-
-    /* Desktop - hide mobile menu button and show header buttons */
-    @media (min-width: 1025px) {
-      .mobile-menu-btn {
-        display: none !important;
-      }
-
-      .sidebar-btn {
-        display: none !important;
-      }
-
-      .header-buttons {
-        display: flex !important;
-        position: static !important;
-        transform: none !important;
-        background: transparent !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-        max-height: none !important;
-        overflow: visible !important;
-        grid-template-columns: none !important;
-        gap: var(--spacing-sm);
-        margin-left: var(--spacing-md);
-      }
-
-      .header-buttons .hidden-button {
-        visibility: hidden !important;
-        opacity: 0 !important;
-        width: 0 !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        border: none !important;
-        min-width: 0 !important;
-      }
-
-      .header-buttons.expanded .hidden-button {
-        visibility: visible !important;
-        opacity: 1 !important;
-        width: auto !important;
-        overflow: visible !important;
-        margin: 0 !important;
-        padding: var(--spacing-sm) var(--spacing-md) !important;
-        border: 1px solid var(--border-color) !important;
-        min-width: var(--button-height) !important;
-      }
-    }
-
-    /* Responsive Design */
-    @media (max-width: 1024px) {
-      main {
+    /* Responsive layout */
+    @media (max-width: 560px) {
+      .view-container {
         grid-template-columns: 1fr;
-        grid-template-areas: "viewer";
+        grid-template-areas: "content";
       }
 
       #sidebar {
@@ -592,258 +764,58 @@
         top: var(--header-height);
         left: 0;
         bottom: 0;
-        width: var(--sidebar-width);
+        width: var(--sidebar-width-mobile);
         z-index: 1001;
         transform: translateX(-100%);
         box-shadow: var(--shadow);
+        padding: var(--spacing-sm);
       }
 
       #sidebar.mobile-visible {
         transform: translateX(0);
       }
 
-      .mobile-menu-btn {
-        display: flex;
-      }
-
-      .header-buttons {
-        display: none;
-        position: fixed;
-        top: var(--header-height);
-        left: 0;
-        right: 0;
-        background: var(--bg-primary);
-        padding: var(--spacing-md);
-        box-shadow: var(--shadow);
-        z-index: 1001;
-        max-height: 80vh;
-        overflow-y: auto;
-        transform: translateY(-100%);
-        transition: transform 0.3s ease;
-        grid-template-columns: 1fr 1fr;
-        gap: var(--spacing-sm);
-        margin-left: 0;
-      }
-
-      .header-buttons.mobile-visible {
-        display: grid !important;
-        transform: translateY(0);
-      }
-
-      /* Make sidebar button span full width */
-      .header-buttons.mobile-visible .sidebar-btn {
-        grid-column: 1 / -1;
-        background: #1e40af !important;
-        border-color: #1e40af !important;
-      }
-
-      .header-buttons.mobile-visible button {
-        width: 100%;
-        justify-self: stretch;
-        font-size: 0.8rem;
-        padding: var(--spacing-sm);
-      }
-
-      /* Mobile button styles */
-      .header-buttons.mobile-visible .hidden-button {
-        display: block !important;
-        width: 100%;
-        margin-bottom: var(--spacing-xs);
-        font-size: 0.8rem;
-        padding: var(--spacing-sm);
-        opacity: 1;
-        transform: none;
-        visibility: visible !important;
-        overflow: visible !important;
-        min-width: auto !important;
-      }
-
-      .sidebar-btn {
-        background: #1e40af !important;
-        border-color: #1e40af !important;
-        color: transparent;
-      }
-
-
-    .sidebar-btn:hover {
-      background: #1d4ed8 !important;
-      border-color: #1d4ed8 !important;
-    }
-
-    /* Hidden Button Styles */
-    .hidden-button {
-      visibility: hidden;
-      opacity: 0;
-      transform: translateX(-10px);
-      transition: all 0.3s ease;
-      width: 0;
-      overflow: hidden;
-      margin: 0;
-      padding: 0;
-      border: none;
-      min-width: 0;
-    }
-
-    .hidden-button.show {
-      visibility: visible;
-      opacity: 1;
-      transform: translateX(0);
-      width: auto;
-      overflow: visible;
-      margin: 0;
-      padding: var(--spacing-sm) var(--spacing-md);
-      border: 1px solid var(--border-color);
-      min-width: var(--button-height);
-    }
-
-    .header-buttons.expanded .hidden-button {
-      visibility: visible;
-      opacity: 1;
-      transform: translateX(0);
-      width: auto;
-      overflow: visible;
-      margin: 0;
-      padding: var(--spacing-sm) var(--spacing-md);
-      border: 1px solid var(--border-color);
-      min-width: var(--button-height);
-    }
-
-    /* Always visible header buttons */
-    #headerButtons button {
-      background: var(--bg-button);
-      color: var(--text-primary);
-      border: 1px solid var(--border-color);
-      padding: var(--spacing-sm) var(--spacing-md);
-      border-radius: var(--border-radius);
-      cursor: pointer;
-      font-size: 0.9rem;
-      margin-left: var(--spacing-xs);
-      transition: all 0.2s ease;
-    }
-
-    #headerButtons button:hover {
-      background: var(--bg-button-hover);
-      border-color: var(--border-hover);
-    }
-
-    #headerButtons button:active {
-      transform: translateY(1px);
-    }
-
-    .sidebar-btn {
-      background: #1e40af !important;
-      border-color: #1e40af !important;
-      color: white !important;
-    }
-
-    .sidebar-btn:hover {
-      background: #1d4ed8 !important;
-      border-color: #1d4ed8 !important;
-    }
-
-    .sidebar-btn.open {
-      background: #1d4ed8 !important;
-      border-color: #1d4ed8 !important;
-    }
-
-
-      /* Mobile header layout fixes */
-      .header-content {
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-      }
-
-      .header-title {
-        font-size: 0.9rem;
-        margin-right: var(--spacing-xs);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .header-status {
-        flex-shrink: 0;
-        min-width: 0;
-      }
-
-      .header-status .muted {
-        display: none; /* Hide "prototype" text on mobile */
-      }
-
-      .pill {
-        font-size: 0.7rem;
-        padding: 2px var(--spacing-xs);
+      .mobile-close-btn {
+        display: block;
       }
     }
 
     @media (max-width: 768px) {
       :root {
-        --header-height: 48px;
         --spacing-sm: 6px;
         --spacing-md: 8px;
         --spacing-lg: 12px;
       }
 
       header {
+        padding: 0;
+      }
+
+      .header-inner {
         padding: 0 var(--spacing-sm);
-        gap: var(--spacing-xs);
-        flex-wrap: nowrap;
-        overflow: hidden;
+        gap: var(--spacing-sm);
       }
 
-      .header-content {
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
+      .header-action {
+        min-width: 44px;
+        padding: 0;
       }
 
-      .header-title {
-        font-size: 0.85rem;
-        margin-right: var(--spacing-xs);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 120px;
+      .header-action .label {
+        display: none;
       }
 
-      .header-status {
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-xs);
-        min-width: 0;
+      .view-selector label {
+        display: none;
       }
 
-      .header-status .muted {
-        display: none; /* Hide "prototype" text on mobile */
-      }
-
-      .pill {
-        font-size: 0.65rem;
-        padding: 2px 4px;
-        white-space: nowrap;
-      }
-
-      .spinner {
-        width: 12px;
-        height: 12px;
-        margin-left: var(--spacing-xs);
+      .view-selector select {
+        max-width: 150px;
       }
 
       button, input[type="button"], input[type="submit"], input[type="text"], input[type="url"] {
         font-size: 0.8rem;
         padding: var(--spacing-xs) var(--spacing-sm);
-      }
-
-      #sidebar {
-        width: 100vw;
-        padding: var(--spacing-sm);
-      }
-
-      #glCanvas {
-        width: 100vw;
-        height: calc(100vh - var(--header-height));
       }
 
       .row {
@@ -858,18 +830,8 @@
     }
 
     @media (max-width: 480px) {
-      .header-content {
+      .header-inner {
         gap: var(--spacing-xs);
-        min-width: 0;
-      }
-
-      .header-title {
-        font-size: 0.8rem;
-        max-width: 100px;
-      }
-
-      .header-status {
-        gap: 2px;
       }
 
       .pill {
@@ -978,18 +940,13 @@
         --spacing-lg: 8px;
       }
 
-      header {
+      .header-inner {
         padding: 0 4px;
-        gap: 2px;
+        gap: var(--spacing-xs);
       }
 
       .header-title {
         font-size: 0.75rem;
-        max-width: 80px;
-      }
-
-      .header-status {
-        gap: 1px;
       }
 
       .pill {
@@ -1000,10 +957,6 @@
       .spinner {
         width: 8px;
         height: 8px;
-      }
-
-      .header-status .muted {
-        display: none; /* Always hide on very small screens */
       }
 
       button, input[type="button"], input[type="submit"] {
@@ -1071,59 +1024,191 @@
     }
   </style>
 </head>
-<body>
-  <header>
-    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">☰</button>
-    <div class="header-content">
-      <div class="header-title">Cervical AI Viewer</div>
-      <div class="header-buttons" id="headerButtons">
-        <button id="btnClassify">Classify</button>
-        <button id="btnClearRois">Clear ROIs</button>
-        <button id="btnDownload">Download</button>
-        <button id="btnSidebar" class="sidebar-btn">Load Image</button>
-        <div class="mobile-layers-section">
-          <h4>Layers</h4>
-          <div id="mobileLayers"></div>
+<body data-active-view="cytology">
+  <header class="medical-header">
+    <div class="header-inner">
+      <div class="header-left">
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle sidebar">☰</button>
+      </div>
+
+      <div class="header-center">
+        <div class="view-selector">
+          <label for="viewSelect">Workspace</label>
+          <select id="viewSelect" aria-label="Workspace selector">
+            <option value="cytology">Cytology</option>
+            <option value="colposcopy">Colposcopy</option>
+            <option value="hpv">HPV</option>
+            <option value="ehr">EHR</option>
+          </select>
         </div>
       </div>
-    </div>
-    <div class="header-status">
-      <span class="pill" id="status">idle</span>
-      <span id="spinner" class="spinner" hidden aria-label="loading"></span>
-      <span class="muted">prototype – not for clinical use</span>
+
+      <div class="header-meta">
+        <span id="spinner" class="spinner" hidden aria-label="loading"></span>
+      </div>
     </div>
   </header>
   <div class="mobile-overlay" id="mobileOverlay"></div>
-  <main>
+  <div class="view-container">
     <aside id="sidebar">
       <div class="sidebar-header">
-        <h3>Controls</h3>
-        <button class="mobile-close-btn" id="mobileCloseBtn" aria-label="Close sidebar">×</button>
+        <h3 id="sidebarTitle">Cytology</h3>
+        <button class="mobile-close-btn" id="mobileCloseBtn" aria-label="Hide sidebar">×</button>
       </div>
-      <div class="layers-section">
-        <h4>Layers</h4>
-        <div id="layers"></div>
+
+      <div class="sidebar-section" data-sidebar-section="cytology">
+        <div id="status" class="status-banner" role="status" aria-live="polite">idle</div>
+
+        <div class="sidebar-actions">
+          <h4>Actions</h4>
+          <button id="btnClassify" class="sidebar-action" aria-label="Classify">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
+            <span>Classify</span>
+          </button>
+          <button id="btnClearRois" class="sidebar-action" aria-label="Clear ROIs">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 6l12 12" />
+              <path d="M6 18 18 6" />
+            </svg>
+            <span>Clear ROIs</span>
+          </button>
+          <button id="btnDownload" class="sidebar-action" aria-label="Download">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 5v14" />
+              <path d="m5 12 7 7 7-7" />
+              <path d="M5 19h14" />
+            </svg>
+            <span>Download</span>
+          </button>
+        </div>
+
+        <div class="layers-section">
+          <h4>Layers</h4>
+          <div id="layers"></div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--border-color); margin: var(--spacing-lg) 0;">
+
+        <div class="row">
+          <input id="imageFile" type="file" accept="image/*" style="display: none;"/>
+          <button id="btnLoadImage" style="width: 100%;">Load Image from Computer</button>
+        </div>
+
+        <div class="quick-load-section">
+          <div class="muted">Dataset samples (CRIC):</div>
+          <div id="datasetSamples" style="margin-top: var(--spacing-sm);"></div>
+        </div>
       </div>
-      <hr style="border: none; border-top: 1px solid var(--border-color); margin: var(--spacing-lg) 0;">
-      <div class="row">
-        <input id="imageFile" type="file" accept="image/*" style="display: none;"/>
-        <button id="btnLoadImage" style="width: 100%;">Load Image from Computer</button>
+
+      <div class="sidebar-section" data-sidebar-section="colposcopy" hidden>
+        <div class="sidebar-actions">
+          <h4>Session</h4>
+          <button class="sidebar-action" disabled>Start capture (soon)</button>
+          <button class="sidebar-action" disabled>Add finding (soon)</button>
+          <button class="sidebar-action" disabled>Export notes (soon)</button>
+        </div>
+        <div class="sidebar-block">
+          <h4>Checklist</h4>
+          <ul class="sidebar-list">
+            <li>Acetic acid (1–3 min) assessment</li>
+            <li>Lugol iodine assessment</li>
+            <li>Transformation zone visibility</li>
+            <li>Biopsy site documentation</li>
+          </ul>
+        </div>
       </div>
-      <div class="quick-load-section">
-        <div class="muted">Dataset samples (CRIC):</div>
-        <div id="datasetSamples" style="margin-top: var(--spacing-sm);"></div>
+
+      <div class="sidebar-section" data-sidebar-section="hpv" hidden>
+        <div class="sidebar-actions">
+          <h4>Inbox</h4>
+          <button class="sidebar-action" disabled>Import results (soon)</button>
+          <button class="sidebar-action" disabled>Apply triage rules (soon)</button>
+        </div>
+        <div class="sidebar-block">
+          <h4>Key Signals</h4>
+          <ul class="sidebar-list">
+            <li>HPV 16/18 positivity</li>
+            <li>Prior cytology history</li>
+            <li>Recommended recall interval</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="sidebar-section" data-sidebar-section="ehr" hidden>
+        <div class="sidebar-actions">
+          <h4>Exports</h4>
+          <button class="sidebar-action" disabled>Generate summary (soon)</button>
+          <button class="sidebar-action" disabled>Download packet (soon)</button>
+        </div>
+        <div class="sidebar-block">
+          <h4>Artifacts</h4>
+          <ul class="sidebar-list">
+            <li>Findings + evidence links</li>
+            <li>Billing / coding suggestions</li>
+            <li>Audit trail + timestamps</li>
+          </ul>
+        </div>
       </div>
     </aside>
-    <section id="viewer">
-      <div id="dropZone" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text-muted); pointer-events: none; z-index: 5;">
-        <div style="font-size: 2rem; margin-bottom: var(--spacing-md);">📁</div>
-        <div>Drop image here or use the "Load Image from Computer" button</div>
-        <div style="font-size: 0.8rem; margin-top: var(--spacing-sm);">Supports PNG, JPG, JPEG, WebP formats</div>
+
+    <div class="workspace-area">
+      <div id="toast" class="toast" hidden aria-live="polite"></div>
+
+      <section class="view-panel" data-view-panel="cytology">
+        <section id="viewer">
+          <div id="dropZone" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text-muted); pointer-events: none; z-index: 5;">
+            <div style="font-size: 2rem; margin-bottom: var(--spacing-md);">📁</div>
+            <div>Drop image here or use the "Load Image from Computer" button</div>
+            <div style="font-size: 0.8rem; margin-top: var(--spacing-sm);">Supports PNG, JPG, JPEG, WebP formats</div>
+          </div>
+          <canvas id="glCanvas"></canvas>
+          <canvas id="overlayCanvas"></canvas>
+        </section>
+      </section>
+
+      <section class="view-panel placeholder-panel" data-view-panel="colposcopy" hidden>
+      <div class="placeholder-grid">
+        <article class="placeholder-card">
+          <h3>Live Colposcopy Workspace</h3>
+          <p>Stream high-resolution cervix imagery, annotate regions of interest, and synchronize findings with biopsy capture forms.</p>
+        </article>
+        <article class="placeholder-card">
+          <h3>Guided Checklists</h3>
+          <p>Step-by-step colposcopy checklists ensure Lugol/Aceto inspections are documented with deterministic evidence.</p>
+        </article>
       </div>
-      <canvas id="glCanvas"></canvas>
-      <canvas id="overlayCanvas"></canvas>
-    </section>
-  </main>
+      </section>
+
+      <section class="view-panel placeholder-panel" data-view-panel="hpv" hidden>
+      <div class="placeholder-grid">
+        <article class="placeholder-card">
+          <h3>HPV Lab Inbox</h3>
+          <p>Surface HPV genotyping results, reflex cytology orders, and recommended actions with evidence links.</p>
+        </article>
+        <article class="placeholder-card">
+          <h3>Triage Automations</h3>
+          <p>Configure rules that pair HPV outcomes with recall intervals, messaging, and escalations.</p>
+        </article>
+      </div>
+      </section>
+
+      <section class="view-panel placeholder-panel" data-view-panel="ehr" hidden>
+      <div class="placeholder-grid">
+        <article class="placeholder-card">
+          <h3>EHR Summaries</h3>
+          <p>Preview the documentation packets, orders, and billing codes generated from Cytology/HPV/Colposcopy work.</p>
+        </article>
+        <article class="placeholder-card">
+          <h3>Care Navigation</h3>
+          <p>Track referrals, patient notifications, and audit trails to keep regulatory evidence in sync.</p>
+        </article>
+      </div>
+      </section>
+    </div>
+  </div>
 
   <script src="niivue/niivue.js"></script>
   <script>
@@ -1188,18 +1273,9 @@
 
     initDatasetSamples();
 
-    // Mobile menu functionality
-    function toggleMobileMenu() {
-      const headerButtons = document.getElementById('headerButtons');
-      const mobileOverlay = document.getElementById('mobileOverlay');
-
-      if (headerButtons) {
-        headerButtons.classList.toggle('mobile-visible');
-        if (mobileOverlay) {
-          mobileOverlay.classList.toggle('visible');
-          document.body.style.overflow = headerButtons.classList.contains('mobile-visible') ? 'hidden' : '';
-        }
-      }
+    // Sidebar + workspace switching
+    function isMobileSidebarMode() {
+      return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 560px)').matches;
     }
 
     function toggleSidebar() {
@@ -1207,56 +1283,79 @@
       const mobileOverlay = document.getElementById('mobileOverlay');
 
       if (sidebar) {
-        sidebar.classList.toggle('mobile-visible');
-        if (mobileOverlay) {
-          mobileOverlay.classList.toggle('visible');
-          document.body.style.overflow = sidebar.classList.contains('mobile-visible') ? 'hidden' : '';
+        if (!isMobileSidebarMode()) {
+          // On desktop, always ensure sidebar is visible.
+          sidebar.classList.remove('mobile-visible');
+          sidebar.style.display = 'block';
+          return;
         }
+
+        const willShow = !sidebar.classList.contains('mobile-visible');
+        sidebar.classList.toggle('mobile-visible', willShow);
+        if (mobileOverlay) mobileOverlay.classList.toggle('visible', willShow);
+        document.body.style.overflow = willShow ? 'hidden' : '';
       }
     }
 
-    function toggleButtons() {
-      const headerButtons = document.getElementById('headerButtons');
-      const hiddenButtons = document.querySelectorAll('.hidden-button');
-
-      console.log('toggleButtons called', { headerButtons, hiddenButtonsCount: hiddenButtons.length });
-
-      if (headerButtons) {
-        headerButtons.classList.toggle('expanded');
-
-        console.log('Classes after toggle:', {
-          expanded: headerButtons.classList.contains('expanded')
-        });
-
-        // Check each hidden button
-        hiddenButtons.forEach((btn, index) => {
-          console.log(`Button ${index}:`, {
-            id: btn.id,
-            computedStyle: window.getComputedStyle(btn).visibility,
-            classList: Array.from(btn.classList)
-          });
-        });
-      }
-    }
-
-    function closeButtons() {
-      const headerButtons = document.getElementById('headerButtons');
-
-      if (headerButtons) {
-        headerButtons.classList.remove('expanded');
-      }
-    }
-
-    function closeAllPanels() {
-      const headerButtons = document.getElementById('headerButtons');
+    function closeSidebar() {
       const sidebar = document.getElementById('sidebar');
       const mobileOverlay = document.getElementById('mobileOverlay');
 
-      if (headerButtons) headerButtons.classList.remove('mobile-visible');
       if (sidebar) sidebar.classList.remove('mobile-visible');
       if (mobileOverlay) mobileOverlay.classList.remove('visible');
-      closeButtons();
       document.body.style.overflow = '';
+    }
+
+    function hideSidebar() {
+      if (isMobileSidebarMode()) {
+        closeSidebar();
+      }
+    }
+
+    const viewNames = {
+      cytology: 'Cytology workspace',
+      colposcopy: 'Colposcopy preview',
+      hpv: 'HPV automations',
+      ehr: 'EHR summaries',
+    };
+
+    const sidebarTitles = {
+      cytology: 'Cytology',
+      colposcopy: 'Colposcopy',
+      hpv: 'HPV',
+      ehr: 'EHR',
+    };
+
+    function setActiveView(view) {
+      document.querySelectorAll('[data-view-panel]').forEach((panel) => {
+        panel.hidden = panel.getAttribute('data-view-panel') !== view;
+      });
+
+      document.body.dataset.activeView = view;
+
+      document.querySelectorAll('[data-sidebar-section]').forEach((section) => {
+        section.hidden = section.getAttribute('data-sidebar-section') !== view;
+      });
+
+      const toastEl = document.getElementById('toast');
+      if (toastEl) toastEl.hidden = true;
+
+      const viewLabelEl = document.getElementById('activeViewLabel');
+      if (viewLabelEl) {
+        viewLabelEl.textContent = viewNames[view] || 'Workspace';
+      }
+
+      const sidebarTitleEl = document.getElementById('sidebarTitle');
+      if (sidebarTitleEl) {
+        sidebarTitleEl.textContent = sidebarTitles[view] || 'Workspace';
+      }
+
+      closeSidebar();
+
+      // Force a resize when returning to cytology so canvases re-measure correctly.
+      if (view === 'cytology') {
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+      }
     }
 
     // Initialize when DOM is ready
@@ -1264,74 +1363,64 @@
       const mobileMenuBtn = document.getElementById('mobileMenuBtn');
       const mobileCloseBtn = document.getElementById('mobileCloseBtn');
       const mobileOverlay = document.getElementById('mobileOverlay');
-      const btnSidebar = document.getElementById('btnSidebar');
+      const viewSelect = document.getElementById('viewSelect');
+
+      if (viewSelect) {
+        viewSelect.addEventListener('change', (event) => {
+          const target = event.target;
+          if (target && 'value' in target) {
+            setActiveView(target.value);
+          }
+        });
+        setActiveView(viewSelect.value || 'cytology');
+      } else {
+        setActiveView('cytology');
+      }
 
       if (mobileMenuBtn) {
         mobileMenuBtn.addEventListener('click', function(e) {
           e.preventDefault();
-          toggleMobileMenu();
+          e.stopPropagation();
+          toggleSidebar();
         });
       }
 
       if (mobileCloseBtn) {
         mobileCloseBtn.addEventListener('click', function(e) {
           e.preventDefault();
-          closeAllPanels();
-        });
-      }
-
-      if (btnSidebar) {
-        btnSidebar.addEventListener('click', function(e) {
-          e.preventDefault();
-          const headerButtons = document.getElementById('headerButtons');
-          const isMobile = window.innerWidth <= 1024;
-
-          if (isMobile) {
-            // On mobile, hide the buttons menu and show the sidebar
-            if (headerButtons) headerButtons.classList.remove('mobile-visible');
-            toggleSidebar();
-          } else {
-            // On desktop, this shouldn't be visible, but just in case
-            toggleSidebar();
-          }
+          hideSidebar();
         });
       }
 
       if (mobileOverlay) {
         mobileOverlay.addEventListener('click', function(e) {
           e.preventDefault();
-          closeAllPanels();
+          closeSidebar();
         });
       }
 
 
       // Handle window resize
       window.addEventListener('resize', function() {
-        if (window.innerWidth > 1024) {
-          closeAllPanels();
+        if (window.innerWidth > 560) {
+          closeSidebar();
+        }
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar && !isMobileSidebarMode()) {
+          sidebar.classList.remove('mobile-visible');
+          sidebar.style.display = 'block';
         }
       });
 
       // Handle escape key
       document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-          closeAllPanels();
-        }
-      });
-
-      // Close buttons when clicking outside
-      document.addEventListener('click', function(e) {
-        const headerButtons = document.getElementById('headerButtons');
-
-        if (headerButtons &&
-            !headerButtons.contains(e.target) &&
-            headerButtons.classList.contains('expanded')) {
-          closeButtons();
+          closeSidebar();
         }
       });
     });
     console.log('API_BASE:', window.__ENV__.API_BASE);
   </script>
-  <script type="module" src="src/viewer/index.js?v=9"></script>
+  <script type="module" src="src/viewer/index.js?v=13"></script>
 </body>
 </html>
