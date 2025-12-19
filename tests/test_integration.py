@@ -3,8 +3,8 @@ Integration tests using Playwright to test the full application stack.
 These tests start the actual server and test real browser interactions.
 """
 
-import os
 import json
+import os
 import socket
 import subprocess
 import threading
@@ -299,8 +299,8 @@ class TestCaseDataIntegration:
     def test_case_endpoints_integration(self, server_process):
         """Test case data endpoints return real data"""
         import json
-        from pathlib import Path
         import subprocess
+        from pathlib import Path
 
         repo_root = Path(__file__).resolve().parent.parent
         index_path = repo_root / "public" / "cases" / "dataset-samples.json"

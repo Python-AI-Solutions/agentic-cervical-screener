@@ -191,6 +191,9 @@ pre-commit-install = "pre-commit install"
 serve-static = "python -m scripts.serve_static"
 import-dataset-cases = "python -m scripts.import_dataset_cases"
 smoke-sidebar = "python -m scripts.smoke_sidebar --url http://localhost:8000/"
+vlm-capture = "python -m scripts.capture_vlm_screenshots"
+vlm-audit = "python -m scripts.vlm_viewer_audit"
+vlm = "python -m scripts.capture_vlm_screenshots && python -m scripts.vlm_viewer_audit"
 
 [tool.pixi.dependencies]
 # Core runtime dependencies
@@ -237,3 +240,4 @@ playwright-python = "*"
 pre-commit = ">=3.0.0"
 ruff = ">=0.1.0"
 mypy = ">=1.0.0"
+llm = ">=0.28,<0.29"

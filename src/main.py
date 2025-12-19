@@ -218,7 +218,9 @@ def classify(req: ClassifyReq):
                 print(f"Found image URI '{image_uri}' from case data, using path: {image_path}")
 
             except Exception as e:
-                raise HTTPException(status_code=404, detail=f"Could not resolve slide_id to a case: {e}") from e
+                raise HTTPException(
+                    status_code=404, detail=f"Could not resolve slide_id to a case: {e}"
+                ) from e
 
             result = model_inference.predict(image_path, conf_threshold)
             print(f"YOLO result: {result}")
@@ -311,7 +313,14 @@ def get_mock_results(slide_id: str):
                 "label": "HSIL",
                 "score": 0.92,
             },
-            {"x": 300, "y": 200, "w": 60, "h": 60, "label": "Negative for intraepithelial lesion", "score": 0.65},
+            {
+                "x": 300,
+                "y": 200,
+                "w": 60,
+                "h": 60,
+                "label": "Negative for intraepithelial lesion",
+                "score": 0.65,
+            },
         ],
         "SLIDE-002": [
             {"x": 200, "y": 180, "w": 90, "h": 80, "label": "LSIL", "score": 0.73},

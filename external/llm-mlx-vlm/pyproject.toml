@@ -1,0 +1,29 @@
+[project]
+name = "llm-mlx-vlm"
+version = "0.1"
+description = "LLM plugin for running vision language models using MLX on Apple Silicon"
+readme = "README.md"
+authors = [{name = "John Lee"}]
+license = "Apache-2.0"
+classifiers = []
+requires-python = ">=3.10"
+dependencies = [
+    "llm",
+    "mlx-vlm>=0.3.5"
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project.urls]
+Homepage = "https://github.com/Python-AI-Solutions/llm-mlx-vlm"
+Changelog = "https://github.com/Python-AI-Solutions/llm-mlx-vlm/releases"
+Issues = "https://github.com/Python-AI-Solutions/llm-mlx-vlm/issues"
+CI = "https://github.com/Python-AI-Solutions/llm-mlx-vlm/actions"
+
+[project.entry-points.llm]
+llm_mlx_vlm = "llm_mlx_vlm"
+
+[project.optional-dependencies]
+test = ["pytest"]

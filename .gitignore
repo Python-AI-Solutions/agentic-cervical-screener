@@ -6,6 +6,9 @@ __pycache__/
 .pixi/
 pixi.lock
 bandit-report.json
+playwright-artifacts/
+playwright-report/
+frontend/
 
 # MLflow authentication
 .mlflow_token

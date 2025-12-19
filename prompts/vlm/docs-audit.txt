@@ -1,0 +1,16 @@
+Analyze this web UI screenshot for visual quality and usability issues.
+
+Pay close attention to:
+- Whether navigation and primary actions are visible and not obscured
+- Drawer/menu positioning and safe-area padding on mobile layouts
+- Tables and metadata displays: are they readable and properly formatted?
+- Whether overlays or popups obscure important UI or the medical viewer canvas
+- Text sizing and contrast at the captured zoom level
+- Overlap/crowding that makes the UI hard to use
+
+Common issues to flag:
+- HIGH severity: primary actions hidden, critical workflow information unreadable, major overlays blocking the viewer
+- MEDIUM severity: text partially cut off, menus hard to dismiss, tables cramped or hard to read
+- LOW severity: minor spacing issues, slight overlap that does not block key information
+
+Describe any problems you see in 1-2 clear sentences, or say "No major issues" if the UI looks good.

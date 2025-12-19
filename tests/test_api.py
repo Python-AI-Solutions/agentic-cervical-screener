@@ -1,7 +1,7 @@
+import json
 import os
 import tempfile
 from pathlib import Path
-import json
 
 import pytest
 from fastapi.testclient import TestClient
@@ -25,6 +25,7 @@ def test_image():
         img.save(tmp.name)
         yield tmp.name
     os.unlink(tmp.name)
+
 
 @pytest.fixture(scope="session")
 def dataset_samples():
