@@ -229,6 +229,17 @@ class TestStaticFiles:
             # Should be 404/400 (not found / invalid), not 500 (server error)
             assert response.status_code in [404, 400, 200]
 
+    def test_browser_icon_probes_not_404(self, client):
+        """Browsers probe common icon paths; avoid noisy 404s in logs."""
+        endpoints = [
+            "/favicon.ico",
+            "/apple-touch-icon.png",
+            "/apple-touch-icon-precomposed.png",
+        ]
+        for endpoint in endpoints:
+            response = client.get(endpoint)
+            assert response.status_code in [200, 204]
+
 
 class TestDataValidation:
     """Test data validation and types without mocks"""

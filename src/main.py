@@ -6,7 +6,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -126,6 +126,29 @@ def read_index():
     """Serve the main frontend HTML file"""
     index_path = os.path.join(public_dir, "index.html")
     return FileResponse(index_path)
+
+
+def _serve_public_root_asset(filename: str) -> FileResponse | Response:
+    path = public_path / filename
+    if path.exists() and path.is_file():
+        return FileResponse(path)
+    # Avoid noisy 404s for default browser probes (favicon, Apple touch icons, etc).
+    return Response(status_code=204)
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return _serve_public_root_asset("favicon.ico")
+
+
+@app.get("/apple-touch-icon.png", include_in_schema=False)
+def apple_touch_icon():
+    return _serve_public_root_asset("apple-touch-icon.png")
+
+
+@app.get("/apple-touch-icon-precomposed.png", include_in_schema=False)
+def apple_touch_icon_precomposed():
+    return _serve_public_root_asset("apple-touch-icon-precomposed.png")
 
 
 @app.get("/healthz")
