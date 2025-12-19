@@ -3,11 +3,13 @@ Integration tests using Playwright to test the full application stack.
 These tests start the actual server and test real browser interactions.
 """
 
+import json
 import os
 import socket
 import subprocess
 import threading
 import time
+from pathlib import Path
 
 import pytest
 from playwright.sync_api import expect, sync_playwright
@@ -47,7 +49,7 @@ def start_test_server(port=None):
 
     # Start server using python -m to avoid PYTHONPATH issues
     process = subprocess.Popen(
-        ["python", "-m", "uvicorn", "agentic_cervical_screener.main:app", "--host", "0.0.0.0", "--port", str(port)],
+        ["python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", str(port)],
         cwd=root_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -75,9 +77,20 @@ def start_test_server(port=None):
 
 
 @pytest.fixture(scope="session")
+def dataset_case_ids():
+    """Return a small list of dataset-backed case IDs for integration tests."""
+    repo_root = Path(__file__).resolve().parent.parent
+    index_path = repo_root / "public" / "cases" / "dataset-samples.json"
+    doc = json.loads(index_path.read_text(encoding="utf-8"))
+    case_ids = [c["case_id"] for c in (doc.get("cases") or [])[:4] if "case_id" in c]
+    assert case_ids, "public/cases/dataset-samples.json must contain cases"
+    return case_ids
+
+
+@pytest.fixture(scope="session")
 def server_process():
     """Start the FastAPI server for integration testing"""
-    server = start_test_server(port=8001)  # Use consistent port for session server
+    server = start_test_server()  # Use a free port to avoid local port conflicts
 
     yield server
 
@@ -168,11 +181,11 @@ class TestAPIIntegration:
 class TestClassifyIntegration:
     """Test classification endpoints with real requests"""
 
-    def test_classify_endpoint_via_curl(self, server_process):
+    def test_classify_endpoint_via_curl(self, server_process, dataset_case_ids):
         """Test classify endpoint using real curl request"""
-        import json
         import subprocess
 
+        case_id = dataset_case_ids[0]
         # Make actual HTTP request
         result = subprocess.run(
             [
@@ -184,7 +197,7 @@ class TestClassifyIntegration:
                 "-H",
                 "Content-Type: application/json",
                 "-d",
-                '{"slide_id": "SLIDE-001", "conf_threshold": 0.25}',
+                json.dumps({"slide_id": case_id, "conf_threshold": 0.25}),
             ],
             capture_output=True,
             text=True,
@@ -200,16 +213,13 @@ class TestClassifyIntegration:
         assert "boxes" in response_data
         assert "total_detections" in response_data
         assert "class_summary" in response_data
-        assert response_data["slide_id"] == "SLIDE-001"
+        assert response_data["slide_id"] == case_id
 
-    def test_all_demo_slides_integration(self, server_process):
-        """Test all demo slides work via real HTTP"""
-        import json
+    def test_dataset_cases_integration(self, server_process, dataset_case_ids):
+        """Test a few dataset-backed cases work via real HTTP"""
         import subprocess
 
-        slides = ["SLIDE-001", "SLIDE-002", "SLIDE-003", "SLIDE-004"]
-
-        for slide_id in slides:
+        for case_id in dataset_case_ids[:3]:
             result = subprocess.run(
                 [
                     "curl",
@@ -220,16 +230,16 @@ class TestClassifyIntegration:
                     "-H",
                     "Content-Type: application/json",
                     "-d",
-                    f'{{"slide_id": "{slide_id}"}}',
+                    json.dumps({"slide_id": case_id}),
                 ],
                 capture_output=True,
                 text=True,
             )
 
-            assert result.returncode == 0, f"Request failed for {slide_id}: {result.stderr}"
+            assert result.returncode == 0, f"Request failed for {case_id}: {result.stderr}"
 
             response_data = json.loads(result.stdout)
-            assert response_data["slide_id"] == slide_id
+            assert response_data["slide_id"] == case_id
             assert isinstance(response_data["boxes"], list)
             assert isinstance(response_data["total_detections"], int)
 
@@ -290,8 +300,13 @@ class TestCaseDataIntegration:
         """Test case data endpoints return real data"""
         import json
         import subprocess
+        from pathlib import Path
 
-        case_ids = ["DEMO-001", "DEMO-002", "DEMO-003", "DEMO-004"]
+        repo_root = Path(__file__).resolve().parent.parent
+        index_path = repo_root / "public" / "cases" / "dataset-samples.json"
+        doc = json.loads(index_path.read_text(encoding="utf-8"))
+        case_ids = [c["case_id"] for c in (doc.get("cases") or [])[:3] if "case_id" in c]
+        assert case_ids, "dataset-samples.json must contain cases for integration tests"
 
         for case_id in case_ids:
             result = subprocess.run(
@@ -310,7 +325,7 @@ class TestCaseDataIntegration:
 class TestSystemResilience:
     """Test system behavior under stress and edge conditions"""
 
-    def test_concurrent_requests_integration(self, fresh_server_process):
+    def test_concurrent_requests_integration(self, fresh_server_process, dataset_case_ids):
         """Test multiple concurrent requests to real server"""
         import concurrent.futures
         import json
@@ -339,8 +354,8 @@ class TestSystemResilience:
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             futures = []
             for i in range(10):
-                slide_id = f"SLIDE-{(i % 4) + 1:03d}"
-                futures.append(executor.submit(make_request, slide_id))
+                case_id = dataset_case_ids[i % len(dataset_case_ids)]
+                futures.append(executor.submit(make_request, case_id))
 
             results = [future.result() for future in futures]
 
@@ -388,7 +403,7 @@ class TestPerformanceBaseline:
     """Establish performance baselines for the API"""
 
     @pytest.mark.timeout(30)
-    def test_response_time_baseline(self, server_process):
+    def test_response_time_baseline(self, server_process, dataset_case_ids):
         """Measure baseline response times for key endpoints"""
         import statistics
         import subprocess
@@ -400,7 +415,7 @@ class TestPerformanceBaseline:
             (
                 f"http://localhost:{server_process.port}/v1/classify",
                 "POST",
-                '{"slide_id": "SLIDE-001"}',
+                json.dumps({"slide_id": dataset_case_ids[0]}),
             ),
         ]
 
@@ -442,6 +457,120 @@ class TestPerformanceBaseline:
             # Reasonable performance expectations
             assert avg_time < 2.0, f"Average response time too high for {url}: {avg_time:.3f}s"
             assert max_time < 5.0, f"Max response time too high for {url}: {max_time:.3f}s"
+
+
+class TestStaticViewerLayout:
+    """Regression checks for the static viewer layout."""
+
+    @pytest.mark.timeout(60)
+    def test_sidebar_toggle_is_visible_and_on_top(self, server_process, playwright_browser):
+        """Ensure the sidebar is actually visible/clickable (not just toggled in DOM)."""
+        url = f"http://localhost:{server_process.port}/"
+
+        def sidebar_is_on_top(page) -> bool:
+            box = page.locator("#sidebar").bounding_box()
+            if not box:
+                return False
+            x = box["x"] + min(20, box["width"] / 2)
+            y = box["y"] + min(20, box["height"] / 2)
+            return bool(
+                page.evaluate(
+                    """({x, y}) => {
+                  const el = document.elementFromPoint(x, y);
+                  if (!el) return false;
+                  return Boolean(el.closest && el.closest('#sidebar'));
+                }""",
+                    {"x": x, "y": y},
+                )
+            )
+
+        def run_check(page) -> None:
+            page.goto(url, wait_until="domcontentloaded")
+            page.wait_for_selector("#mobileMenuBtn", timeout=10_000)
+            page.wait_for_selector("#datasetSamples button", timeout=15_000)
+            page.wait_for_function("typeof window.toggleSidebar === 'function'")
+
+            css_probe = page.evaluate(
+                """() => {
+                const sheetHrefs = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+                  .map(l => l.getAttribute('href') || '')
+                  .filter(Boolean);
+                const body = window.getComputedStyle(document.body);
+                const workspace = document.querySelector('.workspace-area');
+                const workspaceStyle = workspace ? window.getComputedStyle(workspace) : null;
+                const glCanvas = document.getElementById('glCanvas');
+                const glCanvasStyle = glCanvas ? window.getComputedStyle(glCanvas) : null;
+                const hasNiivueCssLink = sheetHrefs.some(h => /niivue\\.css(\\?|$)/.test(h));
+                return {
+                  hasNiivueCssLink,
+                  bodyPosition: body.position,
+                  workspaceDisplay: workspaceStyle ? workspaceStyle.display : null,
+                  glCanvasPosition: glCanvasStyle ? glCanvasStyle.position : null,
+                  sheetHrefs
+                };
+              }"""
+            )
+            assert not css_probe[
+                "hasNiivueCssLink"
+            ], f"Unexpected niivue.css loaded: {css_probe['sheetHrefs']}"
+            assert css_probe["bodyPosition"] != "absolute"
+            assert css_probe["workspaceDisplay"] != "table-row"
+            assert css_probe["glCanvasPosition"] != "absolute"
+
+            # Ensure the app has actually loaded a case and painted the image canvas.
+            page.wait_for_function(
+                """() => {
+                const status = document.getElementById('status');
+                if (!status) return false;
+                return (status.textContent || '').toLowerCase().includes('ready');
+              }""",
+                timeout=20_000,
+            )
+            page.wait_for_function(
+                """() => {
+                const dz = document.getElementById('dropZone');
+                if (!dz) return false;
+                return window.getComputedStyle(dz).display === 'none';
+              }""",
+                timeout=20_000,
+            )
+            page.wait_for_selector("#imageCanvas", timeout=20_000)
+
+            assert page.is_visible("#sidebar")
+            assert sidebar_is_on_top(page)
+
+            # Click a real button inside the sidebar to ensure it's not occluded.
+            page.click("#datasetSamples button")
+            page.wait_for_function(
+                """() => {
+                const status = document.getElementById('status');
+                if (!status) return false;
+                return (status.textContent || '').toLowerCase().includes('ready');
+              }""",
+                timeout=20_000,
+            )
+            assert sidebar_is_on_top(page)
+
+            page.click("#mobileMenuBtn")
+            page.wait_for_timeout(250)
+            assert not page.is_visible("#sidebar")
+
+            page.click("#mobileMenuBtn")
+            page.wait_for_timeout(250)
+            assert page.is_visible("#sidebar")
+            assert sidebar_is_on_top(page)
+
+        # Approximate browser-zoom/DPR behavior with different device scale factors.
+        for dpr in (1.0, 1.25, 1.5):
+            context = playwright_browser.new_context(
+                viewport={"width": 1280, "height": 720},
+                device_scale_factor=dpr,
+            )
+            page = context.new_page()
+            try:
+                run_check(page)
+            finally:
+                context.close()
 
 
 # Pytest configuration for integration tests

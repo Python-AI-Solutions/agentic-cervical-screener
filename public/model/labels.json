@@ -1,0 +1,11 @@
+{
+  "schema_version": "0.1.0",
+  "names": [
+    "Negative for intraepithelial lesion",
+    "ASC-US",
+    "ASC-H",
+    "LSIL",
+    "HSIL",
+    "SCC"
+  ]
+}
