@@ -1,0 +1,1058 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": 0,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              10.0,
+              3.0
+            ],
+            [
+              74.0,
+              3.0
+            ],
+            [
+              74.0,
+              67.0
+            ],
+            [
+              10.0,
+              67.0
+            ],
+            [
+              10.0,
+              3.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              263.0,
+              0
+            ],
+            [
+              327.0,
+              0
+            ],
+            [
+              327.0,
+              50.5
+            ],
+            [
+              263.0,
+              50.5
+            ],
+            [
+              263.0,
+              0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              482.0,
+              41.0
+            ],
+            [
+              546.0,
+              41.0
+            ],
+            [
+              546.0,
+              105.0
+            ],
+            [
+              482.0,
+              105.0
+            ],
+            [
+              482.0,
+              41.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 3,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              687.0,
+              0
+            ],
+            [
+              751.0,
+              0
+            ],
+            [
+              751.0,
+              44.5
+            ],
+            [
+              687.0,
+              44.5
+            ],
+            [
+              687.0,
+              0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 4,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              808.0,
+              27.0
+            ],
+            [
+              872.0,
+              27.0
+            ],
+            [
+              872.0,
+              91.0
+            ],
+            [
+              808.0,
+              91.0
+            ],
+            [
+              808.0,
+              27.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 5,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              876.0,
+              84.0
+            ],
+            [
+              940.0,
+              84.0
+            ],
+            [
+              940.0,
+              148.0
+            ],
+            [
+              876.0,
+              148.0
+            ],
+            [
+              876.0,
+              84.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 6,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              1006.0,
+              62.0
+            ],
+            [
+              1070.0,
+              62.0
+            ],
+            [
+              1070.0,
+              126.0
+            ],
+            [
+              1006.0,
+              126.0
+            ],
+            [
+              1006.0,
+              62.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 7,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              995.0,
+              15.0
+            ],
+            [
+              1059.0,
+              15.0
+            ],
+            [
+              1059.0,
+              79.0
+            ],
+            [
+              995.0,
+              79.0
+            ],
+            [
+              995.0,
+              15.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 8,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              1108.0,
+              12.0
+            ],
+            [
+              1172.0,
+              12.0
+            ],
+            [
+              1172.0,
+              76.0
+            ],
+            [
+              1108.0,
+              76.0
+            ],
+            [
+              1108.0,
+              12.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 9,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              1136.0,
+              26.0
+            ],
+            [
+              1200.0,
+              26.0
+            ],
+            [
+              1200.0,
+              90.0
+            ],
+            [
+              1136.0,
+              90.0
+            ],
+            [
+              1136.0,
+              26.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 10,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              1140.0,
+              174.0
+            ],
+            [
+              1204.0,
+              174.0
+            ],
+            [
+              1204.0,
+              238.0
+            ],
+            [
+              1140.0,
+              238.0
+            ],
+            [
+              1140.0,
+              174.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 11,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              1212.0,
+              269.0
+            ],
+            [
+              1276.0,
+              269.0
+            ],
+            [
+              1276.0,
+              333.0
+            ],
+            [
+              1212.0,
+              333.0
+            ],
+            [
+              1212.0,
+              269.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 12,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              1121.0,
+              266.0
+            ],
+            [
+              1185.0,
+              266.0
+            ],
+            [
+              1185.0,
+              330.0
+            ],
+            [
+              1121.0,
+              330.0
+            ],
+            [
+              1121.0,
+              266.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 13,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              1033.0,
+              214.0
+            ],
+            [
+              1097.0,
+              214.0
+            ],
+            [
+              1097.0,
+              278.0
+            ],
+            [
+              1033.0,
+              278.0
+            ],
+            [
+              1033.0,
+              214.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 14,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              909.0,
+              193.0
+            ],
+            [
+              973.0,
+              193.0
+            ],
+            [
+              973.0,
+              257.0
+            ],
+            [
+              909.0,
+              257.0
+            ],
+            [
+              909.0,
+              193.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 15,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              887.0,
+              270.0
+            ],
+            [
+              951.0,
+              270.0
+            ],
+            [
+              951.0,
+              334.0
+            ],
+            [
+              887.0,
+              334.0
+            ],
+            [
+              887.0,
+              270.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 16,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              10.0,
+              280.0
+            ],
+            [
+              74.0,
+              280.0
+            ],
+            [
+              74.0,
+              344.0
+            ],
+            [
+              10.0,
+              344.0
+            ],
+            [
+              10.0,
+              280.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 17,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              245.0,
+              344.0
+            ],
+            [
+              309.0,
+              344.0
+            ],
+            [
+              309.0,
+              408.0
+            ],
+            [
+              245.0,
+              408.0
+            ],
+            [
+              245.0,
+              344.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 18,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              262.0,
+              387.0
+            ],
+            [
+              326.0,
+              387.0
+            ],
+            [
+              326.0,
+              451.0
+            ],
+            [
+              262.0,
+              451.0
+            ],
+            [
+              262.0,
+              387.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 19,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              274.0,
+              478.0
+            ],
+            [
+              338.0,
+              478.0
+            ],
+            [
+              338.0,
+              542.0
+            ],
+            [
+              274.0,
+              542.0
+            ],
+            [
+              274.0,
+              478.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 20,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              594.0,
+              362.0
+            ],
+            [
+              658.0,
+              362.0
+            ],
+            [
+              658.0,
+              426.0
+            ],
+            [
+              594.0,
+              426.0
+            ],
+            [
+              594.0,
+              362.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 21,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              191.0,
+              456.0
+            ],
+            [
+              255.0,
+              456.0
+            ],
+            [
+              255.0,
+              520.0
+            ],
+            [
+              191.0,
+              520.0
+            ],
+            [
+              191.0,
+              456.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 22,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              361.0,
+              57.0
+            ],
+            [
+              425.0,
+              57.0
+            ],
+            [
+              425.0,
+              121.0
+            ],
+            [
+              361.0,
+              121.0
+            ],
+            [
+              361.0,
+              57.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 23,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              1225.0,
+              662.0
+            ],
+            [
+              1289.0,
+              662.0
+            ],
+            [
+              1289.0,
+              726.0
+            ],
+            [
+              1225.0,
+              726.0
+            ],
+            [
+              1225.0,
+              662.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 24,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              1150.0,
+              623.0
+            ],
+            [
+              1214.0,
+              623.0
+            ],
+            [
+              1214.0,
+              687.0
+            ],
+            [
+              1150.0,
+              687.0
+            ],
+            [
+              1150.0,
+              623.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 25,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              1048.0,
+              776.0
+            ],
+            [
+              1112.0,
+              776.0
+            ],
+            [
+              1112.0,
+              840.0
+            ],
+            [
+              1048.0,
+              840.0
+            ],
+            [
+              1048.0,
+              776.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 26,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              905.0,
+              707.0
+            ],
+            [
+              969.0,
+              707.0
+            ],
+            [
+              969.0,
+              771.0
+            ],
+            [
+              905.0,
+              771.0
+            ],
+            [
+              905.0,
+              707.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 27,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              763.0,
+              864.0
+            ],
+            [
+              827.0,
+              864.0
+            ],
+            [
+              827.0,
+              928.0
+            ],
+            [
+              763.0,
+              928.0
+            ],
+            [
+              763.0,
+              864.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 28,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              646.0,
+              947.0
+            ],
+            [
+              710.0,
+              947.0
+            ],
+            [
+              710.0,
+              1011.0
+            ],
+            [
+              646.0,
+              1011.0
+            ],
+            [
+              646.0,
+              947.0
+            ]
+          ]
+        ]
+      }
+    }
+  ],
+  "properties": {
+    "image_width": 1376,
+    "image_height": 1020,
+    "counts": {
+      "Negative for intraepithelial lesion": 29
+    },
+    "skipped": 0,
+    "source_label_file": "c01b36e0a384197ca9a2e6bcd2c552e1.txt"
+  }
+}
