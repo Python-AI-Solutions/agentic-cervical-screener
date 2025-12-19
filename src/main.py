@@ -30,7 +30,6 @@ public_path = Path(public_dir)
 cases_path = public_path / "cases"
 
 app.mount("/images", StaticFiles(directory=os.path.join(public_dir, "images")), name="images")
-app.mount("/cases", StaticFiles(directory=os.path.join(public_dir, "cases")), name="cases")
 app.mount("/niivue", StaticFiles(directory=os.path.join(public_dir, "niivue")), name="niivue")
 app.mount("/model", StaticFiles(directory=os.path.join(public_dir, "model")), name="model")
 app.mount("/src", StaticFiles(directory=os.path.join(public_dir, "src")), name="src")
@@ -103,6 +102,23 @@ def _case_file_for_id(case_id: str) -> Path:
     if not re.fullmatch(r"[a-z0-9-]+", normalized):
         raise HTTPException(status_code=400, detail="invalid case_id")
     return cases_path / f"{normalized}.json"
+
+
+def _case_asset_path_for_request(case_path: str) -> Path:
+    """Map a request path segment to a file under public/cases, rejecting traversal."""
+    case_path = (case_path or "").strip()
+    if not case_path:
+        raise HTTPException(status_code=400, detail="case path is required")
+
+    rel_path = Path(case_path)
+    if rel_path.is_absolute() or ".." in rel_path.parts:
+        raise HTTPException(status_code=400, detail="invalid case path")
+
+    resolved_cases = cases_path.resolve()
+    resolved_target = (cases_path / rel_path).resolve()
+    if resolved_cases != resolved_target and resolved_cases not in resolved_target.parents:
+        raise HTTPException(status_code=400, detail="invalid case path")
+    return resolved_target
 
 
 @app.get("/")
@@ -237,15 +253,27 @@ async def classify_upload(file: UploadFile = File(...), conf_threshold: float = 
 
 @app.get("/cases/{case_id}")
 def get_case(case_id: str):
-    """Serve case JSON - maps case IDs to their JSON files"""
-    case_file = _case_file_for_id(case_id)
-    if not case_file.exists():
+    """Serve case assets from public/cases.
+
+    This endpoint supports both:
+    - case IDs (e.g. "CRIC-...") -> mapped to "<lowercase>.json"
+    - literal filenames (e.g. "dataset-samples.json", "cric-...-gt.geojson")
+
+    We use a single endpoint so the static viewer can fetch `/cases/*.json` while API
+    clients can fetch `/cases/<case_id>` without conflicting with a static mount.
+    """
+    path_segment = (case_id or "").strip()
+    if not path_segment:
+        raise HTTPException(status_code=400, detail="case_id is required")
+
+    if "." in path_segment:
+        case_file = _case_asset_path_for_request(path_segment)
+    else:
+        case_file = _case_file_for_id(path_segment)
+
+    if not case_file.exists() or not case_file.is_file():
         raise HTTPException(status_code=404, detail=f"Case not found: {case_id}")
-    try:
-        with open(case_file, encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to read case: {case_id}") from e
+    return FileResponse(case_file)
 
 
 def get_mock_results(slide_id: str):

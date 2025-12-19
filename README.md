@@ -1,11 +1,11 @@
 # Cervical AI Viewer (Classification-only Demo)
 
-A web-based cervical screening tool that uses AI to classify and detect abnormal cells in cervical cytology images. The app now ships purely as a static site under `public/` (vanilla JS + NiiVue) backed by CRIC demo data; the Python API is optional.
+A web-based cervical screening tool that uses AI to classify and detect abnormal cells in cervical cytology images. The app now ships purely as a static site under `public/` (vanilla JS + NiiVue) backed by CRIC demo data; the Python API is optional. Future development for a cloud based platform could reuse that component.
 
 ## Features
 
 - **AI-Powered Classification**: Uses YOLO model for detecting and classifying cervical cells
-- **Interactive Viewer**: Built with NiiVue for smooth image navigation and visualization (no build step required)
+- **Interactive Viewer**: Built with NiiVue for smooth image navigation and visualization (no build or backend required)
 - **Bounding Box Overlays**: Visual detection results with confidence scores
 - **CRIC Dataset Samples**: Pre-loaded CRIC tiles + YOLO ground truth (see `public/cases/dataset-samples.json`)
 - **ROI Navigation**: Navigate between regions of interest
@@ -24,20 +24,6 @@ A web-based cervical screening tool that uses AI to classify and detect abnormal
 ### Prerequisites
 
 - [Pixi](https://pixi.sh) package manager installed
-- Python 3.11+ (managed by Pixi)
-
-### Installation
-
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd agentic-cervical-screener
-   ```
-
-2. Install dependencies:
-   ```bash
-   pixi install
-   ```
 
 ### Development / Local serve
 
@@ -47,7 +33,6 @@ pixi run serve-static
 ```
 
 Open **http://localhost:8000**.  
-`public/` is the root, so `/src`, `/cases`, `/images`, `/model`, and `/niivue` are all available.
 
 Run the optional API (if you want backend classification instead of in-browser ONNX):
 ```bash
