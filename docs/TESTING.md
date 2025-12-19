@@ -7,6 +7,11 @@ The project is now a static viewer served from `public/`. Testing is focused on 
 - **Coverage**: `pixi run test-coverage`
 - **Lint/format**: `pixi run lint`, `pixi run format`
 
+## Automated (Static Viewer)
+- **Sidebar + layout smoke (Chromium + WebKit)**: `pixi run smoke-sidebar`  
+  - Serve the viewer first: `pixi run serve-static` → http://localhost:8000  
+  - Installs browsers: `pixi run install-browsers`
+
 ## Manual (Static Viewer)
 1) Serve the site: `pixi run serve-static` → http://localhost:8000  
 2) Load a CRIC sample from the sidebar.  
@@ -14,4 +19,4 @@ The project is now a static viewer served from `public/`. Testing is focused on 
 4) Toggle ground-truth and AI detections; classify to ensure boxes render.  
 5) Drag-and-drop an image to confirm uploads still work.
 
-The legacy Vitest/Playwright pipelines have been removed with the old `frontend/` tree; the static viewer code under `public/src/` is the single source of truth.
+The legacy Vitest-based frontend pipelines have been removed with the old `frontend/` tree; the static viewer code under `public/src/` is the single source of truth. For UI regression checks we use lightweight Python + Playwright smoke tests under `scripts/`.

@@ -459,5 +459,71 @@ class TestPerformanceBaseline:
             assert max_time < 5.0, f"Max response time too high for {url}: {max_time:.3f}s"
 
 
+class TestStaticViewerLayout:
+    """Regression checks for the static viewer layout."""
+
+    def test_sidebar_toggle_is_visible_and_on_top(self, server_process, page):
+        """Ensure the sidebar is actually visible/clickable (not just toggled in DOM)."""
+        page.set_viewport_size({"width": 1280, "height": 720})
+        page.goto(f"http://localhost:{server_process.port}/", wait_until="domcontentloaded")
+
+        page.wait_for_selector("#mobileMenuBtn", timeout=10_000)
+        page.wait_for_function("typeof window.toggleSidebar === 'function'")
+
+        css_probe = page.evaluate(
+            """() => {
+            const sheetHrefs = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+              .map(l => l.getAttribute('href') || '')
+              .filter(Boolean);
+            const body = window.getComputedStyle(document.body);
+            const workspace = document.querySelector('.workspace-area');
+            const workspaceStyle = workspace ? window.getComputedStyle(workspace) : null;
+            const glCanvas = document.getElementById('glCanvas');
+            const glCanvasStyle = glCanvas ? window.getComputedStyle(glCanvas) : null;
+            const hasNiivueCssLink = sheetHrefs.some(h => /niivue\\.css(\\?|$)/.test(h));
+            return {
+              hasNiivueCssLink,
+              bodyPosition: body.position,
+              workspaceDisplay: workspaceStyle ? workspaceStyle.display : null,
+              glCanvasPosition: glCanvasStyle ? glCanvasStyle.position : null,
+              sheetHrefs
+            };
+          }"""
+        )
+        assert not css_probe["hasNiivueCssLink"], f"Unexpected niivue.css loaded: {css_probe['sheetHrefs']}"
+        assert css_probe["bodyPosition"] != "absolute"
+        assert css_probe["workspaceDisplay"] != "table-row"
+        assert css_probe["glCanvasPosition"] != "absolute"
+
+        def sidebar_is_on_top() -> bool:
+            box = page.locator("#sidebar").bounding_box()
+            if not box:
+                return False
+            x = box["x"] + min(20, box["width"] / 2)
+            y = box["y"] + min(20, box["height"] / 2)
+            return bool(
+                page.evaluate(
+                    """({x, y}) => {
+                  const el = document.elementFromPoint(x, y);
+                  if (!el) return false;
+                  return Boolean(el.closest && el.closest('#sidebar'));
+                }""",
+                    {"x": x, "y": y},
+                )
+            )
+
+        assert page.is_visible("#sidebar")
+        assert sidebar_is_on_top()
+
+        page.click("#mobileMenuBtn")
+        page.wait_for_timeout(250)
+        assert not page.is_visible("#sidebar")
+
+        page.click("#mobileMenuBtn")
+        page.wait_for_timeout(250)
+        assert page.is_visible("#sidebar")
+        assert sidebar_is_on_top()
+
+
 # Pytest configuration for integration tests
 pytestmark = pytest.mark.integration

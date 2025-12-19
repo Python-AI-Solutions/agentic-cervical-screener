@@ -7,6 +7,42 @@ This repo now ships a single static viewer under `public/` (no legacy `frontend/
 
 interact, and proposes a strategy that avoids “zoom makes the sidebar permanently disappear” class of bugs while keeping ROIs/overlays aligned.
 
+## Safari “sidebar toggles but never appears” (root cause: `niivue.css`)
+
+We hit a Safari desktop edge case where the hamburger/JS state toggled correctly (classes changed), but the sidebar was not actually visible/clickable at some browser zoom levels.
+
+Root cause: `public/index.html` was loading `public/niivue/niivue.css` (an **upstream NiiVue demo stylesheet**) that includes **unscoped global element rules** which override the entire app layout.
+
+The most problematic rules are:
+- `body { display: flex; position: absolute; ... }` (changes containing blocks + page flow)
+- `canvas { position: absolute; ... }` (changes canvas stacking/flow globally)
+- `div { display: table-row; }` (breaks grid/flex expectations across the app)
+
+In Safari, these global rules interacted with our grid layout such that the sidebar could end up effectively hidden/occluded even though it still existed in the DOM.
+
+### Does upstream change this across versions?
+
+In the upstream `niivue` repo, these global rules were introduced in commit `bcff2c4d` (“Use stylesheets…”, Nov 2022) and remain present in tags such as:
+- `@niivue/niivue-v0.57.0`
+- `@niivue/niivue-v0.59.0`
+- `@niivue/niivue-v0.66.0`
+
+So far it looks stable across many versions, but it is **not a public/stable API**: demo CSS can change at any time without regard for downstream embedding.
+
+### Why does NiiVue ship such global CSS?
+
+NiiVue is a rendering library; its demos are also a “copy/paste starting point”. A global stylesheet makes the demos work with minimal HTML:
+- full-height page layout (`body` flex + `<main>` fill),
+- absolute-positioned canvas inside `<main>`,
+- lightweight dropdown/button styling and a simplified “UI bar”.
+
+That’s helpful when the demo *is the whole page*, but it’s risky when NiiVue is embedded into a larger app that already has its own layout system.
+
+### What we do in this repo (recommended for downstreams)
+
+- **Do not load `niivue.css` globally.** NiiVue itself does not require it.
+- If you want some of the demo look/feel, **copy only the class selectors** you need (e.g. `.dropdown`, `.slidecontainer`), or **scope the stylesheet** by prefixing selectors to a container (e.g. `#viewer :where(canvas) { ... }` rather than `canvas { ... }`).
+
 ## Two different “zooms” to keep separate
 
 1) **Browser zoom** (Ctrl/Cmd +/-):
@@ -99,3 +135,8 @@ This reduces the chance that one codepath updates canvas size while another code
    - switch between the two via resizing and via browser zoom.
 3) Verify canvas alignment with the manual smoke test in `docs/TESTING.md` (67%, 100%, 175% browser zoom) and by toggling the sidebar while zoomed.
 4) Only then consider deeper refactors (e.g., removing unused “Option A” drawing paths) once behavior is stable.
+
+## Regression tests
+
+- CI/pytest: `tests/test_integration.py` includes `TestStaticViewerLayout.test_sidebar_toggle_is_visible_and_on_top`.
+- Local smoke: `pixi run smoke-sidebar` (uses Playwright Chromium + WebKit and checks the sidebar is not occluded).
