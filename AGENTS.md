@@ -1,6 +1,6 @@
-# Agent Development Guide (Static Viewer)
+# Agent Development Guide
 
-This repo now ships a single static viewer under `public/` backed by CRIC sample data. There is no separate TypeScript/Vite frontend; ignore any legacy references to `frontend/`.
+This repo ships a single static viewer under `public/` backed by CRIC sample data. There is no separate TypeScript/Vite frontend; ignore any legacy references to `frontend/`. Try to use pixi for all tasks/dependencies including local tasks like one off python scripts etc. i.e. `pixi run python...`
 
 ## Project Overview
 - **Viewer**: Vanilla JS + NiiVue in `public/src/`
@@ -34,7 +34,3 @@ tests/                 # Backend tests
 ## Common Tasks
 - Import CRIC samples: `pixi run import-dataset-cases --ids <image_id_1> ...`
 - Export ONNX: `pixi run python -m scripts.export_to_onnx --model-path src/models/best.pt --output-dir public/model`
-
-## Notes
-- Legacy mock data under `public/mock/` and the `frontend/` directory were removed. Use the CRIC cases under `public/cases/`.
-- The viewer performs in-browser ONNX inference by default; if it fails, configure `API_BASE` to point at a running backend.
