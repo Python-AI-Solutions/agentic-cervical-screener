@@ -4,11 +4,10 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes"/>
   <meta name="mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <title>Cervical AI Viewer</title>
-  <link rel="stylesheet" href="niivue/niivue.css"/>
-  <style>
+	  <meta name="apple-mobile-web-app-capable" content="yes"/>
+	  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+	  <title>Cervical AI Viewer</title>
+	  <style>
 	    :root {
 	      --header-height: 56px;
 	      --sidebar-width: 280px;
@@ -34,21 +33,26 @@
       --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
     }
 
-    * {
-      box-sizing: border-box;
-    }
+	    * {
+	      box-sizing: border-box;
+	    }
 
-    [hidden] {
-      display: none !important;
-    }
+	    html, body {
+	      height: 100%;
+	    }
 
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      overflow-x: hidden;
-    }
+	    [hidden] {
+	      display: none !important;
+	    }
+
+	    body {
+	      margin: 0;
+	      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+	      background: var(--bg-secondary);
+	      color: var(--text-primary);
+	      overflow-x: hidden;
+	      min-height: 100vh;
+	    }
 
     /* Header Styles */
     header {

@@ -20,8 +20,8 @@ graph TD
     E --> E2["Sidebar: Case Loader & Layers"]
     E --> E3["Viewer: Canvas Display"]
 
-    F --> F1["niivue.js<br/>WebGL Renderer"]
-    F --> F2["niivue.css<br/>Styling"]
+	    F --> F1["niivue.js<br/>WebGL Renderer"]
+	    F --> F2["niivue.css<br/>Upstream demo styles (not loaded)"]
 
     G --> G1["dataset-samples.json<br/>Sample Index"]
     G --> G2["cric-<id>.json<br/>Case Manifest"]
@@ -84,7 +84,7 @@ Structure:
 
 #### **🎨 Niivue Library (`public/niivue/`)**
 - **niivue.js** : Medical imaging WebGL library
-- **niivue.css** : Medical viewer styling
+- **niivue.css** : Upstream demo stylesheet (intentionally not loaded by `public/index.html` because it applies global `body/div/canvas` rules)
 - **Purpose**: Handles medical image formats (NIfTI, DICOM, etc.)
 
 #### **🖼️ Assets (`public/images/`)**
