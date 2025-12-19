@@ -462,40 +462,12 @@ class TestPerformanceBaseline:
 class TestStaticViewerLayout:
     """Regression checks for the static viewer layout."""
 
-    def test_sidebar_toggle_is_visible_and_on_top(self, server_process, page):
+    @pytest.mark.timeout(60)
+    def test_sidebar_toggle_is_visible_and_on_top(self, server_process, playwright_browser):
         """Ensure the sidebar is actually visible/clickable (not just toggled in DOM)."""
-        page.set_viewport_size({"width": 1280, "height": 720})
-        page.goto(f"http://localhost:{server_process.port}/", wait_until="domcontentloaded")
+        url = f"http://localhost:{server_process.port}/"
 
-        page.wait_for_selector("#mobileMenuBtn", timeout=10_000)
-        page.wait_for_function("typeof window.toggleSidebar === 'function'")
-
-        css_probe = page.evaluate(
-            """() => {
-            const sheetHrefs = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
-              .map(l => l.getAttribute('href') || '')
-              .filter(Boolean);
-            const body = window.getComputedStyle(document.body);
-            const workspace = document.querySelector('.workspace-area');
-            const workspaceStyle = workspace ? window.getComputedStyle(workspace) : null;
-            const glCanvas = document.getElementById('glCanvas');
-            const glCanvasStyle = glCanvas ? window.getComputedStyle(glCanvas) : null;
-            const hasNiivueCssLink = sheetHrefs.some(h => /niivue\\.css(\\?|$)/.test(h));
-            return {
-              hasNiivueCssLink,
-              bodyPosition: body.position,
-              workspaceDisplay: workspaceStyle ? workspaceStyle.display : null,
-              glCanvasPosition: glCanvasStyle ? glCanvasStyle.position : null,
-              sheetHrefs
-            };
-          }"""
-        )
-        assert not css_probe["hasNiivueCssLink"], f"Unexpected niivue.css loaded: {css_probe['sheetHrefs']}"
-        assert css_probe["bodyPosition"] != "absolute"
-        assert css_probe["workspaceDisplay"] != "table-row"
-        assert css_probe["glCanvasPosition"] != "absolute"
-
-        def sidebar_is_on_top() -> bool:
+        def sidebar_is_on_top(page) -> bool:
             box = page.locator("#sidebar").bounding_box()
             if not box:
                 return False
@@ -512,17 +484,93 @@ class TestStaticViewerLayout:
                 )
             )
 
-        assert page.is_visible("#sidebar")
-        assert sidebar_is_on_top()
+        def run_check(page) -> None:
+            page.goto(url, wait_until="domcontentloaded")
+            page.wait_for_selector("#mobileMenuBtn", timeout=10_000)
+            page.wait_for_selector("#datasetSamples button", timeout=15_000)
+            page.wait_for_function("typeof window.toggleSidebar === 'function'")
 
-        page.click("#mobileMenuBtn")
-        page.wait_for_timeout(250)
-        assert not page.is_visible("#sidebar")
+            css_probe = page.evaluate(
+                """() => {
+                const sheetHrefs = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+                  .map(l => l.getAttribute('href') || '')
+                  .filter(Boolean);
+                const body = window.getComputedStyle(document.body);
+                const workspace = document.querySelector('.workspace-area');
+                const workspaceStyle = workspace ? window.getComputedStyle(workspace) : null;
+                const glCanvas = document.getElementById('glCanvas');
+                const glCanvasStyle = glCanvas ? window.getComputedStyle(glCanvas) : null;
+                const hasNiivueCssLink = sheetHrefs.some(h => /niivue\\.css(\\?|$)/.test(h));
+                return {
+                  hasNiivueCssLink,
+                  bodyPosition: body.position,
+                  workspaceDisplay: workspaceStyle ? workspaceStyle.display : null,
+                  glCanvasPosition: glCanvasStyle ? glCanvasStyle.position : null,
+                  sheetHrefs
+                };
+              }"""
+            )
+            assert not css_probe["hasNiivueCssLink"], (
+                f"Unexpected niivue.css loaded: {css_probe['sheetHrefs']}"
+            )
+            assert css_probe["bodyPosition"] != "absolute"
+            assert css_probe["workspaceDisplay"] != "table-row"
+            assert css_probe["glCanvasPosition"] != "absolute"
 
-        page.click("#mobileMenuBtn")
-        page.wait_for_timeout(250)
-        assert page.is_visible("#sidebar")
-        assert sidebar_is_on_top()
+            # Ensure the app has actually loaded a case and painted the image canvas.
+            page.wait_for_function(
+                """() => {
+                const status = document.getElementById('status');
+                if (!status) return false;
+                return (status.textContent || '').toLowerCase().includes('ready');
+              }""",
+                timeout=20_000,
+            )
+            page.wait_for_function(
+                """() => {
+                const dz = document.getElementById('dropZone');
+                if (!dz) return false;
+                return window.getComputedStyle(dz).display === 'none';
+              }""",
+                timeout=20_000,
+            )
+            page.wait_for_selector("#imageCanvas", timeout=20_000)
+
+            assert page.is_visible("#sidebar")
+            assert sidebar_is_on_top(page)
+
+            # Click a real button inside the sidebar to ensure it's not occluded.
+            page.click("#datasetSamples button")
+            page.wait_for_function(
+                """() => {
+                const status = document.getElementById('status');
+                if (!status) return false;
+                return (status.textContent || '').toLowerCase().includes('ready');
+              }""",
+                timeout=20_000,
+            )
+            assert sidebar_is_on_top(page)
+
+            page.click("#mobileMenuBtn")
+            page.wait_for_timeout(250)
+            assert not page.is_visible("#sidebar")
+
+            page.click("#mobileMenuBtn")
+            page.wait_for_timeout(250)
+            assert page.is_visible("#sidebar")
+            assert sidebar_is_on_top(page)
+
+        # Approximate browser-zoom/DPR behavior with different device scale factors.
+        for dpr in (1.0, 1.25, 1.5):
+            context = playwright_browser.new_context(
+                viewport={"width": 1280, "height": 720},
+                device_scale_factor=dpr,
+            )
+            page = context.new_page()
+            try:
+                run_check(page)
+            finally:
+                context.close()
 
 
 # Pytest configuration for integration tests
