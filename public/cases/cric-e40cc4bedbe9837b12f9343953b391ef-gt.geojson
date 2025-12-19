@@ -1,0 +1,447 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": 0,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              217.0,
+              674.0
+            ],
+            [
+              281.0,
+              674.0
+            ],
+            [
+              281.0,
+              738.0
+            ],
+            [
+              217.0,
+              738.0
+            ],
+            [
+              217.0,
+              674.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 1,
+      "properties": {
+        "source": "yolo",
+        "class_id": 0,
+        "label": "Negative for intraepithelial lesion"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              1010.0,
+              569.0
+            ],
+            [
+              1074.0,
+              569.0
+            ],
+            [
+              1074.0,
+              633.0
+            ],
+            [
+              1010.0,
+              633.0
+            ],
+            [
+              1010.0,
+              569.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2,
+      "properties": {
+        "source": "yolo",
+        "class_id": 3,
+        "label": "LSIL"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              322.0,
+              634.0
+            ],
+            [
+              386.0,
+              634.0
+            ],
+            [
+              386.0,
+              698.0
+            ],
+            [
+              322.0,
+              698.0
+            ],
+            [
+              322.0,
+              634.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 3,
+      "properties": {
+        "source": "yolo",
+        "class_id": 3,
+        "label": "LSIL"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              451.0,
+              685.0
+            ],
+            [
+              515.0,
+              685.0
+            ],
+            [
+              515.0,
+              749.0
+            ],
+            [
+              451.0,
+              749.0
+            ],
+            [
+              451.0,
+              685.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 4,
+      "properties": {
+        "source": "yolo",
+        "class_id": 3,
+        "label": "LSIL"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              493.0,
+              701.0
+            ],
+            [
+              557.0,
+              701.0
+            ],
+            [
+              557.0,
+              765.0
+            ],
+            [
+              493.0,
+              765.0
+            ],
+            [
+              493.0,
+              701.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 5,
+      "properties": {
+        "source": "yolo",
+        "class_id": 3,
+        "label": "LSIL"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              876.0,
+              396.0
+            ],
+            [
+              940.0,
+              396.0
+            ],
+            [
+              940.0,
+              460.0
+            ],
+            [
+              876.0,
+              460.0
+            ],
+            [
+              876.0,
+              396.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 6,
+      "properties": {
+        "source": "yolo",
+        "class_id": 3,
+        "label": "LSIL"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              990.0,
+              459.0
+            ],
+            [
+              1054.0,
+              459.0
+            ],
+            [
+              1054.0,
+              523.0
+            ],
+            [
+              990.0,
+              523.0
+            ],
+            [
+              990.0,
+              459.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 7,
+      "properties": {
+        "source": "yolo",
+        "class_id": 3,
+        "label": "LSIL"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              917.0,
+              568.0
+            ],
+            [
+              981.0,
+              568.0
+            ],
+            [
+              981.0,
+              632.0
+            ],
+            [
+              917.0,
+              632.0
+            ],
+            [
+              917.0,
+              568.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 8,
+      "properties": {
+        "source": "yolo",
+        "class_id": 3,
+        "label": "LSIL"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              955.0,
+              580.0
+            ],
+            [
+              1019.0,
+              580.0
+            ],
+            [
+              1019.0,
+              644.0
+            ],
+            [
+              955.0,
+              644.0
+            ],
+            [
+              955.0,
+              580.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 9,
+      "properties": {
+        "source": "yolo",
+        "class_id": 3,
+        "label": "LSIL"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              845.0,
+              165.0
+            ],
+            [
+              909.0,
+              165.0
+            ],
+            [
+              909.0,
+              229.0
+            ],
+            [
+              845.0,
+              229.0
+            ],
+            [
+              845.0,
+              165.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 10,
+      "properties": {
+        "source": "yolo",
+        "class_id": 3,
+        "label": "LSIL"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              822.0,
+              111.0
+            ],
+            [
+              886.0,
+              111.0
+            ],
+            [
+              886.0,
+              175.0
+            ],
+            [
+              822.0,
+              175.0
+            ],
+            [
+              822.0,
+              111.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 11,
+      "properties": {
+        "source": "yolo",
+        "class_id": 3,
+        "label": "LSIL"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              1062.0,
+              31.0
+            ],
+            [
+              1126.0,
+              31.0
+            ],
+            [
+              1126.0,
+              95.0
+            ],
+            [
+              1062.0,
+              95.0
+            ],
+            [
+              1062.0,
+              31.0
+            ]
+          ]
+        ]
+      }
+    }
+  ],
+  "properties": {
+    "image_width": 1376,
+    "image_height": 1020,
+    "counts": {
+      "Negative for intraepithelial lesion": 2,
+      "LSIL": 10
+    },
+    "skipped": 0,
+    "source_label_file": "e40cc4bedbe9837b12f9343953b391ef.txt"
+  }
+}

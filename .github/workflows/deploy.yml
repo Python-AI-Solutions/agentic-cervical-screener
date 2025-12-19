@@ -1,0 +1,56 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  deployments: write
+
+env:
+  PROJECT_NAME: "agentic-cervical-screener"
+  BUILD_DIR: "public"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify static artifacts exist
+        run: |
+          test -f "${BUILD_DIR}/index.html"
+          test -f "${BUILD_DIR}/model/best.onnx"
+          test -f "${BUILD_DIR}/model/labels.json"
+          test -f "${BUILD_DIR}/_headers"
+          if [ -f "${BUILD_DIR}/model/best.int8.onnx" ]; then
+            echo "Optional int8 model present: ${BUILD_DIR}/model/best.int8.onnx"
+          else
+            echo "Optional int8 model missing (ok): ${BUILD_DIR}/model/best.int8.onnx"
+          fi
+
+      - name: Install wrangler
+        run: npm install -g wrangler
+
+      - name: Deploy preview
+        if: github.event_name == 'pull_request'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_KEY }}
+        run: |
+          wrangler pages deploy ./${{ env.BUILD_DIR }} \
+            --project-name ${{ env.PROJECT_NAME }} \
+            --branch ${{ github.head_ref }}
+
+      - name: Deploy production
+        if: github.event_name == 'push'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_KEY }}
+        run: |
+          wrangler pages deploy ./${{ env.BUILD_DIR }} \
+            --project-name ${{ env.PROJECT_NAME }} \
+            --branch main \
+            --commit-dirty=true

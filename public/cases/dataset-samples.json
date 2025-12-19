@@ -1,0 +1,147 @@
+{
+  "schema_version": "0.1.0",
+  "title": "CRIC dataset samples",
+  "program_id": "CRIC_YOLO_Dataset",
+  "cases": [
+    {
+      "case_id": "CRIC-e4c629cd4647aa3e1a5bd66590118b44",
+      "title": "CRIC sample e4c629cd (train, 18 labels)",
+      "file": "cric-e4c629cd4647aa3e1a5bd66590118b44.json",
+      "image_uri": "images/e4c629cd4647aa3e1a5bd66590118b44.webp",
+      "gt_uri": "cases/cric-e4c629cd4647aa3e1a5bd66590118b44-gt.geojson",
+      "label_counts": {
+        "LSIL": 6,
+        "Negative for intraepithelial lesion": 12
+      }
+    },
+    {
+      "case_id": "CRIC-e40cc4bedbe9837b12f9343953b391ef",
+      "title": "CRIC sample e40cc4be (train, 12 labels)",
+      "file": "cric-e40cc4bedbe9837b12f9343953b391ef.json",
+      "image_uri": "images/e40cc4bedbe9837b12f9343953b391ef.webp",
+      "gt_uri": "cases/cric-e40cc4bedbe9837b12f9343953b391ef-gt.geojson",
+      "label_counts": {
+        "Negative for intraepithelial lesion": 2,
+        "LSIL": 10
+      }
+    },
+    {
+      "case_id": "CRIC-fcc9c7e2fc1a0f4d30fa745308d15194",
+      "title": "CRIC sample fcc9c7e2 (train, 28 labels)",
+      "file": "cric-fcc9c7e2fc1a0f4d30fa745308d15194.json",
+      "image_uri": "images/fcc9c7e2fc1a0f4d30fa745308d15194.webp",
+      "gt_uri": "cases/cric-fcc9c7e2fc1a0f4d30fa745308d15194-gt.geojson",
+      "label_counts": {
+        "Negative for intraepithelial lesion": 21,
+        "LSIL": 7
+      }
+    },
+    {
+      "case_id": "CRIC-c63289c59bca91f80b2dde9ac013cc57",
+      "title": "CRIC sample c63289c5 (train, 19 labels)",
+      "file": "cric-c63289c59bca91f80b2dde9ac013cc57.json",
+      "image_uri": "images/c63289c59bca91f80b2dde9ac013cc57.webp",
+      "gt_uri": "cases/cric-c63289c59bca91f80b2dde9ac013cc57-gt.geojson",
+      "label_counts": {
+        "Negative for intraepithelial lesion": 10,
+        "LSIL": 7,
+        "ASC-US": 2
+      }
+    },
+    {
+      "case_id": "CRIC-c22f24fa5dc7c8d99c2d2ba5e293960c",
+      "title": "CRIC sample c22f24fa (train, 26 labels)",
+      "file": "cric-c22f24fa5dc7c8d99c2d2ba5e293960c.json",
+      "image_uri": "images/c22f24fa5dc7c8d99c2d2ba5e293960c.webp",
+      "gt_uri": "cases/cric-c22f24fa5dc7c8d99c2d2ba5e293960c-gt.geojson",
+      "label_counts": {
+        "Negative for intraepithelial lesion": 26
+      }
+    },
+    {
+      "case_id": "CRIC-c01b36e0a384197ca9a2e6bcd2c552e1",
+      "title": "CRIC sample c01b36e0 (train, 29 labels)",
+      "file": "cric-c01b36e0a384197ca9a2e6bcd2c552e1.json",
+      "image_uri": "images/c01b36e0a384197ca9a2e6bcd2c552e1.webp",
+      "gt_uri": "cases/cric-c01b36e0a384197ca9a2e6bcd2c552e1-gt.geojson",
+      "label_counts": {
+        "Negative for intraepithelial lesion": 29
+      }
+    },
+    {
+      "case_id": "CRIC-5633910bdb41ea5626f7b60a8ef80af0",
+      "title": "CRIC sample 5633910b (train, 17 labels)",
+      "file": "cric-5633910bdb41ea5626f7b60a8ef80af0.json",
+      "image_uri": "images/5633910bdb41ea5626f7b60a8ef80af0.webp",
+      "gt_uri": "cases/cric-5633910bdb41ea5626f7b60a8ef80af0-gt.geojson",
+      "label_counts": {
+        "Negative for intraepithelial lesion": 16,
+        "LSIL": 1
+      }
+    },
+    {
+      "case_id": "CRIC-624930d9bfc4219ba1bdd73ea3fed13b",
+      "title": "CRIC sample 624930d9 (train, 39 labels)",
+      "file": "cric-624930d9bfc4219ba1bdd73ea3fed13b.json",
+      "image_uri": "images/624930d9bfc4219ba1bdd73ea3fed13b.webp",
+      "gt_uri": "cases/cric-624930d9bfc4219ba1bdd73ea3fed13b-gt.geojson",
+      "label_counts": {
+        "Negative for intraepithelial lesion": 39
+      }
+    },
+    {
+      "case_id": "CRIC-4372f7114534a5e0b688673c15a43fa9",
+      "title": "CRIC sample 4372f711 (train, 34 labels)",
+      "file": "cric-4372f7114534a5e0b688673c15a43fa9.json",
+      "image_uri": "images/4372f7114534a5e0b688673c15a43fa9.webp",
+      "gt_uri": "cases/cric-4372f7114534a5e0b688673c15a43fa9-gt.geojson",
+      "label_counts": {
+        "LSIL": 6,
+        "Negative for intraepithelial lesion": 28
+      }
+    },
+    {
+      "case_id": "CRIC-3731e3064f5b3dfaf2df337f4b481c78",
+      "title": "CRIC sample 3731e306 (train, 26 labels)",
+      "file": "cric-3731e3064f5b3dfaf2df337f4b481c78.json",
+      "image_uri": "images/3731e3064f5b3dfaf2df337f4b481c78.webp",
+      "gt_uri": "cases/cric-3731e3064f5b3dfaf2df337f4b481c78-gt.geojson",
+      "label_counts": {
+        "LSIL": 13,
+        "Negative for intraepithelial lesion": 13
+      }
+    },
+    {
+      "case_id": "CRIC-66c20a252497fd16ec17a40b5dbc05f6",
+      "title": "CRIC sample 66c20a25 (train, 14 labels)",
+      "file": "cric-66c20a252497fd16ec17a40b5dbc05f6.json",
+      "image_uri": "images/66c20a252497fd16ec17a40b5dbc05f6.webp",
+      "gt_uri": "cases/cric-66c20a252497fd16ec17a40b5dbc05f6-gt.geojson",
+      "label_counts": {
+        "Negative for intraepithelial lesion": 14
+      }
+    },
+    {
+      "case_id": "CRIC-7c09a4a52e0cb6ffc6a10044dd321123",
+      "title": "CRIC sample 7c09a4a5 (train, 8 labels)",
+      "file": "cric-7c09a4a52e0cb6ffc6a10044dd321123.json",
+      "image_uri": "images/7c09a4a52e0cb6ffc6a10044dd321123.webp",
+      "gt_uri": "cases/cric-7c09a4a52e0cb6ffc6a10044dd321123-gt.geojson",
+      "label_counts": {
+        "Negative for intraepithelial lesion": 7,
+        "LSIL": 1
+      }
+    },
+    {
+      "case_id": "CRIC-2cefdbf695da71852337ae3557ccdd38",
+      "title": "CRIC sample 2cefdbf6 (train, 20 labels)",
+      "file": "cric-2cefdbf695da71852337ae3557ccdd38.json",
+      "image_uri": "images/2cefdbf695da71852337ae3557ccdd38.webp",
+      "gt_uri": "cases/cric-2cefdbf695da71852337ae3557ccdd38-gt.geojson",
+      "label_counts": {
+        "ASC-US": 7,
+        "Negative for intraepithelial lesion": 13
+      }
+    }
+  ]
+}

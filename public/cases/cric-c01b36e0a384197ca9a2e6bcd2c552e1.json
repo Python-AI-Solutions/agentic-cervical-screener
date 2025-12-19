@@ -1,0 +1,24 @@
+{
+  "schema_version": "0.1.0",
+  "case_id": "CRIC-c01b36e0a384197ca9a2e6bcd2c552e1",
+  "program_id": "CRIC_YOLO_Dataset",
+  "dataset_split": "train",
+  "slides": [
+    {
+      "slide_id": "CRIC-c01b36e0a384197ca9a2e6bcd2c552e1",
+      "title": "CRIC sample c01b36e0 (train, 29 labels)",
+      "uri": "images/c01b36e0a384197ca9a2e6bcd2c552e1.webp",
+      "layers": [
+        {
+          "layer_id": "gt-boxes",
+          "kind": "roi",
+          "geometry": "polygons",
+          "uri": "cases/cric-c01b36e0a384197ca9a2e6bcd2c552e1-gt.geojson"
+        }
+      ]
+    }
+  ],
+  "label_counts": {
+    "Negative for intraepithelial lesion": 29
+  }
+}
